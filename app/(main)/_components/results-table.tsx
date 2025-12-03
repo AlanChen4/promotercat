@@ -168,7 +168,7 @@ export function ResultsTable({
             {displayedResults.length === 0 && !isLoading && !isLockedPage ? (
               <TableRow>
                 <TableCell
-                  colSpan={2}
+                  colSpan={3}
                   className="py-10 text-center text-muted-foreground"
                 >
                   No subreddits found. Try a different search.

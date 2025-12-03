@@ -126,7 +126,7 @@ export function Pricing({ source = "unknown" }: PricingProps) {
                 For advanced users and serious indie hackers.
               </p>
               <div className="mb-4">
-                <span className="text-2xl sm:text-3xl font-bold">$9.99</span>
+                <span className="text-2xl sm:text-3xl font-bold">$4.99</span>
                 <span className="text-gray-600 text-sm"> / month</span>
               </div>
               <Button
@@ -178,7 +178,7 @@ export function Pricing({ source = "unknown" }: PricingProps) {
                 savings.
               </p>
               <div className="mb-4">
-                <span className="text-2xl sm:text-3xl font-bold">$79.99</span>
+                <span className="text-2xl sm:text-3xl font-bold">$39.99</span>
                 <span className="text-gray-600 text-sm"> / year</span>
               </div>
               <Button

@@ -67,7 +67,7 @@ export function Filters({
     <div className="grid gap-4">
       <Input
         id="subreddit-search"
-        placeholder="Try “marketing” or “finance”"
+        placeholder="Try “finance” or “food”"
         value={searchInput}
         onChange={(event) => onSearchInputChange(event.target.value)}
         className="max-w-xl"
