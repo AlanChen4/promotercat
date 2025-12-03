@@ -193,7 +193,8 @@ export function ResultsTable({
                     </TableCell>
                     <TableCell>
                       {formatSelfPromotion(subreddit.self_promotion)}
-                      {subreddit.self_promotion === "allowed_limited" && (
+                      {(subreddit.self_promotion === "allowed_limited" ||
+                        subreddit.self_promotion === "allowed_full") && (
                         <span className="text-muted-foreground">
                           {" "}
                           — {subreddit.self_promotion_detail}
