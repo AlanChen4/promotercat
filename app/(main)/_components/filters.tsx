@@ -16,6 +16,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { UpgradeModal } from "@/components/upgrade-modal";
 import { useAuth } from "@/providers/auth-provider";
 import type { Enums } from "@/types/database.types";
@@ -69,18 +74,44 @@ export function Filters({
 
   return (
     <div className="grid gap-4 w-full">
-      <div className="relative w-full">
-        <HugeiconsIcon
-          icon={Search01Icon}
-          className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-        />
-        <Input
-          id="subreddit-search"
-          placeholder='Try "finance" or "food"'
-          value={searchInput}
-          onChange={(event) => onSearchInputChange(event.target.value)}
-          className="pl-9"
-        />
+      <div className="flex w-full items-center gap-2">
+        <div className="relative flex-1">
+          <HugeiconsIcon
+            icon={Search01Icon}
+            className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+          />
+          <Input
+            id="subreddit-search"
+            placeholder='Try "finance" or "food recipes"'
+            value={searchInput}
+            onChange={(event) => onSearchInputChange(event.target.value)}
+            className="pl-9 text-sm"
+          />
+        </div>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              className="text-sm font-semibold text-muted-foreground underline-offset-2 hover:text-foreground"
+            >
+              How do I use this site?
+            </button>
+          </TooltipTrigger>
+          <TooltipContent className="max-w-xs p-4 text-sm">
+            <p>
+              Discover Reddit communities that welcome promotion so you can
+              reach an audience without breaking the rules.
+            </p>
+            <ol className="mt-2 space-y-1.5 list-decimal pl-4">
+              <li>Search by topic keywords to surface relevant subreddits.</li>
+              <li>
+                Filter by promotion permissions and member counts to narrow the
+                list.
+              </li>
+              <li>Review each subreddit&apos;s guidelines before posting.</li>
+            </ol>
+          </TooltipContent>
+        </Tooltip>
       </div>
 
       <div className="flex w-full gap-x-4 items-center">
