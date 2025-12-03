@@ -14,7 +14,7 @@ type SortDirection = "asc" | "desc";
 
 const RESULTS_PER_PAGE = 10;
 const FREE_RESULT_LIMIT = 3;
-const SEMANTIC_MATCH_THRESHOLD = 0.65;
+const SEMANTIC_MATCH_THRESHOLD = 0.64;
 const SEMANTIC_MATCH_COUNT = 100;
 
 const VALID_SELF_PROMOTION = new Set<SelfPromotionStatus>([
@@ -205,6 +205,12 @@ async function fetchSemanticCandidateNames({
     contents: searchTerm,
     config: {
       taskType: "RETRIEVAL_QUERY",
+      httpOptions: {
+        headers: {
+          "Helicone-Cache-Enabled": "true",
+          "Cache-Control": "max-age=31536000",
+        },
+      },
     },
   });
 

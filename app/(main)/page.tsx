@@ -27,10 +27,10 @@ const SELF_PROMOTION_OPTIONS: {
   label: string;
   value: SelfPromotionStatus;
 }[] = [
-  { label: "Allowed", value: "allowed_full" },
+  { label: "Yes", value: "allowed_full" },
   { label: "Limited", value: "allowed_limited" },
-  { label: "Unspecified", value: "unspecified" },
-  { label: "Not Allowed", value: "not_allowed" },
+  { label: "Not Specified", value: "unspecified" },
+  { label: "No", value: "not_allowed" },
 ];
 
 const SELF_PROMOTION_LABELS: Record<SelfPromotionStatus, string> =
@@ -54,7 +54,7 @@ const MEMBER_THRESHOLD_OPTIONS: MemberThresholdOption[] = [
 
 const MEMBERS_FILTER_ANY_VALUE = "any";
 
-const SEARCH_DEBOUNCE_MS = 500;
+const SEARCH_DEBOUNCE_MS = 300;
 const ROWS_PER_PAGE = 10;
 const PLACEHOLDER_SUBREDDITS: PlaceholderSubreddit[] = [
   {
@@ -423,7 +423,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="mx-auto flex max-w-5xl flex-col gap-4 p-4">
+    <div className="mx-auto flex max-w-4xl flex-col items-center gap-4 p-4">
       <Filters
         searchInput={searchInput}
         selectedSelfPromotion={selectedSelfPromotion}

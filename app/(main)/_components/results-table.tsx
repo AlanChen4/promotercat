@@ -8,6 +8,7 @@ import {
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import Link from "next/link";
+import { Spinner } from "@/components/ui/spinner";
 import {
   Table,
   TableBody,
@@ -135,12 +136,14 @@ export function ResultsTable({
   );
 
   return (
-    <div className="rounded-xl border bg-card">
+    <div className="rounded-xl border bg-card w-full max-w-4xl">
       <div className="flex justify-between items-center border-b px-4 py-3">
         <p className="text-sm text-muted-foreground">
-          {showLoadingMessage
-            ? "Loading results…"
-            : `${totalCount} subreddit${totalCount === 1 ? "" : "s"} found`}
+          {showLoadingMessage ? (
+            <Spinner />
+          ) : (
+            `${totalCount.toLocaleString()} subreddit${totalCount === 1 ? "" : "s"} found`
+          )}
         </p>
         <p className="flex items-center gap-1 text-sm text-muted-foreground">
           <HugeiconsIcon icon={TickDouble03FreeIcons} className="size-4" />
@@ -159,9 +162,7 @@ export function ResultsTable({
               <TableHead className="text-muted-foreground">
                 {renderSortableHeader("Members", "members")}
               </TableHead>
-              <TableHead className="text-muted-foreground">
-                Self-Promotion
-              </TableHead>
+              <TableHead className="text-muted-foreground">Promotion</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

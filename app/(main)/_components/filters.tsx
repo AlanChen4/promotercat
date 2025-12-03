@@ -1,6 +1,10 @@
 "use client";
 
-import { FavouriteIcon, SquareLock01Icon } from "@hugeicons/core-free-icons";
+import {
+  FavouriteIcon,
+  Search01Icon,
+  SquareLock01Icon,
+} from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -64,17 +68,23 @@ export function Filters({
   const membersFilterDisabled = !canUseMembersFilter;
 
   return (
-    <div className="grid gap-4">
-      <Input
-        id="subreddit-search"
-        placeholder="Try “finance” or “food”"
-        value={searchInput}
-        onChange={(event) => onSearchInputChange(event.target.value)}
-        className="max-w-xl"
-      />
+    <div className="grid gap-4 w-full">
+      <div className="relative w-full">
+        <HugeiconsIcon
+          icon={Search01Icon}
+          className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+        />
+        <Input
+          id="subreddit-search"
+          placeholder='Try "finance" or "food"'
+          value={searchInput}
+          onChange={(event) => onSearchInputChange(event.target.value)}
+          className="pl-9"
+        />
+      </div>
 
-      <div className="flex gap-x-4 items-center">
-        <Label>Self-Promotion</Label>
+      <div className="flex w-full gap-x-4 items-center">
+        <Label className="w-20">Promotion</Label>
         {selfPromotionOptions.map((option) => {
           const checkboxId = `self-promotion-${option.value}`;
           return (
@@ -97,9 +107,9 @@ export function Filters({
         })}
       </div>
 
-      <div className="flex flex-wrap items-start gap-4">
-        <div className="flex flex-wrap items-center gap-3">
-          <Label>Members</Label>
+      <div className="flex w-full flex-wrap items-start gap-4">
+        <div className="flex w-full flex-wrap items-center gap-3">
+          <Label className="w-20">Members</Label>
           <div className="flex flex-wrap gap-3">
             <div className="flex items-center gap-3">
               <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
