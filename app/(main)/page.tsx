@@ -8,6 +8,8 @@ import { Filters } from "./_components/filters";
 import { SubredditsPagination } from "./_components/pagination";
 import type {
   PlaceholderSubreddit,
+  SortField,
+  SortState,
   SubredditResult,
 } from "./_components/results-table";
 import { ResultsTable } from "./_components/results-table";
@@ -121,9 +123,13 @@ export default function HomePage() {
   const [totalCount, setTotalCount] = useState(0);
   const [minimumMembers, setMinimumMembers] = useState<number | null>(null);
   const [maximumMembers, setMaximumMembers] = useState<number | null>(null);
+  const [sortState, setSortState] = useState<SortState>(null);
+  const [isSortLoading, setIsSortLoading] = useState(false);
+  const [hasInitializedSort, setHasInitializedSort] = useState(false);
 
   const isLockedPage = !isPremium && !isPremiumLoading && page > 1;
   const canUseMembersFilter = isAuthenticated && !isAuthenticatedLoading;
+  const canUseSorting = isAuthenticated && !isAuthenticatedLoading;
 
   useEffect(() => {
     if (canUseMembersFilter) {
@@ -132,6 +138,20 @@ export default function HomePage() {
     setMinimumMembers(null);
     setMaximumMembers(null);
   }, [canUseMembersFilter]);
+
+  useEffect(() => {
+    if (!canUseSorting) {
+      setSortState(null);
+      setIsSortLoading(false);
+      setHasInitializedSort(false);
+      return;
+    }
+    if (!hasInitializedSort && !sortState) {
+      setIsSortLoading(true);
+      setHasInitializedSort(true);
+      setSortState({ field: "members", direction: "desc" });
+    }
+  }, [canUseSorting, hasInitializedSort, sortState]);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
@@ -149,11 +169,16 @@ export default function HomePage() {
   }, [searchInput]);
 
   useEffect(() => {
+    if (canUseSorting && !hasInitializedSort) {
+      return;
+    }
+
     const abortController = new AbortController();
 
     const fetchData = async () => {
       if (isLockedPage) {
         setIsLoading(false);
+        setIsSortLoading(false);
         setErrorMessage(null);
         return;
       }
@@ -173,6 +198,10 @@ export default function HomePage() {
       }
       if (canUseMembersFilter && maximumMembers !== null) {
         query.set("max_members", String(maximumMembers));
+      }
+      if (canUseSorting && sortState) {
+        query.set("sort_by", sortState.field);
+        query.set("sort_direction", sortState.direction);
       }
       query.set("page", String(!isPremium && !isPremiumLoading ? 1 : page));
 
@@ -210,6 +239,7 @@ export default function HomePage() {
       } finally {
         if (!abortController.signal.aborted) {
           setIsLoading(false);
+          setIsSortLoading(false);
         }
       }
     };
@@ -227,6 +257,9 @@ export default function HomePage() {
     minimumMembers,
     maximumMembers,
     canUseMembersFilter,
+    canUseSorting,
+    sortState,
+    hasInitializedSort,
   ]);
 
   const totalPages = useMemo(() => {
@@ -361,12 +394,36 @@ export default function HomePage() {
     });
   };
 
+  const handleSortToggle = (field: SortField) => {
+    if (!canUseSorting) {
+      return;
+    }
+    setIsSortLoading(true);
+    setSortState((previous) => {
+      let nextState: SortState = null;
+      if (!previous || previous.field !== field) {
+        nextState = { field, direction: "desc" };
+      } else if (previous.direction === "desc") {
+        nextState = { field, direction: "asc" };
+      }
+
+      if (
+        previous?.field !== nextState?.field ||
+        previous?.direction !== nextState?.direction
+      ) {
+        setPage(1);
+      }
+
+      return nextState;
+    });
+  };
+
   const handlePageChange = (nextPage: number) => {
     setPage(nextPage);
   };
 
   return (
-    <div className="mx-auto flex max-w-5xl flex-col gap-4 px-4 pt-8">
+    <div className="mx-auto flex max-w-5xl flex-col gap-4 p-4">
       <Filters
         searchInput={searchInput}
         selectedSelfPromotion={selectedSelfPromotion}
@@ -395,6 +452,10 @@ export default function HomePage() {
         isLockedPage={isLockedPage}
         formatSelfPromotion={formatSelfPromotion}
         formatMembersCount={formatMembersCount}
+        canUseSorting={canUseSorting}
+        sortState={sortState}
+        onSortToggle={handleSortToggle}
+        isSortLoading={isSortLoading}
       />
 
       <SubredditsPagination

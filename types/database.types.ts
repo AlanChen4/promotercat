@@ -45,21 +45,30 @@ export type Database = {
       };
       subreddits: {
         Row: {
+          description: string | null;
+          description_embedding: string | null;
           id: string;
+          last_scraped_at: string | null;
           members_count: number;
           name: string;
           self_promotion: Database["public"]["Enums"]["self_promotion_status"];
           self_promotion_detail: string;
         };
         Insert: {
+          description?: string | null;
+          description_embedding?: string | null;
           id?: string;
+          last_scraped_at?: string | null;
           members_count: number;
           name: string;
           self_promotion: Database["public"]["Enums"]["self_promotion_status"];
           self_promotion_detail: string;
         };
         Update: {
+          description?: string | null;
+          description_embedding?: string | null;
           id?: string;
+          last_scraped_at?: string | null;
           members_count?: number;
           name?: string;
           self_promotion?: Database["public"]["Enums"]["self_promotion_status"];
@@ -96,7 +105,29 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
-      [_ in never]: never;
+      match_subreddits_by_description: {
+        Args: {
+          match_count: number;
+          match_threshold: number;
+          query_embedding: string;
+        };
+        Returns: {
+          description: string | null;
+          description_embedding: string | null;
+          id: string;
+          last_scraped_at: string | null;
+          members_count: number;
+          name: string;
+          self_promotion: Database["public"]["Enums"]["self_promotion_status"];
+          self_promotion_detail: string;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "subreddits";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
     };
     Enums: {
       self_promotion_status:

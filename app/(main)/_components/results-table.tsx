@@ -1,6 +1,11 @@
 "use client";
 
-import { TickDouble03FreeIcons } from "@hugeicons/core-free-icons";
+import {
+  SortByDown02Icon,
+  SortByUp02Icon,
+  SquareLock01Icon,
+  TickDouble03FreeIcons,
+} from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import Link from "next/link";
 import {
@@ -29,6 +34,10 @@ export type PlaceholderSubreddit = {
   members: string;
 };
 
+export type SortField = "name" | "members";
+export type SortDirection = "asc" | "desc";
+export type SortState = { field: SortField; direction: SortDirection } | null;
+
 type ResultsTableProps = {
   isLoading: boolean;
   errorMessage: string | null;
@@ -40,6 +49,10 @@ type ResultsTableProps = {
   isLockedPage: boolean;
   formatSelfPromotion: (status: SelfPromotionStatus) => string;
   formatMembersCount: (count: number) => string;
+  canUseSorting: boolean;
+  sortState: SortState;
+  onSortToggle: (field: SortField) => void;
+  isSortLoading: boolean;
 };
 
 export function ResultsTable({
@@ -53,12 +66,79 @@ export function ResultsTable({
   isLockedPage,
   formatSelfPromotion,
   formatMembersCount,
+  canUseSorting,
+  sortState,
+  onSortToggle,
+  isSortLoading,
 }: ResultsTableProps) {
+  const showLoadingMessage = isLoading && !isSortLoading;
+
+  const getSortIcon = (field: SortField) => {
+    if (!canUseSorting) {
+      return SquareLock01Icon;
+    }
+    if (sortState?.field !== field) {
+      return SortByDown02Icon;
+    }
+    return sortState.direction === "asc" ? SortByUp02Icon : SortByDown02Icon;
+  };
+
+  const renderSortButton = (field: SortField) => {
+    const Icon = getSortIcon(field);
+    const isActive = sortState?.field === field;
+    const label = isActive
+      ? `Sort by ${field} ${
+          sortState.direction === "asc" ? "ascending" : "descending"
+        }`
+      : `Sort by ${field}`;
+
+    return (
+      <button
+        type="button"
+        onClick={(event) => {
+          event.stopPropagation();
+          onSortToggle(field);
+        }}
+        disabled={!canUseSorting}
+        aria-pressed={isActive}
+        aria-label={label}
+        className={`rounded p-1 transition ${
+          isActive
+            ? "bg-muted text-primary"
+            : "text-muted-foreground hover:bg-muted"
+        } ${!canUseSorting ? "cursor-not-allowed opacity-70" : ""}`}
+      >
+        {Icon ? <HugeiconsIcon icon={Icon} className="size-4" /> : null}
+      </button>
+    );
+  };
+
+  const renderSortableHeader = (label: string, field: SortField) => (
+    // biome-ignore lint/a11y/useSemanticElements: Button can't be nested in a button
+    <div
+      role="button"
+      className={`flex cursor-pointer items-center gap-2 ${
+        !canUseSorting ? "cursor-not-allowed opacity-80" : ""
+      }`}
+      onClick={() => onSortToggle(field)}
+      tabIndex={0}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onSortToggle(field);
+        }
+      }}
+    >
+      <span>{label}</span>
+      {renderSortButton(field)}
+    </div>
+  );
+
   return (
     <div className="rounded-xl border bg-card">
       <div className="flex justify-between items-center border-b px-4 py-3">
         <p className="text-sm text-muted-foreground">
-          {isLoading
+          {showLoadingMessage
             ? "Loading results…"
             : `${totalCount} subreddit${totalCount === 1 ? "" : "s"} found`}
         </p>
@@ -73,11 +153,15 @@ export function ResultsTable({
         <Table>
           <TableHeader>
             <TableRow className="bg-muted">
-              <TableHead className="text-muted-foreground">Name</TableHead>
+              <TableHead className="text-muted-foreground">
+                {renderSortableHeader("Name", "name")}
+              </TableHead>
+              <TableHead className="text-muted-foreground">
+                {renderSortableHeader("Members", "members")}
+              </TableHead>
               <TableHead className="text-muted-foreground">
                 Self-Promotion
               </TableHead>
-              <TableHead className="text-muted-foreground">Members</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -105,6 +189,9 @@ export function ResultsTable({
                       </Link>
                     </TableCell>
                     <TableCell>
+                      {formatMembersCount(subreddit.members_count)}
+                    </TableCell>
+                    <TableCell>
                       {formatSelfPromotion(subreddit.self_promotion)}
                       {subreddit.self_promotion === "allowed_limited" && (
                         <span className="text-muted-foreground">
@@ -112,9 +199,6 @@ export function ResultsTable({
                           — {subreddit.self_promotion_detail}
                         </span>
                       )}
-                    </TableCell>
-                    <TableCell>
-                      {formatMembersCount(subreddit.members_count)}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -135,6 +219,7 @@ export function ResultsTable({
                           <TableCell className="font-medium w-48">
                             r/{placeholder.name}
                           </TableCell>
+                          <TableCell>{placeholder.members}</TableCell>
                           <TableCell>
                             {formatSelfPromotion(placeholder.selfPromotion)}
                             {placeholder.selfPromotion === "allowed_limited" &&
@@ -145,7 +230,6 @@ export function ResultsTable({
                               </span>
                             ) : null}
                           </TableCell>
-                          <TableCell>{placeholder.members}</TableCell>
                         </>
                       );
                     })()}

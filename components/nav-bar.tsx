@@ -97,7 +97,6 @@ export function NavigationBar() {
           className="flex items-center gap-4 text-muted-foreground"
         >
           <Image src={logo} alt="Where Can I Promote" width={42} height={42} />
-          <span className="font-medium">wherecanipromote.com</span>
         </Link>
       </div>
       {user ? (

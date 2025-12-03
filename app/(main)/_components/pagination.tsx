@@ -1,8 +1,10 @@
 "use client";
 
+import { Fragment } from "react";
 import {
   Pagination,
   PaginationContent,
+  PaginationEllipsis,
   PaginationItem,
   PaginationLink,
   PaginationNext,
@@ -26,6 +28,17 @@ export function SubredditsPagination({
     return null;
   }
 
+  const visiblePages =
+    paginationItems.length <= 5
+      ? paginationItems
+      : Array.from(
+          new Set(
+            [1, totalPages, page - 1, page, page + 1].filter(
+              (value) => value >= 1 && value <= totalPages,
+            ),
+          ),
+        ).sort((a, b) => a - b);
+
   return (
     <Pagination>
       <PaginationContent>
@@ -42,22 +55,35 @@ export function SubredditsPagination({
             className={page === 1 ? "pointer-events-none opacity-50" : ""}
           />
         </PaginationItem>
-        {paginationItems.map((pageNumber) => (
-          <PaginationItem key={pageNumber}>
-            <PaginationLink
-              href="#"
-              isActive={pageNumber === page}
-              onClick={(event) => {
-                event.preventDefault();
-                if (pageNumber !== page) {
-                  onPageChange(pageNumber);
-                }
-              }}
-            >
-              {pageNumber}
-            </PaginationLink>
-          </PaginationItem>
-        ))}
+        {visiblePages.map((pageNumber, index) => {
+          const previousPage = visiblePages[index - 1];
+          const showEllipsis =
+            typeof previousPage === "number" && pageNumber - previousPage > 1;
+
+          return (
+            <Fragment key={pageNumber}>
+              {showEllipsis ? (
+                <PaginationItem>
+                  <PaginationEllipsis />
+                </PaginationItem>
+              ) : null}
+              <PaginationItem>
+                <PaginationLink
+                  href="#"
+                  isActive={pageNumber === page}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    if (pageNumber !== page) {
+                      onPageChange(pageNumber);
+                    }
+                  }}
+                >
+                  {pageNumber}
+                </PaginationLink>
+              </PaginationItem>
+            </Fragment>
+          );
+        })}
         <PaginationItem>
           <PaginationNext
             href="#"

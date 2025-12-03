@@ -103,11 +103,11 @@ export function Pricing({ source = "unknown" }: PricingProps) {
               </p>
               <ul className="space-y-2 text-base text-gray-600">
                 <li className="flex items-center gap-2">
-                  <div className="bg-green-100 rounded-md p-0.5 shrink-0">
+                  <div className="bg-primary/10 rounded-md p-0.5 shrink-0">
                     <HugeiconsIcon
                       icon={Tick02Icon}
                       size={16}
-                      color="#166534"
+                      className="text-primary"
                     />
                   </div>
                   3 results per search
@@ -144,21 +144,21 @@ export function Pricing({ source = "unknown" }: PricingProps) {
               </p>
               <ul className="space-y-2 text-base text-gray-600">
                 <li className="flex items-center gap-2">
-                  <div className="bg-green-100 rounded-md p-0.5 shrink-0">
+                  <div className="bg-primary/10 rounded-md p-0.5 shrink-0">
                     <HugeiconsIcon
                       icon={Tick02Icon}
                       size={16}
-                      color="#166534"
+                      className="text-primary"
                     />
                   </div>
                   Unlimited results per search
                 </li>
                 <li className="flex items-center gap-2">
-                  <div className="bg-green-100 rounded-md p-0.5 shrink-0">
+                  <div className="bg-primary/10 rounded-md p-0.5 shrink-0">
                     <HugeiconsIcon
                       icon={Tick02Icon}
                       size={16}
-                      color="#166534"
+                      className="text-primary"
                     />
                   </div>
                   Priority email support
@@ -196,21 +196,21 @@ export function Pricing({ source = "unknown" }: PricingProps) {
               </p>
               <ul className="space-y-2 text-base text-gray-600">
                 <li className="flex items-center gap-2">
-                  <div className="bg-green-100 rounded-md p-0.5 shrink-0">
+                  <div className="bg-primary/10 rounded-md p-0.5 shrink-0">
                     <HugeiconsIcon
                       icon={Tick02Icon}
                       size={16}
-                      color="#166534"
+                      className="text-primary"
                     />
                   </div>
                   Annual discount
                 </li>
                 <li className="flex items-center gap-2">
-                  <div className="bg-green-100 rounded-md p-0.5 shrink-0">
+                  <div className="bg-primary/10 rounded-md p-0.5 shrink-0">
                     <HugeiconsIcon
                       icon={Tick02Icon}
                       size={16}
-                      color="#166534"
+                      className="text-primary"
                     />
                   </div>
                   Priority feature requests
