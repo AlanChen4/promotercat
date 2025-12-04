@@ -35,8 +35,8 @@
     "next": "16.0.7",
     "posthog-js": "^1.299.0",
     "posthog-node": "^5.15.0",
-    "react": "19.2.0",
-    "react-dom": "19.2.0",
+    "react": "19.2.1",
+    "react-dom": "19.2.1",
     "require-in-the-middle": "^8.0.1",
     "stripe": "^14.21.0",
     "tailwind-merge": "^3.4.0"
