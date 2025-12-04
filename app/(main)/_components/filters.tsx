@@ -104,11 +104,8 @@ export function Filters({
             </p>
             <ol className="mt-2 space-y-1.5 list-decimal pl-4">
               <li>Search by topic keywords to surface relevant subreddits.</li>
-              <li>
-                Filter by promotion permissions and member counts to narrow the
-                list.
-              </li>
-              <li>Review each subreddit&apos;s guidelines before posting.</li>
+              <li>Filter by promotion permissions to narrow the list.</li>
+              <li>Start promoting!</li>
             </ol>
           </TooltipContent>
         </Tooltip>
@@ -138,8 +135,8 @@ export function Filters({
         })}
       </div>
 
-      <div className="flex w-full flex-wrap items-start gap-4">
-        <div className="flex w-full flex-wrap items-center gap-3">
+      <div className="w-full flex flex-wrap items-start gap-4">
+        <div className="hidden w-full flex-wrap items-center gap-3">
           <Label className="w-20">Members</Label>
           <div className="flex flex-wrap gap-3">
             <div className="flex items-center gap-3">
