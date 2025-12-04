@@ -122,7 +122,7 @@ export async function GET(request: Request) {
   const rangeEnd = rangeStart + pageSize - 1;
   const canUseSorting = Boolean(userId);
   const sortField: SortField =
-    canUseSorting && requestedSortField ? requestedSortField : "name";
+    canUseSorting && requestedSortField ? requestedSortField : "members";
   const sortDirection: SortDirection =
     canUseSorting && requestedSortDirection ? requestedSortDirection : "asc";
 

@@ -90,13 +90,13 @@ export function NavigationBar() {
   const email = user?.email ?? "";
 
   return (
-    <nav className="flex items-center justify-between p-4 max-w-4xl mx-auto">
+    <nav className="flex items-center justify-between p-4 max-w-4xl mx-auto w-full">
       <div className="flex items-center gap-2">
         <Link
           href="/"
           className="flex items-center gap-4 text-muted-foreground"
         >
-          <Image src={logo} alt="Where Can I Promote" width={42} height={42} />
+          <Image src={logo} alt="PromoterCat" width={42} height={42} />
         </Link>
       </div>
       {user ? (
@@ -109,7 +109,7 @@ export function NavigationBar() {
         </div>
       ) : (
         <div className="flex items-center gap-4">
-          <Link href="/pricing" className="text-muted-foreground">
+          <Link href="/pricing" className="text-muted-foreground text-sm">
             Pricing
           </Link>
           <Link href="/auth">

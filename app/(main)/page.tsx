@@ -42,6 +42,12 @@ const SELF_PROMOTION_LABELS: Record<SelfPromotionStatus, string> =
     {} as Record<SelfPromotionStatus, string>,
   );
 
+const DEFAULT_SELF_PROMOTION_SELECTION: SelfPromotionStatus[] = [
+  "allowed_full",
+  "allowed_limited",
+  "unspecified",
+];
+
 const MEMBER_THRESHOLD_OPTIONS: MemberThresholdOption[] = [
   { label: "50k", value: 50_000 },
   { label: "100k", value: 100_000 },
@@ -53,6 +59,7 @@ const MEMBER_THRESHOLD_OPTIONS: MemberThresholdOption[] = [
 ];
 
 const MEMBERS_FILTER_ANY_VALUE = "any";
+const DEFAULT_SORT_STATE: SortState = { field: "members", direction: "asc" };
 
 const SEARCH_DEBOUNCE_MS = 300;
 const ROWS_PER_PAGE = 10;
@@ -115,7 +122,7 @@ export default function HomePage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedSelfPromotion, setSelectedSelfPromotion] = useState<
     SelfPromotionStatus[]
-  >([]);
+  >(DEFAULT_SELF_PROMOTION_SELECTION);
   const [page, setPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -123,9 +130,8 @@ export default function HomePage() {
   const [totalCount, setTotalCount] = useState(0);
   const [minimumMembers, setMinimumMembers] = useState<number | null>(null);
   const [maximumMembers, setMaximumMembers] = useState<number | null>(null);
-  const [sortState, setSortState] = useState<SortState>(null);
+  const [sortState, setSortState] = useState<SortState>(DEFAULT_SORT_STATE);
   const [isSortLoading, setIsSortLoading] = useState(false);
-  const [hasInitializedSort, setHasInitializedSort] = useState(false);
 
   const isLockedPage = !isPremium && !isPremiumLoading && page > 1;
   const canUseMembersFilter = isAuthenticated && !isAuthenticatedLoading;
@@ -141,17 +147,10 @@ export default function HomePage() {
 
   useEffect(() => {
     if (!canUseSorting) {
-      setSortState(null);
+      setSortState(DEFAULT_SORT_STATE);
       setIsSortLoading(false);
-      setHasInitializedSort(false);
-      return;
     }
-    if (!hasInitializedSort && !sortState) {
-      setIsSortLoading(true);
-      setHasInitializedSort(true);
-      setSortState({ field: "members", direction: "desc" });
-    }
-  }, [canUseSorting, hasInitializedSort, sortState]);
+  }, [canUseSorting]);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
@@ -169,10 +168,6 @@ export default function HomePage() {
   }, [searchInput]);
 
   useEffect(() => {
-    if (canUseSorting && !hasInitializedSort) {
-      return;
-    }
-
     const abortController = new AbortController();
 
     const fetchData = async () => {
@@ -199,7 +194,7 @@ export default function HomePage() {
       if (canUseMembersFilter && maximumMembers !== null) {
         query.set("max_members", String(maximumMembers));
       }
-      if (canUseSorting && sortState) {
+      if (sortState) {
         query.set("sort_by", sortState.field);
         query.set("sort_direction", sortState.direction);
       }
@@ -257,9 +252,7 @@ export default function HomePage() {
     minimumMembers,
     maximumMembers,
     canUseMembersFilter,
-    canUseSorting,
     sortState,
-    hasInitializedSort,
   ]);
 
   const totalPages = useMemo(() => {
@@ -400,16 +393,19 @@ export default function HomePage() {
     }
     setIsSortLoading(true);
     setSortState((previous) => {
-      let nextState: SortState = null;
+      let nextState: SortState;
       if (!previous || previous.field !== field) {
         nextState = { field, direction: "desc" };
-      } else if (previous.direction === "desc") {
-        nextState = { field, direction: "asc" };
+      } else {
+        nextState = {
+          field,
+          direction: previous.direction === "desc" ? "asc" : "desc",
+        };
       }
 
       if (
-        previous?.field !== nextState?.field ||
-        previous?.direction !== nextState?.direction
+        previous?.field !== nextState.field ||
+        previous?.direction !== nextState.direction
       ) {
         setPage(1);
       }

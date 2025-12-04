@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  FavouriteIcon,
-  Search01Icon,
-  SquareLock01Icon,
-} from "@hugeicons/core-free-icons";
+import { Search01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -16,13 +12,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { UpgradeModal } from "@/components/upgrade-modal";
-import { useAuth } from "@/providers/auth-provider";
 import type { Enums } from "@/types/database.types";
 
 type SelfPromotionStatus = Enums<"self_promotion_status">;
@@ -69,7 +58,6 @@ export function Filters({
   onMinimumMembersChange,
   onMaximumMembersChange,
 }: FiltersProps) {
-  const { isPremium, isPremiumLoading } = useAuth();
   const membersFilterDisabled = !canUseMembersFilter;
 
   return (
@@ -82,57 +70,38 @@ export function Filters({
           />
           <Input
             id="subreddit-search"
-            placeholder='Try "finance" or "food recipes"'
+            placeholder='Try "gaming" or "money"'
             value={searchInput}
             onChange={(event) => onSearchInputChange(event.target.value)}
             className="pl-9 text-sm"
           />
         </div>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              type="button"
-              className="text-sm font-semibold text-muted-foreground underline-offset-2 hover:text-foreground"
-            >
-              How do I use this site?
-            </button>
-          </TooltipTrigger>
-          <TooltipContent className="max-w-xs p-4 text-sm">
-            <p>
-              Discover Reddit communities that welcome promotion so you can
-              reach an audience without breaking the rules.
-            </p>
-            <ol className="mt-2 space-y-1.5 list-decimal pl-4">
-              <li>Search by topic keywords to surface relevant subreddits.</li>
-              <li>Filter by promotion permissions to narrow the list.</li>
-              <li>Start promoting!</li>
-            </ol>
-          </TooltipContent>
-        </Tooltip>
       </div>
 
-      <div className="flex w-full gap-x-4 items-center">
+      <div className="flex flex-col md:flex-row w-full gap-x-4 gap-y-2">
         <Label className="w-20">Promotion</Label>
-        {selfPromotionOptions.map((option) => {
-          const checkboxId = `self-promotion-${option.value}`;
-          return (
-            <div
-              key={option.value}
-              className="flex items-center gap-1.5 text-sm text-muted-foreground"
-            >
-              <Checkbox
-                id={checkboxId}
-                checked={selectedSelfPromotion.includes(option.value)}
-                onCheckedChange={(checked) =>
-                  onSelfPromotionChange(option.value, Boolean(checked))
-                }
-              />
-              <Label htmlFor={checkboxId} className="text-muted-foreground">
-                {option.label}
-              </Label>
-            </div>
-          );
-        })}
+        <div className="flex gap-x-4">
+          {selfPromotionOptions.map((option) => {
+            const checkboxId = `self-promotion-${option.value}`;
+            return (
+              <div
+                key={option.value}
+                className="flex items-center gap-1.5 text-sm text-muted-foreground"
+              >
+                <Checkbox
+                  id={checkboxId}
+                  checked={selectedSelfPromotion.includes(option.value)}
+                  onCheckedChange={(checked) =>
+                    onSelfPromotionChange(option.value, Boolean(checked))
+                  }
+                />
+                <Label htmlFor={checkboxId} className="text-muted-foreground">
+                  {option.label}
+                </Label>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       <div className="w-full flex flex-wrap items-start gap-4">
@@ -193,23 +162,6 @@ export function Filters({
             </div>
           </div>
         </div>
-        {membersFilterDisabled && (
-          <div className="flex items-center gap-2 rounded-lg border border-dashed border-muted-foreground/40 px-3 py-1.5 text-sm text-muted-foreground">
-            <HugeiconsIcon icon={SquareLock01Icon} className="size-4" />
-            <span>Login or sign up for full search access</span>
-          </div>
-        )}
-        {!membersFilterDisabled && !isPremium && !isPremiumLoading && (
-          <UpgradeModal
-            source="search_filters"
-            trigger={
-              <div className="flex items-center gap-2 rounded-lg border border-dashed border-amber-500/60 px-3 py-1.5 text-sm text-amber-700 cursor-pointer">
-                <HugeiconsIcon icon={FavouriteIcon} className="size-4" />
-                <span>Upgrade to unlock all search results</span>
-              </div>
-            }
-          />
-        )}
       </div>
     </div>
   );

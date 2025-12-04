@@ -22,7 +22,7 @@ export function AuthForm({ className, ...props }: React.ComponentProps<"div">) {
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
         <CardHeader className="text-center">
-          <CardTitle className="text-xl">Login or sign up</CardTitle>
+          <CardTitle className="text-xl">Login or Sign Up</CardTitle>
           <CardDescription>
             Free to get started. No credit card required.
           </CardDescription>

@@ -8,6 +8,8 @@ import {
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import Link from "next/link";
+import { Fragment } from "react";
+import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import {
   Table,
@@ -17,6 +19,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { UpgradeModal } from "@/components/upgrade-modal";
+import { useAuth } from "@/providers/auth-provider";
 import type { Enums } from "@/types/database.types";
 
 type SelfPromotionStatus = Enums<"self_promotion_status">;
@@ -72,7 +76,14 @@ export function ResultsTable({
   onSortToggle,
   isSortLoading,
 }: ResultsTableProps) {
+  const { isAuthenticated, isPremium, isPremiumLoading } = useAuth();
   const showLoadingMessage = isLoading && !isSortLoading;
+  const shouldShowPlaceholderCta =
+    placeholderRows.length > 0 && !isPremium && !isPremiumLoading;
+  const placeholderCtaIndex =
+    placeholderRows.length > 0
+      ? Math.floor((placeholderRows.length - 1) / 2)
+      : 0;
 
   const getSortIcon = (field: SortField) => {
     if (!canUseSorting) {
@@ -134,6 +145,50 @@ export function ResultsTable({
       {renderSortButton(field)}
     </div>
   );
+
+  const renderPlaceholderCta = () => {
+    if (!shouldShowPlaceholderCta) {
+      return null;
+    }
+
+    return (
+      <TableRow key="placeholder-cta">
+        <TableCell colSpan={3} className="bg-muted py-4">
+          <div className="relative overflow-hidden">
+            <div className="relative flex md:justify-center items-center">
+              <div className="flex flex-wrap items-center justify-center gap-3">
+                {!isAuthenticated ? (
+                  <Button asChild variant="outline">
+                    <Link href="/auth">
+                      Log in or Sign Up{" "}
+                      <span className="text-muted-foreground">— it's free</span>
+                    </Link>
+                  </Button>
+                ) : null}
+                {!isPremium && !isPremiumLoading && isAuthenticated ? (
+                  <UpgradeModal
+                    source="search_placeholder"
+                    trigger={
+                      <Button>
+                        <HugeiconsIcon
+                          icon={SquareLock01Icon}
+                          className="size-4"
+                        />
+                        Upgrade{" "}
+                        <span className="text-primary-foreground/80">
+                          — Money Back Guarantee
+                        </span>
+                      </Button>
+                    }
+                  />
+                ) : null}
+              </div>
+            </div>
+          </div>
+        </TableCell>
+      </TableRow>
+    );
+  };
 
   return (
     <div className="rounded-xl border bg-card w-full max-w-4xl">
@@ -204,39 +259,40 @@ export function ResultsTable({
                     </TableCell>
                   </TableRow>
                 ))}
-                {placeholderRows.map((placeholderKey, index) => (
-                  <TableRow
-                    key={placeholderKey}
-                    className="pointer-events-none select-none"
-                    style={{ filter: "blur(4px)" }}
-                    aria-hidden="true"
-                  >
-                    {(() => {
-                      const placeholder =
-                        placeholderSubreddits[
-                          (page + index) % placeholderSubreddits.length
-                        ];
-                      return (
-                        <>
-                          <TableCell className="font-medium w-48">
-                            r/{placeholder.name}
-                          </TableCell>
-                          <TableCell>{placeholder.members}</TableCell>
-                          <TableCell>
-                            {formatSelfPromotion(placeholder.selfPromotion)}
-                            {placeholder.selfPromotion === "allowed_limited" &&
-                            placeholder.selfPromotionDetail ? (
-                              <span className="text-muted-foreground">
-                                {" "}
-                                — {placeholder.selfPromotionDetail}
-                              </span>
-                            ) : null}
-                          </TableCell>
-                        </>
-                      );
-                    })()}
-                  </TableRow>
-                ))}
+                {placeholderRows.map((placeholderKey, index) => {
+                  const placeholder =
+                    placeholderSubreddits[
+                      (page + index) % placeholderSubreddits.length
+                    ];
+                  const showPlaceholderCta =
+                    shouldShowPlaceholderCta && index === placeholderCtaIndex;
+
+                  return (
+                    <Fragment key={placeholderKey}>
+                      <TableRow
+                        className="pointer-events-none select-none"
+                        style={{ filter: "blur(4px)" }}
+                        aria-hidden="true"
+                      >
+                        <TableCell className="font-medium w-48">
+                          r/{placeholder.name}
+                        </TableCell>
+                        <TableCell>{placeholder.members}</TableCell>
+                        <TableCell>
+                          {formatSelfPromotion(placeholder.selfPromotion)}
+                          {placeholder.selfPromotion === "allowed_limited" &&
+                          placeholder.selfPromotionDetail ? (
+                            <span className="text-muted-foreground">
+                              {" "}
+                              — {placeholder.selfPromotionDetail}
+                            </span>
+                          ) : null}
+                        </TableCell>
+                      </TableRow>
+                      {showPlaceholderCta ? renderPlaceholderCta() : null}
+                    </Fragment>
+                  );
+                })}
               </>
             )}
           </TableBody>

@@ -15,8 +15,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "where can i promote",
-  description: "Find subreddits and other websites that allow self-promotion",
+  title: "PromoterCat",
+  description:
+    "Find subreddits that allow self-promotion for you to promote your apps",
 };
 
 export default function RootLayout({
