@@ -6,7 +6,7 @@ export function Footer() {
           <p className="font-medium">
             © PromoterCat {new Date().getFullYear()}
           </p>
-          <p className="text-xs tracking-wide">We help you promote your apps</p>
+          <p className="text-xs">We help you promote your creations</p>
         </div>
       </div>
     </footer>
