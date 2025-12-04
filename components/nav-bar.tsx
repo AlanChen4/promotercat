@@ -108,15 +108,20 @@ export function NavigationBar() {
           />
         </div>
       ) : (
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
           <Link href="/pricing" className="text-muted-foreground text-sm">
             Pricing
           </Link>
           <Link href="/auth">
-            <Button variant="outline">Login</Button>
+            <Button variant="outline" size="sm">
+              Login
+            </Button>
           </Link>
           <Link href="/auth">
-            <Button>Sign up</Button>
+            <Button size="sm">
+              Sign Up{" "}
+              <span className="text-primary-foreground/80">— it's free</span>
+            </Button>
           </Link>
         </div>
       )}
