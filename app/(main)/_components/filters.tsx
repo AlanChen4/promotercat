@@ -79,7 +79,7 @@ export function Filters({
       </div>
 
       <div className="flex flex-col md:flex-row w-full gap-x-4 gap-y-2">
-        <Label className="w-20">Promotion</Label>
+        <Label className="">Promotion Allowed?</Label>
         <div className="flex gap-x-4">
           {selfPromotionOptions.map((option) => {
             const checkboxId = `self-promotion-${option.value}`;
