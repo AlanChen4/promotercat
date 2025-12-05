@@ -110,7 +110,7 @@ export function Pricing({ source = "unknown" }: PricingProps) {
                       className="text-primary"
                     />
                   </div>
-                  3 results per search
+                  10 results per search
                 </li>
               </ul>
             </div>
