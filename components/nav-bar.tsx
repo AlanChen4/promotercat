@@ -109,9 +109,6 @@ export function NavigationBar() {
         </div>
       ) : (
         <div className="flex items-center gap-2">
-          <Link href="/pricing" className="text-muted-foreground text-sm">
-            Pricing
-          </Link>
           <Link href="/auth">
             <Button variant="outline" size="sm">
               Login
