@@ -15,7 +15,7 @@ type SortDirection = "asc" | "desc";
 const RESULTS_PER_PAGE = 10;
 const FREE_RESULT_LIMIT = 3;
 const SEMANTIC_MATCH_THRESHOLD = 0.64;
-const SEMANTIC_MATCH_COUNT = 100;
+const SEMANTIC_MATCH_COUNT = 300;
 
 const VALID_SELF_PROMOTION = new Set<SelfPromotionStatus>([
   "not_allowed",
@@ -103,6 +103,7 @@ export async function GET(request: Request) {
   } = await supabase.auth.getUser();
 
   const userId = user?.id ?? null;
+  const isAuthenticated = Boolean(userId);
   let isPremium: boolean = false;
   if (userId) {
     const { data: userRecord } = await supabase
@@ -116,7 +117,8 @@ export async function GET(request: Request) {
     isPremium = userRecord.is_premium ?? false;
   }
 
-  const pageSize = isPremium ? RESULTS_PER_PAGE : FREE_RESULT_LIMIT;
+  const pageSize =
+    isPremium || isAuthenticated ? RESULTS_PER_PAGE : FREE_RESULT_LIMIT;
   const currentPage = isPremium ? requestedPage : 1;
   const rangeStart = isPremium ? (currentPage - 1) * RESULTS_PER_PAGE : 0;
   const rangeEnd = rangeStart + pageSize - 1;
