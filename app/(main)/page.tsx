@@ -13,6 +13,7 @@ import type {
   SubredditResult,
 } from "./_components/results-table";
 import { ResultsTable } from "./_components/results-table";
+import { SearchSuggestions } from "./_components/search-suggestions";
 
 type SelfPromotionStatus = Enums<"self_promotion_status">;
 
@@ -59,7 +60,7 @@ const MEMBER_THRESHOLD_OPTIONS: MemberThresholdOption[] = [
 ];
 
 const MEMBERS_FILTER_ANY_VALUE = "any";
-const DEFAULT_SORT_STATE: SortState = { field: "members", direction: "asc" };
+const DEFAULT_SORT_STATE: SortState = null;
 
 const SEARCH_DEBOUNCE_MS = 300;
 const ROWS_PER_PAGE = 10;
@@ -108,6 +109,24 @@ const PLACEHOLDER_SUBREDDITS: PlaceholderSubreddit[] = [
     selfPromotion: "allowed_limited" as SelfPromotionStatus,
     selfPromotionDetail: "Demo + screenshots",
     members: "62.5K",
+  },
+];
+
+const SEARCH_SUGGESTIONS = [
+  {
+    label: "Game Development",
+    emoji: "🕹️",
+    query: "gaming, game development, indie games",
+  },
+  {
+    label: "AI & SaaS",
+    emoji: "🧠",
+    query: "ai tools, saas, machine learning, automation",
+  },
+  {
+    label: "Startups",
+    emoji: "🚀",
+    query: "startups, founders, entrepreneurship",
   },
 ];
 
@@ -396,16 +415,15 @@ export default function HomePage() {
       let nextState: SortState;
       if (!previous || previous.field !== field) {
         nextState = { field, direction: "desc" };
+      } else if (previous.direction === "desc") {
+        nextState = { field, direction: "asc" };
       } else {
-        nextState = {
-          field,
-          direction: previous.direction === "desc" ? "asc" : "desc",
-        };
+        nextState = null;
       }
 
       if (
-        previous?.field !== nextState.field ||
-        previous?.direction !== nextState.direction
+        (previous?.field ?? null) !== (nextState?.field ?? null) ||
+        (previous?.direction ?? null) !== (nextState?.direction ?? null)
       ) {
         setPage(1);
       }
@@ -418,8 +436,20 @@ export default function HomePage() {
     setPage(nextPage);
   };
 
+  const handleSuggestionSelect = (query: string) => {
+    setSearchInput(query);
+    const trimmedQuery = query.trim();
+    setSearchTerm((previous) => {
+      if (previous === trimmedQuery) {
+        return previous;
+      }
+      setPage(1);
+      return trimmedQuery;
+    });
+  };
+
   return (
-    <div className="mx-auto flex max-w-4xl flex-col items-center gap-4 p-4">
+    <div className="mx-auto flex max-w-4xl flex-col items-center gap-2 p-4">
       <Filters
         searchInput={searchInput}
         selectedSelfPromotion={selectedSelfPromotion}
@@ -435,6 +465,11 @@ export default function HomePage() {
         onSelfPromotionChange={handleFilterChange}
         onMinimumMembersChange={handleMinimumMembersChange}
         onMaximumMembersChange={handleMaximumMembersChange}
+      />
+
+      <SearchSuggestions
+        suggestions={SEARCH_SUGGESTIONS}
+        onSelect={handleSuggestionSelect}
       />
 
       <ResultsTable

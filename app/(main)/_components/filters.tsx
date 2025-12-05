@@ -70,7 +70,7 @@ export function Filters({
           />
           <Input
             id="subreddit-search"
-            placeholder='Try "gaming" or "money"'
+            placeholder='Keywords separated by commas (e.g. "gaming, game development")'
             value={searchInput}
             onChange={(event) => onSearchInputChange(event.target.value)}
             className="pl-9 text-sm"

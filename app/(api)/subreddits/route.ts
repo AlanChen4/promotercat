@@ -14,7 +14,7 @@ type SortDirection = "asc" | "desc";
 
 const RESULTS_PER_PAGE = 10;
 const FREE_RESULT_LIMIT = 3;
-const SEMANTIC_MATCH_THRESHOLD = 0.64;
+const SEMANTIC_MATCH_THRESHOLD = 0.69;
 const SEMANTIC_MATCH_COUNT = 300;
 
 const VALID_SELF_PROMOTION = new Set<SelfPromotionStatus>([
@@ -123,21 +123,19 @@ export async function GET(request: Request) {
   const rangeStart = isPremium ? (currentPage - 1) * RESULTS_PER_PAGE : 0;
   const rangeEnd = rangeStart + pageSize - 1;
   const canUseSorting = Boolean(userId);
-  const sortField: SortField =
-    canUseSorting && requestedSortField ? requestedSortField : "members";
+  const sortField: SortField | null =
+    canUseSorting && requestedSortField ? requestedSortField : null;
   const sortDirection: SortDirection =
     canUseSorting && requestedSortDirection ? requestedSortDirection : "asc";
 
   const shouldUseSemanticSearch = searchTerm.length > 0;
-  let semanticCandidateNames: string[] = [];
-
   if (shouldUseSemanticSearch) {
-    semanticCandidateNames = await fetchSemanticCandidateNames({
+    const semanticCandidates = await fetchSemanticCandidates({
       searchTerm,
       supabaseAdmin,
     });
 
-    if (semanticCandidateNames.length === 0) {
+    if (semanticCandidates.length === 0) {
       return NextResponse.json({
         subreddits: [],
         totalCount: 0,
@@ -145,6 +143,62 @@ export async function GET(request: Request) {
         pageSize,
       });
     }
+
+    let filteredCandidates = semanticCandidates;
+
+    if (selfPromotionFilters.length > 0) {
+      const allowedStatuses = new Set(selfPromotionFilters);
+      filteredCandidates = filteredCandidates.filter((candidate) =>
+        candidate.self_promotion
+          ? allowedStatuses.has(candidate.self_promotion as SelfPromotionStatus)
+          : false,
+      );
+    }
+
+    if (minMembers !== null) {
+      filteredCandidates = filteredCandidates.filter(
+        (candidate) => (candidate.members_count ?? 0) >= minMembers,
+      );
+    }
+
+    if (
+      maxMembers !== null &&
+      (minMembers === null || maxMembers >= minMembers)
+    ) {
+      filteredCandidates = filteredCandidates.filter(
+        (candidate) => (candidate.members_count ?? 0) <= maxMembers,
+      );
+    }
+
+    let orderedCandidates = filteredCandidates;
+    if (sortField) {
+      const directionMultiplier = sortDirection === "asc" ? 1 : -1;
+      orderedCandidates = [...filteredCandidates].sort((a, b) => {
+        if (sortField === "members") {
+          const aMembers = a.members_count ?? 0;
+          const bMembers = b.members_count ?? 0;
+          if (aMembers === bMembers) {
+            return a.name.localeCompare(b.name) * directionMultiplier;
+          }
+          return aMembers > bMembers
+            ? directionMultiplier
+            : -directionMultiplier;
+        }
+        return a.name.localeCompare(b.name) * directionMultiplier;
+      });
+    }
+
+    const totalCount = orderedCandidates.length;
+    const sliceStart = rangeStart;
+    const sliceEnd = sliceStart + pageSize;
+    const paginated = orderedCandidates.slice(sliceStart, sliceEnd);
+
+    return NextResponse.json({
+      subreddits: paginated,
+      totalCount,
+      page: currentPage,
+      pageSize,
+    });
   }
 
   let query = supabaseAdmin
@@ -152,10 +206,6 @@ export async function GET(request: Request) {
     .select("name,self_promotion,self_promotion_detail,members_count", {
       count: "exact",
     });
-
-  if (shouldUseSemanticSearch) {
-    query = query.in("name", semanticCandidateNames);
-  }
 
   if (selfPromotionFilters.length > 0) {
     query = query.in("self_promotion", selfPromotionFilters);
@@ -171,10 +221,10 @@ export async function GET(request: Request) {
   ) {
     query = query.lte("members_count", maxMembers);
   }
-
+  const effectiveSortField = sortField ?? "members";
   const { data, error, count } = await query
-    .order(sortField === "members" ? "members_count" : "name", {
-      ascending: sortDirection === "asc",
+    .order(effectiveSortField === "members" ? "members_count" : "name", {
+      ascending: sortField ? sortDirection === "asc" : true,
     })
     .range(rangeStart, rangeEnd);
 
@@ -197,14 +247,14 @@ type SemanticCandidateArgs = {
   supabaseAdmin: Awaited<ReturnType<typeof createAdminClient>>;
 };
 
-async function fetchSemanticCandidateNames({
+async function fetchSemanticCandidates({
   searchTerm,
   supabaseAdmin,
-}: SemanticCandidateArgs): Promise<string[]> {
+}: SemanticCandidateArgs): Promise<SubredditRow[]> {
   const geminiClient = createGeminiClient();
   const response = await geminiClient.models.embedContent({
     model: "gemini-embedding-001",
-    contents: searchTerm,
+    contents: `subreddit related to ${searchTerm}`,
     config: {
       taskType: "RETRIEVAL_QUERY",
       httpOptions: {
@@ -236,11 +286,21 @@ async function fetchSemanticCandidateNames({
     return [];
   }
 
-  return Array.from(
-    new Set(
-      (data ?? [])
-        .filter((row): row is Tables<"subreddits"> => Boolean(row?.name))
-        .map((row) => row.name),
-    ),
-  );
+  const seen = new Set<string>();
+  const rows: SubredditRow[] = [];
+
+  for (const row of data ?? []) {
+    if (!row?.name || seen.has(row.name)) {
+      continue;
+    }
+    seen.add(row.name);
+    rows.push({
+      name: row.name,
+      self_promotion: row.self_promotion,
+      self_promotion_detail: row.self_promotion_detail,
+      members_count: row.members_count,
+    });
+  }
+
+  return rows;
 }
