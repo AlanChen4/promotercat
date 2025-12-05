@@ -15,7 +15,7 @@ export const createGeminiClient = (() => {
       httpOptions: {
         baseUrl: "https://gateway.helicone.ai",
         headers: {
-          "Helicone-Auth": `Bearer ${process.env.HELICONE_API_KEY}`,
+          "Helicone-Auth": `Bearer ${process.env.LLM_GATEWAY_API_KEY}`,
           "Helicone-Target-URL": "https://generativelanguage.googleapis.com",
           "Helicone-Property-Environment":
             process.env.NODE_ENV === "production" ? "prd" : "dev",
