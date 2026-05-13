@@ -1,0 +1,6 @@
+---
+alwaysApply: true
+---
+Run using the `.scripts/run.sh` script. For instance, `./scripts/run.sh main.py`.
+After making changes, run the `./scripts/lint.sh` to check for any errors. Do NOT run `./scripts/format.sh`.
+Always prefer to write out variable names in full, rather than using abbreviations. For example, prefer `error` over `err`

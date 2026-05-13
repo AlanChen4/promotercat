@@ -1,0 +1,7 @@
+---
+description: Working with supabase/database migrations
+alwaysApply: false
+---
+Unless the migration file is given, create migration files using Supabase CLI. For instance, 'supabase migration new create_employees_table' where 'create_employees_table' is the name of the migration file.
+When using extensions in the migration file, make sure to use the `extensions.` prefix. For instance, `extensions.uuid_generate_v4()`.
+Always enable RLS for newly created tables. Important: Ask for the policy permissions if not specified.
