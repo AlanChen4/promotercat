@@ -104,7 +104,7 @@ async def get_self_promotion_status(
         },
     ]
     response = await ai.openai_client.chat.completions.parse(
-        model="gpt-5-mini/openai",
+        model="openai/gpt-5-nano",
         messages=messages,  # ty: ignore[invalid-argument-type] It's fine because the schema is correct.
         response_format=SelfPromotionExtraction,
         extra_headers={

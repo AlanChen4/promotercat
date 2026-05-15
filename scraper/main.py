@@ -33,7 +33,7 @@ async def main():
                         },
                         env=environment.BROWSERBASE_ENV,
                         model_api_key=environment.LLM_GATEWAY_API_KEY,  # ty: ignore[unknown-argument]
-                        model_name="openai/gpt-4o-mini",  # ty: ignore[unknown-argument]
+                        model_name="openai/gpt-5-nano",  # ty: ignore[unknown-argument]
                         model_client_options={  # ty: ignore[unknown-argument]
                             "api_base": str(environment.LLM_GATEWAY_BASE_URL),
                             "headers": {
