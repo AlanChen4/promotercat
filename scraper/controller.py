@@ -2,7 +2,6 @@ import asyncio
 from typing import cast
 
 import httpx
-from bs4 import BeautifulSoup
 from stagehand import StagehandPage
 
 import ai
@@ -30,24 +29,25 @@ async def get_subreddits(url: str) -> list[Subreddit]:
     subreddits: list[Subreddit] = []
     seen_subreddit_names = set()
 
-    async with httpx.AsyncClient() as client:
-        community_page_response = await client.get(url)
-        soup = BeautifulSoup(community_page_response.text, "html.parser")
-        community_list = soup.find("div", class_="community-list")
-        for community in community_list.find_all("div"):
-            subreddit_name = community.find("a").attrs["href"].split("/")[-2]
+    # Reddit blocks default user-agents with a JS-challenge page. A unique,
+    # descriptive UA on the JSON endpoint bypasses both the challenge and the
+    # generic UA rate limit.
+    headers = {"User-Agent": "promotercat-scraper/0.1"}
+    async with httpx.AsyncClient(headers=headers) as client:
+        response = await client.get(url)
+        response.raise_for_status()
+        listing = response.json()
+        for child in listing["data"]["children"]:
+            data = child["data"]
+            subreddit_name = data["display_name"]
             if subreddit_name in seen_subreddit_names:
                 continue
-            description = community.find(
-                "h6",
-                class_="flex-grow h-md text-12 truncate py-[0.125rem] w-[11rem] m-0",
-            ).text.strip()
             seen_subreddit_names.add(subreddit_name)
-            members_count = community.find("faceplate-number").attrs["number"]
+            description = (data.get("public_description") or "").strip() or None
             subreddits.append(
                 Subreddit(
                     name=subreddit_name,
-                    members_count=members_count,
+                    members_count=data.get("subscribers") or 0,
                     description=description,
                 )
             )
@@ -104,7 +104,7 @@ async def get_self_promotion_status(
         },
     ]
     response = await ai.openai_client.chat.completions.parse(
-        model="openai/gpt-5-nano",
+        model="gpt-5-nano",
         messages=messages,  # ty: ignore[invalid-argument-type] It's fine because the schema is correct.
         response_format=SelfPromotionExtraction,
         extra_headers={

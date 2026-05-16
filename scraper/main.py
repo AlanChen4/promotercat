@@ -14,7 +14,7 @@ logger = get_logger(__name__)
 
 async def main():
     subreddits = await controller.get_subreddits(
-        "https://www.reddit.com/best/communities/16/",
+        "https://www.reddit.com/subreddits/popular.json?limit=16",
     )
     if not subreddits:
         logger.info("No subreddits found to process.")
