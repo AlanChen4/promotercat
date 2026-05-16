@@ -1,3 +1,5 @@
+create extension if not exists vector with schema extensions;
+
 alter table public.subreddits
     add column if not exists description text;
 
