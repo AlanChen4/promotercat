@@ -3,6 +3,7 @@ from contextlib import AsyncExitStack
 
 from stagehand import Stagehand, StagehandConfig
 
+import ai
 import controller
 import db
 from env import environment
@@ -33,7 +34,7 @@ async def main():
                         },
                         env=environment.BROWSERBASE_ENV,
                         model_api_key=environment.LLM_GATEWAY_API_KEY,  # ty: ignore[unknown-argument]
-                        model_name="openai/gpt-5-nano",  # ty: ignore[unknown-argument]
+                        model_name=ai.STAGEHAND_LLM_MODEL,  # ty: ignore[unknown-argument]
                         model_client_options={  # ty: ignore[unknown-argument]
                             "api_base": str(environment.LLM_GATEWAY_BASE_URL),
                             "headers": {

@@ -29,9 +29,8 @@ async def get_subreddits(url: str) -> list[Subreddit]:
     subreddits: list[Subreddit] = []
     seen_subreddit_names = set()
 
-    # Reddit blocks default user-agents with a JS-challenge page. A unique,
-    # descriptive UA on the JSON endpoint bypasses both the challenge and the
-    # generic UA rate limit.
+    # Reddit serves a JS-challenge interstitial to default httpx/requests UAs;
+    # a unique descriptive UA on the .json endpoint avoids it.
     headers = {"User-Agent": "promotercat-scraper/0.1"}
     async with httpx.AsyncClient(headers=headers) as client:
         response = await client.get(url)
@@ -104,7 +103,7 @@ async def get_self_promotion_status(
         },
     ]
     response = await ai.openai_client.chat.completions.parse(
-        model="gpt-5-nano",
+        model=ai.LLM_MODEL,
         messages=messages,  # ty: ignore[invalid-argument-type] It's fine because the schema is correct.
         response_format=SelfPromotionExtraction,
         extra_headers={
