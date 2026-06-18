@@ -4,12 +4,12 @@ import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 
 export function ContinueWithGoogleButton() {
-  const supabase = createClient();
   return (
     <Button
       variant="outline"
       className="w-full"
       onClick={async () => {
+        const supabase = createClient();
         const redirectTo = `${window.location.origin}/auth/callback?next=/post-login`;
         await supabase.auth.signInWithOAuth({
           provider: "google",
