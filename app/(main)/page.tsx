@@ -1,6 +1,17 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { ContinueWithGoogleButton } from "@/components/buttons";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { useAuth } from "@/providers/auth-provider";
 import type { Enums } from "@/types/database.types";
 import type { MemberThresholdOption } from "./_components/filters";
 import { Filters } from "./_components/filters";
@@ -81,12 +92,15 @@ const SEARCH_SUGGESTIONS = [
 ];
 
 export default function HomePage() {
+  const { isAuthenticated, isAuthenticatedLoading } = useAuth();
   const [searchInput, setSearchInput] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedSelfPromotion, setSelectedSelfPromotion] = useState<
     SelfPromotionStatus[]
   >(DEFAULT_SELF_PROMOTION_SELECTION);
-  const [page, setPage] = useState(1);
+  const [selectedPage, setPage] = useState(1);
+  const page = isAuthenticated ? selectedPage : 1;
+  const [isSignupOpen, setIsSignupOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [results, setResults] = useState<SubredditResult[]>([]);
@@ -142,6 +156,16 @@ export default function HomePage() {
           signal: abortController.signal,
           credentials: "include",
         });
+
+        if (abortController.signal.aborted) {
+          return;
+        }
+
+        if (response.status === 401) {
+          setPage(1);
+          setIsSignupOpen(true);
+          return;
+        }
 
         if (!response.ok) {
           const text = await response.text();
@@ -315,6 +339,12 @@ export default function HomePage() {
   };
 
   const handlePageChange = (nextPage: number) => {
+    if (nextPage > 1 && !isAuthenticated) {
+      if (!isAuthenticatedLoading) {
+        setIsSignupOpen(true);
+      }
+      return;
+    }
     setPage(nextPage);
   };
 
@@ -371,6 +401,29 @@ export default function HomePage() {
         paginationItems={paginationItems}
         onPageChange={handlePageChange}
       />
+
+      <Dialog open={isSignupOpen} onOpenChange={setIsSignupOpen}>
+        {totalPages > 1 && !isAuthenticated && !isAuthenticatedLoading ? (
+          <div className="flex flex-col items-center gap-2 py-4">
+            <p className="text-sm text-muted-foreground">
+              Create a free account to view results beyond the first page.
+            </p>
+            <DialogTrigger asChild>
+              <Button>Sign up to see more results</Button>
+            </DialogTrigger>
+          </div>
+        ) : null}
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Sign up to see more results</DialogTitle>
+            <DialogDescription>
+              Create a free account or log in to view results beyond the first
+              page.
+            </DialogDescription>
+          </DialogHeader>
+          <ContinueWithGoogleButton />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

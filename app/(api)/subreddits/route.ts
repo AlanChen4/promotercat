@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createGeminiClient } from "@/lib/gemini";
 import { createAdminClient } from "@/lib/supabase/admin-server";
+import { createClient } from "@/lib/supabase/server";
 import type { Enums, Tables } from "@/types/database.types";
 
 type SelfPromotionStatus = Enums<"self_promotion_status">;
@@ -14,6 +15,7 @@ type SortDirection = "asc" | "desc";
 const RESULTS_PER_PAGE = 10;
 const SEMANTIC_MATCH_THRESHOLD = 0.69;
 const SEMANTIC_MATCH_COUNT = 300;
+const RESPONSE_HEADERS = { "Cache-Control": "private, no-store" };
 
 const VALID_SELF_PROMOTION = new Set<SelfPromotionStatus>([
   "not_allowed",
@@ -87,6 +89,20 @@ export async function GET(request: Request) {
     url.searchParams.get("self_promotion"),
   );
   const requestedPage = parsePage(url.searchParams.get("page"));
+  if (requestedPage > 1) {
+    const supabase = await createClient();
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
+
+    if (error || !user || user.is_anonymous) {
+      return NextResponse.json(
+        { message: "Sign up or log in to view more results." },
+        { status: 401, headers: RESPONSE_HEADERS },
+      );
+    }
+  }
   const minMembers = parseMemberBoundary(url.searchParams.get("min_members"));
   const maxMembers = parseMemberBoundary(url.searchParams.get("max_members"));
   const requestedSortField = parseSortField(url.searchParams.get("sort_by"));
@@ -110,12 +126,15 @@ export async function GET(request: Request) {
     });
 
     if (semanticCandidates.length === 0) {
-      return NextResponse.json({
-        subreddits: [],
-        totalCount: 0,
-        page: currentPage,
-        pageSize,
-      });
+      return NextResponse.json(
+        {
+          subreddits: [],
+          totalCount: 0,
+          page: currentPage,
+          pageSize,
+        },
+        { headers: RESPONSE_HEADERS },
+      );
     }
 
     let filteredCandidates = semanticCandidates;
@@ -167,12 +186,15 @@ export async function GET(request: Request) {
     const sliceEnd = sliceStart + pageSize;
     const paginated = orderedCandidates.slice(sliceStart, sliceEnd);
 
-    return NextResponse.json({
-      subreddits: paginated,
-      totalCount,
-      page: currentPage,
-      pageSize,
-    });
+    return NextResponse.json(
+      {
+        subreddits: paginated,
+        totalCount,
+        page: currentPage,
+        pageSize,
+      },
+      { headers: RESPONSE_HEADERS },
+    );
   }
 
   let query = supabaseAdmin
@@ -205,15 +227,18 @@ export async function GET(request: Request) {
   if (error) {
     return NextResponse.json(
       { message: "Failed to load subreddits." },
-      { status: 500 },
+      { status: 500, headers: RESPONSE_HEADERS },
     );
   }
-  return NextResponse.json({
-    subreddits: (data ?? []) as SubredditRow[],
-    totalCount: count ?? 0,
-    page: currentPage,
-    pageSize,
-  });
+  return NextResponse.json(
+    {
+      subreddits: (data ?? []) as SubredditRow[],
+      totalCount: count ?? 0,
+      page: currentPage,
+      pageSize,
+    },
+    { headers: RESPONSE_HEADERS },
+  );
 }
 
 type SemanticCandidateArgs = {

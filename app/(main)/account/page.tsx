@@ -22,7 +22,7 @@ export default function AccountPage() {
           <CardDescription>
             {isAuthenticatedLoading
               ? "Loading your account..."
-              : "PromoterCat is free. All search features are available to everyone."}
+              : "PromoterCat is free. Your account lets you view results beyond the first page."}
           </CardDescription>
         </CardHeader>
         <CardContent>

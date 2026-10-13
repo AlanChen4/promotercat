@@ -24,7 +24,7 @@ export function AuthForm({ className, ...props }: React.ComponentProps<"div">) {
         <CardHeader className="text-center">
           <CardTitle className="text-xl">Login or Sign Up</CardTitle>
           <CardDescription>
-            Free to get started. No credit card required.
+            Create a free account to view results beyond the first page.
           </CardDescription>
         </CardHeader>
         <CardContent>
