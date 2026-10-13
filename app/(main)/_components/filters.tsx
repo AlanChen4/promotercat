@@ -19,7 +19,7 @@ import type { Enums } from "@/types/database.types";
 
 type SelfPromotionStatus = Enums<"self_promotion_status">;
 
-export type MemberThresholdOption = {
+export type ActivityThresholdOption = {
   label: string;
   value: number;
   isOpenEnded?: boolean;
@@ -32,32 +32,32 @@ type FiltersProps = {
     label: string;
     value: SelfPromotionStatus;
   }[];
-  minimumMembers: number | null;
-  maximumMembers: number | null;
+  minimumActivity: number | null;
+  maximumActivity: number | null;
   isMinimumOpenEnded: boolean;
-  maximumMembersOptions: MemberThresholdOption[];
-  membersFilterAnyValue: string;
-  memberThresholdOptions: MemberThresholdOption[];
+  maximumActivityOptions: ActivityThresholdOption[];
+  activityFilterAnyValue: string;
+  activityThresholdOptions: ActivityThresholdOption[];
   onSearchInputChange: (value: string) => void;
   onSelfPromotionChange: (value: SelfPromotionStatus, checked: boolean) => void;
-  onMinimumMembersChange: (value: string) => void;
-  onMaximumMembersChange: (value: string) => void;
+  onMinimumActivityChange: (value: string) => void;
+  onMaximumActivityChange: (value: string) => void;
 };
 
 export function Filters({
   searchInput,
   selectedSelfPromotion,
   selfPromotionOptions,
-  minimumMembers,
-  maximumMembers,
+  minimumActivity,
+  maximumActivity,
   isMinimumOpenEnded,
-  maximumMembersOptions,
-  membersFilterAnyValue,
-  memberThresholdOptions,
+  maximumActivityOptions,
+  activityFilterAnyValue,
+  activityThresholdOptions,
   onSearchInputChange,
   onSelfPromotionChange,
-  onMinimumMembersChange,
-  onMaximumMembersChange,
+  onMinimumActivityChange,
+  onMaximumActivityChange,
 }: FiltersProps) {
   return (
     <div className="grid gap-4 w-full">
@@ -108,7 +108,7 @@ export function Filters({
 
       <div className="w-full flex flex-wrap items-start gap-4">
         <div className="flex w-full flex-wrap items-center gap-3">
-          <Label className="w-20">Members</Label>
+          <Label className="w-28">Weekly active</Label>
           <div className="flex flex-wrap gap-3">
             <div className="flex items-center gap-3">
               <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
@@ -116,18 +116,18 @@ export function Filters({
               </span>
               <Select
                 value={
-                  minimumMembers !== null
-                    ? String(minimumMembers)
-                    : membersFilterAnyValue
+                  minimumActivity !== null
+                    ? String(minimumActivity)
+                    : activityFilterAnyValue
                 }
-                onValueChange={onMinimumMembersChange}
+                onValueChange={onMinimumActivityChange}
               >
                 <SelectTrigger className="min-w-28">
                   <SelectValue placeholder="Any" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={membersFilterAnyValue}>Any</SelectItem>
-                  {memberThresholdOptions.map(({ label, value }) => (
+                  <SelectItem value={activityFilterAnyValue}>Any</SelectItem>
+                  {activityThresholdOptions.map(({ label, value }) => (
                     <SelectItem key={value} value={String(value)}>
                       {label}
                     </SelectItem>
@@ -141,19 +141,19 @@ export function Filters({
               </span>
               <Select
                 value={
-                  maximumMembers !== null
-                    ? String(maximumMembers)
-                    : membersFilterAnyValue
+                  maximumActivity !== null
+                    ? String(maximumActivity)
+                    : activityFilterAnyValue
                 }
-                onValueChange={onMaximumMembersChange}
+                onValueChange={onMaximumActivityChange}
                 disabled={isMinimumOpenEnded}
               >
                 <SelectTrigger className="min-w-28">
                   <SelectValue placeholder="Any" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={membersFilterAnyValue}>Any</SelectItem>
-                  {maximumMembersOptions.map(({ label, value }) => (
+                  <SelectItem value={activityFilterAnyValue}>Any</SelectItem>
+                  {maximumActivityOptions.map(({ label, value }) => (
                     <SelectItem key={value} value={String(value)}>
                       {label}
                     </SelectItem>

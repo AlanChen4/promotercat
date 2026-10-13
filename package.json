@@ -13,10 +13,10 @@
     "db:start": "supabase start",
     "db:stop": "supabase stop",
     "db:reset": "supabase db reset",
-    "db:status": "supabase status"
+    "db:status": "supabase status",
+    "subreddits": "node scripts/subreddits.ts"
   },
   "dependencies": {
-    "@google/genai": "^1.30.0",
     "@hugeicons/core-free-icons": "^2.0.0",
     "@hugeicons/react": "^1.1.1",
     "@radix-ui/react-avatar": "^1.1.11",
@@ -31,6 +31,8 @@
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.86.0",
     "@vercel/analytics": "^1.6.0",
+    "ai": "7.0.139",
+    "cheerio": "1.1.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "import-in-the-middle": "^2.0.0",
@@ -41,7 +43,8 @@
     "react": "19.2.1",
     "react-dom": "19.2.1",
     "require-in-the-middle": "^8.0.1",
-    "tailwind-merge": "^3.4.0"
+    "tailwind-merge": "^3.4.0",
+    "zod": "4.3.6"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.3.8",
@@ -61,5 +64,9 @@
     "onlyBuiltDependencies": [
       "supabase"
     ]
-  }
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "type": "module"
 }

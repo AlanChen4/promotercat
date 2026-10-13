@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { createGeminiClient } from "@/lib/gemini";
+import { ACTIVITY_THRESHOLD_OPTIONS } from "@/lib/activity";
+import { embedDescription } from "@/lib/ai";
 import { createAdminClient } from "@/lib/supabase/admin-server";
 import { createClient } from "@/lib/supabase/server";
 import type { Enums, Tables } from "@/types/database.types";
@@ -7,9 +8,9 @@ import type { Enums, Tables } from "@/types/database.types";
 type SelfPromotionStatus = Enums<"self_promotion_status">;
 type SubredditRow = Pick<
   Tables<"subreddits">,
-  "name" | "self_promotion" | "self_promotion_detail" | "members_count"
+  "name" | "self_promotion" | "self_promotion_detail" | "weekly_active_users"
 >;
-type SortField = "name" | "members";
+type SortField = "name" | "weekly_active";
 type SortDirection = "asc" | "desc";
 
 const RESULTS_PER_PAGE = 10;
@@ -24,9 +25,9 @@ const VALID_SELF_PROMOTION = new Set<SelfPromotionStatus>([
   "allowed_limited",
 ]);
 
-const MEMBER_THRESHOLDS = [
-  50_000, 100_000, 250_000, 500_000, 1_000_000, 5_000_000, 10_000_000,
-];
+const ACTIVITY_THRESHOLDS = ACTIVITY_THRESHOLD_OPTIONS.map(
+  (option) => option.value,
+);
 
 function parsePage(requestedPage: string | null): number {
   const parsed = Number(requestedPage);
@@ -49,12 +50,12 @@ function extractSelfPromotionFilters(
     .filter((value) => VALID_SELF_PROMOTION.has(value));
 }
 
-function parseMemberBoundary(rawValue: string | null): number | null {
+function parseActivityBoundary(rawValue: string | null): number | null {
   if (!rawValue) {
     return null;
   }
   const parsed = Number(rawValue);
-  if (!Number.isFinite(parsed) || !MEMBER_THRESHOLDS.includes(parsed)) {
+  if (!Number.isFinite(parsed) || !ACTIVITY_THRESHOLDS.includes(parsed)) {
     return null;
   }
   return parsed;
@@ -65,7 +66,7 @@ function parseSortField(rawValue: string | null): SortField | null {
     return null;
   }
   const lowered = rawValue.toLowerCase();
-  if (lowered === "name" || lowered === "members") {
+  if (lowered === "name" || lowered === "weekly_active") {
     return lowered as SortField;
   }
   return null;
@@ -103,9 +104,13 @@ export async function GET(request: Request) {
       );
     }
   }
-  const minMembers = parseMemberBoundary(url.searchParams.get("min_members"));
-  const maxMembers = parseMemberBoundary(url.searchParams.get("max_members"));
-  const requestedSortField = parseSortField(url.searchParams.get("sort_by"));
+  const minActivity = parseActivityBoundary(
+    url.searchParams.get("min_weekly_active"),
+  );
+  const maxActivity = parseActivityBoundary(
+    url.searchParams.get("max_weekly_active"),
+  );
+  const requestedSortField = parseSortField(url.searchParams.get("sort"));
   const requestedSortDirection = parseSortDirection(
     url.searchParams.get("sort_direction"),
   );
@@ -148,18 +153,22 @@ export async function GET(request: Request) {
       );
     }
 
-    if (minMembers !== null) {
+    if (minActivity !== null) {
       filteredCandidates = filteredCandidates.filter(
-        (candidate) => (candidate.members_count ?? 0) >= minMembers,
+        (candidate) =>
+          candidate.weekly_active_users !== null &&
+          candidate.weekly_active_users >= minActivity,
       );
     }
 
     if (
-      maxMembers !== null &&
-      (minMembers === null || maxMembers >= minMembers)
+      maxActivity !== null &&
+      (minActivity === null || maxActivity >= minActivity)
     ) {
       filteredCandidates = filteredCandidates.filter(
-        (candidate) => (candidate.members_count ?? 0) <= maxMembers,
+        (candidate) =>
+          candidate.weekly_active_users !== null &&
+          candidate.weekly_active_users <= maxActivity,
       );
     }
 
@@ -167,13 +176,18 @@ export async function GET(request: Request) {
     if (sortField) {
       const directionMultiplier = sortDirection === "asc" ? 1 : -1;
       orderedCandidates = [...filteredCandidates].sort((a, b) => {
-        if (sortField === "members") {
-          const aMembers = a.members_count ?? 0;
-          const bMembers = b.members_count ?? 0;
-          if (aMembers === bMembers) {
+        if (sortField === "weekly_active") {
+          if (a.weekly_active_users === null)
+            return b.weekly_active_users === null
+              ? a.name.localeCompare(b.name)
+              : 1;
+          if (b.weekly_active_users === null) return -1;
+          const aActivity = a.weekly_active_users;
+          const bActivity = b.weekly_active_users;
+          if (aActivity === bActivity) {
             return a.name.localeCompare(b.name) * directionMultiplier;
           }
-          return aMembers > bMembers
+          return aActivity > bActivity
             ? directionMultiplier
             : -directionMultiplier;
         }
@@ -199,7 +213,7 @@ export async function GET(request: Request) {
 
   let query = supabaseAdmin
     .from("subreddits")
-    .select("name,self_promotion,self_promotion_detail,members_count", {
+    .select("name,self_promotion,self_promotion_detail,weekly_active_users", {
       count: "exact",
     });
 
@@ -207,21 +221,26 @@ export async function GET(request: Request) {
     query = query.in("self_promotion", selfPromotionFilters);
   }
 
-  if (minMembers !== null) {
-    query = query.gte("members_count", minMembers);
+  if (minActivity !== null) {
+    query = query.gte("weekly_active_users", minActivity);
   }
 
   if (
-    maxMembers !== null &&
-    (minMembers === null || maxMembers >= minMembers)
+    maxActivity !== null &&
+    (minActivity === null || maxActivity >= minActivity)
   ) {
-    query = query.lte("members_count", maxMembers);
+    query = query.lte("weekly_active_users", maxActivity);
   }
-  const effectiveSortField = sortField ?? "members";
+  const effectiveSortField = sortField ?? "weekly_active";
   const { data, error, count } = await query
-    .order(effectiveSortField === "members" ? "members_count" : "name", {
-      ascending: sortField ? sortDirection === "asc" : true,
-    })
+    .order(
+      effectiveSortField === "weekly_active" ? "weekly_active_users" : "name",
+      {
+        ascending: sortField ? sortDirection === "asc" : true,
+        nullsFirst: false,
+      },
+    )
+    .order("name", { ascending: true })
     .range(rangeStart, rangeEnd);
 
   if (error) {
@@ -250,31 +269,15 @@ async function fetchSemanticCandidates({
   searchTerm,
   supabaseAdmin,
 }: SemanticCandidateArgs): Promise<SubredditRow[]> {
-  const geminiClient = createGeminiClient();
-  const response = await geminiClient.models.embedContent({
-    model: "gemini-embedding-001",
-    contents: `subreddit related to ${searchTerm}`,
-    config: {
-      taskType: "RETRIEVAL_QUERY",
-      httpOptions: {
-        headers: {
-          "Helicone-Cache-Enabled": "true",
-          "Cache-Control": "max-age=31536000",
-        },
-      },
-    },
-  });
-
-  const embeddingValues = response.embeddings?.[0]?.values;
-  if (!embeddingValues || embeddingValues.length === 0) {
-    return [];
-  }
+  const embeddingValues = await embedDescription(
+    `subreddit related to ${searchTerm}`,
+    "RETRIEVAL_QUERY",
+  );
 
   const { data, error } = await supabaseAdmin.rpc(
     "match_subreddits_by_description",
     {
-      // @ts-expect-error: RPC arguments are typed incorrectly and 'query_embedding' works.
-      query_embedding: embeddingValues,
+      query_embedding: JSON.stringify(embeddingValues),
       match_threshold: SEMANTIC_MATCH_THRESHOLD,
       match_count: SEMANTIC_MATCH_COUNT,
     },
@@ -297,7 +300,7 @@ async function fetchSemanticCandidates({
       name: row.name,
       self_promotion: row.self_promotion,
       self_promotion_detail: row.self_promotion_detail,
-      members_count: row.members_count,
+      weekly_active_users: row.weekly_active_users,
     });
   }
 

@@ -7,11 +7,6 @@ export type Json =
   | Json[];
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "13.0.5";
-  };
   public: {
     Tables: {
       rules: {
@@ -49,30 +44,36 @@ export type Database = {
           description_embedding: string | null;
           id: string;
           last_scraped_at: string | null;
-          members_count: number;
+          members_count: number | null;
           name: string;
           self_promotion: Database["public"]["Enums"]["self_promotion_status"];
+          self_promotion_confidence: number | null;
           self_promotion_detail: string;
+          weekly_active_users: number | null;
         };
         Insert: {
           description?: string | null;
           description_embedding?: string | null;
           id?: string;
           last_scraped_at?: string | null;
-          members_count: number;
+          members_count?: number | null;
           name: string;
           self_promotion: Database["public"]["Enums"]["self_promotion_status"];
+          self_promotion_confidence?: number | null;
           self_promotion_detail: string;
+          weekly_active_users?: number | null;
         };
         Update: {
           description?: string | null;
           description_embedding?: string | null;
           id?: string;
           last_scraped_at?: string | null;
-          members_count?: number;
+          members_count?: number | null;
           name?: string;
           self_promotion?: Database["public"]["Enums"]["self_promotion_status"];
+          self_promotion_confidence?: number | null;
           self_promotion_detail?: string;
+          weekly_active_users?: number | null;
         };
         Relationships: [];
       };
@@ -116,10 +117,12 @@ export type Database = {
           description_embedding: string | null;
           id: string;
           last_scraped_at: string | null;
-          members_count: number;
+          members_count: number | null;
           name: string;
           self_promotion: Database["public"]["Enums"]["self_promotion_status"];
+          self_promotion_confidence: number | null;
           self_promotion_detail: string;
+          weekly_active_users: number | null;
         }[];
         SetofOptions: {
           from: "*";
@@ -127,6 +130,13 @@ export type Database = {
           isOneToOne: false;
           isSetofReturn: true;
         };
+      };
+      save_subreddit_snapshot: {
+        Args: { p_mode: string; p_rules: Json; p_snapshot: Json };
+        Returns: {
+          outcome: string;
+          subreddit_id: string;
+        }[];
       };
     };
     Enums: {

@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { ACTIVITY_THRESHOLD_OPTIONS } from "@/lib/activity";
 import { useAuth } from "@/providers/auth-provider";
 import type { Enums } from "@/types/database.types";
-import type { MemberThresholdOption } from "./_components/filters";
 import { Filters } from "./_components/filters";
 import { SubredditsPagination } from "./_components/pagination";
 import type {
@@ -48,17 +48,7 @@ const DEFAULT_SELF_PROMOTION_SELECTION: SelfPromotionStatus[] = [
   "unspecified",
 ];
 
-const MEMBER_THRESHOLD_OPTIONS: MemberThresholdOption[] = [
-  { label: "50k", value: 50_000 },
-  { label: "100k", value: 100_000 },
-  { label: "250k", value: 250_000 },
-  { label: "500k", value: 500_000 },
-  { label: "1M", value: 1_000_000 },
-  { label: "5M", value: 5_000_000 },
-  { label: "10M+", value: 10_000_000, isOpenEnded: true },
-];
-
-const MEMBERS_FILTER_ANY_VALUE = "any";
+const ACTIVITY_FILTER_ANY_VALUE = "any";
 const DEFAULT_SORT_STATE: SortState = null;
 
 const SEARCH_DEBOUNCE_MS = 300;
@@ -94,8 +84,8 @@ export default function HomePage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [results, setResults] = useState<SubredditResult[]>([]);
   const [totalCount, setTotalCount] = useState(0);
-  const [minimumMembers, setMinimumMembers] = useState<number | null>(null);
-  const [maximumMembers, setMaximumMembers] = useState<number | null>(null);
+  const [minimumActivity, setMinimumActivity] = useState<number | null>(null);
+  const [maximumActivity, setMaximumActivity] = useState<number | null>(null);
   const [sortState, setSortState] = useState<SortState>(DEFAULT_SORT_STATE);
   const [isSortLoading, setIsSortLoading] = useState(false);
 
@@ -134,14 +124,14 @@ export default function HomePage() {
       if (selectedSelfPromotion.length > 0) {
         query.set("self_promotion", selectedSelfPromotion.join(","));
       }
-      if (minimumMembers !== null) {
-        query.set("min_members", String(minimumMembers));
+      if (minimumActivity !== null) {
+        query.set("min_weekly_active", String(minimumActivity));
       }
-      if (maximumMembers !== null) {
-        query.set("max_members", String(maximumMembers));
+      if (maximumActivity !== null) {
+        query.set("max_weekly_active", String(maximumActivity));
       }
       if (sortState) {
-        query.set("sort_by", sortState.field);
+        query.set("sort", sortState.field);
         query.set("sort_direction", sortState.direction);
       }
       query.set("page", String(page));
@@ -203,8 +193,8 @@ export default function HomePage() {
     selectedSelfPromotion,
     page,
     isLockedPage,
-    minimumMembers,
-    maximumMembers,
+    minimumActivity,
+    maximumActivity,
     sortState,
   ]);
 
@@ -213,31 +203,32 @@ export default function HomePage() {
   }, [totalCount]);
 
   const isMinimumOpenEnded = useMemo(() => {
-    if (minimumMembers === null) {
+    if (minimumActivity === null) {
       return false;
     }
-    return MEMBER_THRESHOLD_OPTIONS.some(
-      (option) => option.value === minimumMembers && option.isOpenEnded,
+    return ACTIVITY_THRESHOLD_OPTIONS.some(
+      (option) => option.value === minimumActivity && option.isOpenEnded,
     );
-  }, [minimumMembers]);
+  }, [minimumActivity]);
 
-  const maximumMembersOptions = useMemo(() => {
-    const cappedOptions = MEMBER_THRESHOLD_OPTIONS.filter(
+  const maximumActivityOptions = useMemo(() => {
+    const cappedOptions = ACTIVITY_THRESHOLD_OPTIONS.filter(
       (option) => !option.isOpenEnded,
     );
-    if (minimumMembers === null) {
+    if (minimumActivity === null) {
       return cappedOptions;
     }
     if (isMinimumOpenEnded) {
       return [];
     }
-    return cappedOptions.filter((option) => option.value >= minimumMembers);
-  }, [minimumMembers, isMinimumOpenEnded]);
+    return cappedOptions.filter((option) => option.value >= minimumActivity);
+  }, [minimumActivity, isMinimumOpenEnded]);
 
   const formatSelfPromotion = (status: SelfPromotionStatus) =>
     SELF_PROMOTION_LABELS[status];
 
-  const formatMembersCount = (count: number): string => {
+  const formatActivityCount = (count: number | null): string => {
+    if (count === null) return "Unknown";
     if (count >= 1_000_000) {
       const millions = count / 1_000_000;
       return `${millions.toFixed(0)}M`;
@@ -273,19 +264,20 @@ export default function HomePage() {
     });
   };
 
-  const handleMinimumMembersChange = (value: string) => {
-    const nextValue = value === MEMBERS_FILTER_ANY_VALUE ? null : Number(value);
-    const isOpenEndedSelection = MEMBER_THRESHOLD_OPTIONS.some(
+  const handleMinimumActivityChange = (value: string) => {
+    const nextValue =
+      value === ACTIVITY_FILTER_ANY_VALUE ? null : Number(value);
+    const isOpenEndedSelection = ACTIVITY_THRESHOLD_OPTIONS.some(
       (option) => option.value === nextValue && option.isOpenEnded,
     );
-    setMinimumMembers((previous) => {
+    setMinimumActivity((previous) => {
       if (previous === nextValue) {
         return previous;
       }
       setPage(1);
       return nextValue;
     });
-    setMaximumMembers((previousMax) => {
+    setMaximumActivity((previousMax) => {
       if (isOpenEndedSelection) {
         return previousMax === null ? previousMax : null;
       }
@@ -300,9 +292,10 @@ export default function HomePage() {
     });
   };
 
-  const handleMaximumMembersChange = (value: string) => {
-    const nextValue = value === MEMBERS_FILTER_ANY_VALUE ? null : Number(value);
-    setMaximumMembers((previous) => {
+  const handleMaximumActivityChange = (value: string) => {
+    const nextValue =
+      value === ACTIVITY_FILTER_ANY_VALUE ? null : Number(value);
+    setMaximumActivity((previous) => {
       if (previous === nextValue) {
         return previous;
       }
@@ -356,16 +349,16 @@ export default function HomePage() {
         searchInput={searchInput}
         selectedSelfPromotion={selectedSelfPromotion}
         selfPromotionOptions={SELF_PROMOTION_OPTIONS}
-        minimumMembers={minimumMembers}
-        maximumMembers={maximumMembers}
+        minimumActivity={minimumActivity}
+        maximumActivity={maximumActivity}
         isMinimumOpenEnded={isMinimumOpenEnded}
-        maximumMembersOptions={maximumMembersOptions}
-        memberThresholdOptions={MEMBER_THRESHOLD_OPTIONS}
-        membersFilterAnyValue={MEMBERS_FILTER_ANY_VALUE}
+        maximumActivityOptions={maximumActivityOptions}
+        activityThresholdOptions={ACTIVITY_THRESHOLD_OPTIONS}
+        activityFilterAnyValue={ACTIVITY_FILTER_ANY_VALUE}
         onSearchInputChange={setSearchInput}
         onSelfPromotionChange={handleFilterChange}
-        onMinimumMembersChange={handleMinimumMembersChange}
-        onMaximumMembersChange={handleMaximumMembersChange}
+        onMinimumActivityChange={handleMinimumActivityChange}
+        onMaximumActivityChange={handleMaximumActivityChange}
       />
 
       <SearchSuggestions
@@ -387,7 +380,7 @@ export default function HomePage() {
             : 0
         }
         formatSelfPromotion={formatSelfPromotion}
-        formatMembersCount={formatMembersCount}
+        formatActivityCount={formatActivityCount}
         sortState={sortState}
         onSortToggle={handleSortToggle}
         isSortLoading={isSortLoading}

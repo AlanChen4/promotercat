@@ -21,10 +21,10 @@ export type SubredditResult = {
   name: string;
   self_promotion: SelfPromotionStatus;
   self_promotion_detail: string;
-  members_count: number;
+  weekly_active_users: number | null;
 };
 
-export type SortField = "name" | "members";
+export type SortField = "name" | "weekly_active";
 export type SortDirection = "asc" | "desc";
 export type SortState = { field: SortField; direction: SortDirection } | null;
 
@@ -35,7 +35,7 @@ type ResultsTableProps = {
   displayedResults: SubredditResult[];
   lockedRowCount: number;
   formatSelfPromotion: (status: SelfPromotionStatus) => string;
-  formatMembersCount: (count: number) => string;
+  formatActivityCount: (count: number | null) => string;
   sortState: SortState;
   onSortToggle: (field: SortField) => void;
   isSortLoading: boolean;
@@ -48,7 +48,7 @@ export function ResultsTable({
   displayedResults,
   lockedRowCount,
   formatSelfPromotion,
-  formatMembersCount,
+  formatActivityCount,
   sortState,
   onSortToggle,
   isSortLoading,
@@ -111,7 +111,7 @@ export function ResultsTable({
           <Table className="table-fixed">
             <colgroup>
               <col className="w-[30%] sm:w-48" />
-              <col className="w-24 sm:w-28" />
+              <col className="w-36" />
               <col />
             </colgroup>
             <TableHeader>
@@ -120,7 +120,7 @@ export function ResultsTable({
                   {renderSortableHeader("Name", "name")}
                 </TableHead>
                 <TableHead className="text-muted-foreground">
-                  {renderSortableHeader("Members", "members")}
+                  {renderSortableHeader("Weekly active", "weekly_active")}
                 </TableHead>
                 <TableHead className="text-muted-foreground">
                   Promotion
@@ -171,26 +171,24 @@ export function ResultsTable({
                       </Link>
                     </TableCell>
                     <TableCell>
-                      {formatMembersCount(subreddit.members_count)}
+                      {formatActivityCount(subreddit.weekly_active_users)}
                     </TableCell>
                     <TableCell>
                       <div
                         className="truncate"
                         title={
-                          subreddit.self_promotion === "allowed_limited" ||
-                          subreddit.self_promotion === "allowed_full"
+                          subreddit.self_promotion_detail
                             ? `${formatSelfPromotion(subreddit.self_promotion)} — ${subreddit.self_promotion_detail}`
                             : formatSelfPromotion(subreddit.self_promotion)
                         }
                       >
                         {formatSelfPromotion(subreddit.self_promotion)}
-                        {(subreddit.self_promotion === "allowed_limited" ||
-                          subreddit.self_promotion === "allowed_full") && (
+                        {subreddit.self_promotion_detail ? (
                           <span className="text-muted-foreground">
                             {" "}
                             — {subreddit.self_promotion_detail}
                           </span>
-                        )}
+                        ) : null}
                       </div>
                     </TableCell>
                   </TableRow>
