@@ -29,7 +29,6 @@ type FiltersProps = {
     label: string;
     value: SelfPromotionStatus;
   }[];
-  canUseMembersFilter: boolean;
   minimumMembers: number | null;
   maximumMembers: number | null;
   isMinimumOpenEnded: boolean;
@@ -46,7 +45,6 @@ export function Filters({
   searchInput,
   selectedSelfPromotion,
   selfPromotionOptions,
-  canUseMembersFilter,
   minimumMembers,
   maximumMembers,
   isMinimumOpenEnded,
@@ -58,8 +56,6 @@ export function Filters({
   onMinimumMembersChange,
   onMaximumMembersChange,
 }: FiltersProps) {
-  const membersFilterDisabled = !canUseMembersFilter;
-
   return (
     <div className="grid gap-4 w-full">
       <div className="flex w-full items-center gap-2">
@@ -105,7 +101,7 @@ export function Filters({
       </div>
 
       <div className="w-full flex flex-wrap items-start gap-4">
-        <div className="hidden w-full flex-wrap items-center gap-3">
+        <div className="flex w-full flex-wrap items-center gap-3">
           <Label className="w-20">Members</Label>
           <div className="flex flex-wrap gap-3">
             <div className="flex items-center gap-3">
@@ -119,7 +115,6 @@ export function Filters({
                     : membersFilterAnyValue
                 }
                 onValueChange={onMinimumMembersChange}
-                disabled={membersFilterDisabled}
               >
                 <SelectTrigger className="min-w-28">
                   <SelectValue placeholder="Any" />
@@ -145,7 +140,7 @@ export function Filters({
                     : membersFilterAnyValue
                 }
                 onValueChange={onMaximumMembersChange}
-                disabled={membersFilterDisabled || isMinimumOpenEnded}
+                disabled={isMinimumOpenEnded}
               >
                 <SelectTrigger className="min-w-28">
                   <SelectValue placeholder="Any" />

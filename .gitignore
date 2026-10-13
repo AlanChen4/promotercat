@@ -43,5 +43,10 @@ next-env.d.ts
 # Sentry Config File
 .env.sentry-build-plugin
 
-# Claude Code auto-managed worktrees
-.claude/worktrees/
+# Local editor and agent configuration
+.cursor/
+.claude/
+.agents/
+.vscode/
+CLAUDE.md
+skills-lock.json

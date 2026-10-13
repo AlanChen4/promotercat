@@ -1,13 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useAuth } from "@/providers/auth-provider";
 import type { Enums } from "@/types/database.types";
 import type { MemberThresholdOption } from "./_components/filters";
 import { Filters } from "./_components/filters";
 import { SubredditsPagination } from "./_components/pagination";
 import type {
-  PlaceholderSubreddit,
   SortField,
   SortState,
   SubredditResult,
@@ -64,54 +62,6 @@ const DEFAULT_SORT_STATE: SortState = null;
 
 const SEARCH_DEBOUNCE_MS = 300;
 const ROWS_PER_PAGE = 10;
-const PLACEHOLDER_SUBREDDITS: PlaceholderSubreddit[] = [
-  {
-    name: "growthstack",
-    selfPromotion: "allowed_full" as SelfPromotionStatus,
-    members: "128K",
-  },
-  {
-    name: "founderfeedback",
-    selfPromotion: "allowed_limited" as SelfPromotionStatus,
-    selfPromotionDetail: "Weekly promo thread",
-    members: "54.1K",
-  },
-  {
-    name: "sideprojectshowcase",
-    selfPromotion: "allowed_limited" as SelfPromotionStatus,
-    selfPromotionDetail: "Text posts only",
-    members: "212K",
-  },
-  {
-    name: "saaslaunches",
-    selfPromotion: "allowed_limited" as SelfPromotionStatus,
-    selfPromotionDetail: "Signup posts only",
-    members: "33.8K",
-  },
-  {
-    name: "indiehackernews",
-    selfPromotion: "allowed_limited" as SelfPromotionStatus,
-    selfPromotionDetail: "Allowed on Sundays",
-    members: "81.4K",
-  },
-  {
-    name: "designcritique",
-    selfPromotion: "allowed_full" as SelfPromotionStatus,
-    members: "403K",
-  },
-  {
-    name: "marketingcoop",
-    selfPromotion: "not_allowed" as SelfPromotionStatus,
-    members: "19.7K",
-  },
-  {
-    name: "appstorelaunch",
-    selfPromotion: "allowed_limited" as SelfPromotionStatus,
-    selfPromotionDetail: "Demo + screenshots",
-    members: "62.5K",
-  },
-];
-
 const SEARCH_SUGGESTIONS = [
   {
     label: "Game Development",
@@ -131,12 +81,6 @@ const SEARCH_SUGGESTIONS = [
 ];
 
 export default function HomePage() {
-  const {
-    isPremium,
-    isPremiumLoading,
-    isAuthenticated,
-    isAuthenticatedLoading,
-  } = useAuth();
   const [searchInput, setSearchInput] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedSelfPromotion, setSelectedSelfPromotion] = useState<
@@ -151,25 +95,6 @@ export default function HomePage() {
   const [maximumMembers, setMaximumMembers] = useState<number | null>(null);
   const [sortState, setSortState] = useState<SortState>(DEFAULT_SORT_STATE);
   const [isSortLoading, setIsSortLoading] = useState(false);
-
-  const isLockedPage = !isPremium && !isPremiumLoading && page > 1;
-  const canUseMembersFilter = isAuthenticated && !isAuthenticatedLoading;
-  const canUseSorting = isAuthenticated && !isAuthenticatedLoading;
-
-  useEffect(() => {
-    if (canUseMembersFilter) {
-      return;
-    }
-    setMinimumMembers(null);
-    setMaximumMembers(null);
-  }, [canUseMembersFilter]);
-
-  useEffect(() => {
-    if (!canUseSorting) {
-      setSortState(DEFAULT_SORT_STATE);
-      setIsSortLoading(false);
-    }
-  }, [canUseSorting]);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
@@ -190,13 +115,6 @@ export default function HomePage() {
     const abortController = new AbortController();
 
     const fetchData = async () => {
-      if (isLockedPage) {
-        setIsLoading(false);
-        setIsSortLoading(false);
-        setErrorMessage(null);
-        return;
-      }
-
       setIsLoading(true);
       setErrorMessage(null);
 
@@ -207,17 +125,17 @@ export default function HomePage() {
       if (selectedSelfPromotion.length > 0) {
         query.set("self_promotion", selectedSelfPromotion.join(","));
       }
-      if (canUseMembersFilter && minimumMembers !== null) {
+      if (minimumMembers !== null) {
         query.set("min_members", String(minimumMembers));
       }
-      if (canUseMembersFilter && maximumMembers !== null) {
+      if (maximumMembers !== null) {
         query.set("max_members", String(maximumMembers));
       }
       if (sortState) {
         query.set("sort_by", sortState.field);
         query.set("sort_direction", sortState.direction);
       }
-      query.set("page", String(!isPremium && !isPremiumLoading ? 1 : page));
+      query.set("page", String(page));
 
       try {
         const response = await fetch(`/subreddits?${query.toString()}`, {
@@ -265,45 +183,14 @@ export default function HomePage() {
     searchTerm,
     selectedSelfPromotion,
     page,
-    isPremium,
-    isPremiumLoading,
-    isLockedPage,
     minimumMembers,
     maximumMembers,
-    canUseMembersFilter,
     sortState,
   ]);
 
   const totalPages = useMemo(() => {
     return Math.max(1, Math.ceil(totalCount / ROWS_PER_PAGE));
   }, [totalCount]);
-
-  const expectedRowsOnCurrentPage = useMemo(() => {
-    const rowsBeforePage = (page - 1) * ROWS_PER_PAGE;
-    const rowsRemaining = Math.max(0, totalCount - rowsBeforePage);
-    return Math.min(ROWS_PER_PAGE, rowsRemaining);
-  }, [page, totalCount]);
-
-  const placeholderRows = useMemo(() => {
-    if (isPremium || isPremiumLoading) {
-      return [] as string[];
-    }
-    const placeholderCount = isLockedPage
-      ? expectedRowsOnCurrentPage
-      : Math.max(0, expectedRowsOnCurrentPage - results.length);
-
-    return Array.from(
-      { length: placeholderCount },
-      (_, offset) => `placeholder-${page}-${offset}`,
-    );
-  }, [
-    expectedRowsOnCurrentPage,
-    isLockedPage,
-    isPremium,
-    isPremiumLoading,
-    page,
-    results.length,
-  ]);
 
   const isMinimumOpenEnded = useMemo(() => {
     if (minimumMembers === null) {
@@ -326,8 +213,6 @@ export default function HomePage() {
     }
     return cappedOptions.filter((option) => option.value >= minimumMembers);
   }, [minimumMembers, isMinimumOpenEnded]);
-
-  const displayedResults = isLockedPage ? [] : results;
 
   const formatSelfPromotion = (status: SelfPromotionStatus) =>
     SELF_PROMOTION_LABELS[status];
@@ -407,9 +292,6 @@ export default function HomePage() {
   };
 
   const handleSortToggle = (field: SortField) => {
-    if (!canUseSorting) {
-      return;
-    }
     setIsSortLoading(true);
     setSortState((previous) => {
       let nextState: SortState;
@@ -454,7 +336,6 @@ export default function HomePage() {
         searchInput={searchInput}
         selectedSelfPromotion={selectedSelfPromotion}
         selfPromotionOptions={SELF_PROMOTION_OPTIONS}
-        canUseMembersFilter={canUseMembersFilter}
         minimumMembers={minimumMembers}
         maximumMembers={maximumMembers}
         isMinimumOpenEnded={isMinimumOpenEnded}
@@ -476,14 +357,9 @@ export default function HomePage() {
         isLoading={isLoading}
         errorMessage={errorMessage}
         totalCount={totalCount}
-        displayedResults={displayedResults}
-        placeholderRows={placeholderRows}
-        placeholderSubreddits={PLACEHOLDER_SUBREDDITS}
-        page={page}
-        isLockedPage={isLockedPage}
+        displayedResults={results}
         formatSelfPromotion={formatSelfPromotion}
         formatMembersCount={formatMembersCount}
-        canUseSorting={canUseSorting}
         sortState={sortState}
         onSortToggle={handleSortToggle}
         isSortLoading={isSortLoading}

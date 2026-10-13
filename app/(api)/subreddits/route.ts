@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { createGeminiClient } from "@/lib/gemini";
 import { createAdminClient } from "@/lib/supabase/admin-server";
-import { createClient } from "@/lib/supabase/server";
 import type { Enums, Tables } from "@/types/database.types";
 
 type SelfPromotionStatus = Enums<"self_promotion_status">;
@@ -13,7 +12,6 @@ type SortField = "name" | "members";
 type SortDirection = "asc" | "desc";
 
 const RESULTS_PER_PAGE = 10;
-const FREE_RESULT_LIMIT = 3;
 const SEMANTIC_MATCH_THRESHOLD = 0.69;
 const SEMANTIC_MATCH_COUNT = 300;
 
@@ -96,37 +94,13 @@ export async function GET(request: Request) {
     url.searchParams.get("sort_direction"),
   );
 
-  const supabase = await createClient();
   const supabaseAdmin = await createAdminClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const userId = user?.id ?? null;
-  const isAuthenticated = Boolean(userId);
-  let isPremium: boolean = false;
-  if (userId) {
-    const { data: userRecord } = await supabase
-      .from("users")
-      .select("is_premium")
-      .eq("id", userId)
-      .single();
-    if (!userRecord) {
-      return NextResponse.json({ message: "User not found." }, { status: 404 });
-    }
-    isPremium = userRecord.is_premium ?? false;
-  }
-
-  const pageSize =
-    isPremium || isAuthenticated ? RESULTS_PER_PAGE : FREE_RESULT_LIMIT;
-  const currentPage = isPremium ? requestedPage : 1;
-  const rangeStart = isPremium ? (currentPage - 1) * RESULTS_PER_PAGE : 0;
+  const pageSize = RESULTS_PER_PAGE;
+  const currentPage = requestedPage;
+  const rangeStart = (currentPage - 1) * pageSize;
   const rangeEnd = rangeStart + pageSize - 1;
-  const canUseSorting = Boolean(userId);
-  const sortField: SortField | null =
-    canUseSorting && requestedSortField ? requestedSortField : null;
-  const sortDirection: SortDirection =
-    canUseSorting && requestedSortDirection ? requestedSortDirection : "asc";
+  const sortField = requestedSortField;
+  const sortDirection = requestedSortDirection ?? "asc";
 
   const shouldUseSemanticSearch = searchTerm.length > 0;
   if (shouldUseSemanticSearch) {
