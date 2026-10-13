@@ -1,6 +1,5 @@
 "use client";
 
-import { Fragment } from "react";
 import {
   Pagination,
   PaginationContent,
@@ -28,20 +27,34 @@ export function SubredditsPagination({
     return null;
   }
 
-  const visiblePages =
-    paginationItems.length <= 5
+  const visiblePages: (number | "ellipsis-start" | "ellipsis-end")[] =
+    totalPages <= 7
       ? paginationItems
-      : Array.from(
-          new Set(
-            [1, totalPages, page - 1, page, page + 1].filter(
-              (value) => value >= 1 && value <= totalPages,
-            ),
-          ),
-        ).sort((a, b) => a - b);
+      : page <= 4
+        ? [1, 2, 3, 4, 5, "ellipsis-end", totalPages]
+        : page >= totalPages - 3
+          ? [
+              1,
+              "ellipsis-start",
+              totalPages - 4,
+              totalPages - 3,
+              totalPages - 2,
+              totalPages - 1,
+              totalPages,
+            ]
+          : [
+              1,
+              "ellipsis-start",
+              page - 1,
+              page,
+              page + 1,
+              "ellipsis-end",
+              totalPages,
+            ];
 
   return (
     <Pagination>
-      <PaginationContent>
+      <PaginationContent className="gap-0 sm:gap-1">
         <PaginationItem>
           <PaginationPrevious
             href="#"
@@ -55,35 +68,27 @@ export function SubredditsPagination({
             className={page === 1 ? "pointer-events-none opacity-50" : ""}
           />
         </PaginationItem>
-        {visiblePages.map((pageNumber, index) => {
-          const previousPage = visiblePages[index - 1];
-          const showEllipsis =
-            typeof previousPage === "number" && pageNumber - previousPage > 1;
-
-          return (
-            <Fragment key={pageNumber}>
-              {showEllipsis ? (
-                <PaginationItem>
-                  <PaginationEllipsis />
-                </PaginationItem>
-              ) : null}
-              <PaginationItem>
-                <PaginationLink
-                  href="#"
-                  isActive={pageNumber === page}
-                  onClick={(event) => {
-                    event.preventDefault();
-                    if (pageNumber !== page) {
-                      onPageChange(pageNumber);
-                    }
-                  }}
-                >
-                  {pageNumber}
-                </PaginationLink>
-              </PaginationItem>
-            </Fragment>
-          );
-        })}
+        {visiblePages.map((pageNumber) => (
+          <PaginationItem key={pageNumber}>
+            {typeof pageNumber === "number" ? (
+              <PaginationLink
+                href="#"
+                className="size-7 sm:size-9"
+                isActive={pageNumber === page}
+                onClick={(event) => {
+                  event.preventDefault();
+                  if (pageNumber !== page) {
+                    onPageChange(pageNumber);
+                  }
+                }}
+              >
+                {pageNumber}
+              </PaginationLink>
+            ) : (
+              <PaginationEllipsis className="size-7 sm:size-9" />
+            )}
+          </PaginationItem>
+        ))}
         <PaginationItem>
           <PaginationNext
             href="#"

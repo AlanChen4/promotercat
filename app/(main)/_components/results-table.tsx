@@ -3,7 +3,6 @@
 import { SortByDown02Icon, SortByUp02Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import Link from "next/link";
-import { Fragment } from "react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import {
@@ -59,6 +58,10 @@ export function ResultsTable({
     { length: lockedRowCount },
     (_, offset) => `locked-row-${offset}`,
   );
+  const paddingRows = Array.from(
+    { length: Math.max(0, 10 - (lockedRowCount || displayedResults.length)) },
+    (_, offset) => `padding-row-${offset}`,
+  );
 
   const getSortIcon = (field: SortField) => {
     if (sortState?.field !== field) {
@@ -90,7 +93,7 @@ export function ResultsTable({
 
   return (
     <div className="rounded-xl border bg-card w-full max-w-4xl">
-      <div className="flex justify-between items-center border-b px-4 py-3">
+      <div className="flex h-11 justify-between items-center border-b px-4">
         <p className="text-sm text-muted-foreground">
           {showLoadingMessage ? (
             <Spinner />
@@ -100,97 +103,129 @@ export function ResultsTable({
         </p>
       </div>
       {errorMessage ? (
-        <div className="px-4 py-8 text-sm text-destructive">{errorMessage}</div>
+        <div className="flex h-[27.5rem] items-center px-4 text-sm text-destructive">
+          {errorMessage}
+        </div>
       ) : (
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-muted">
-              <TableHead className="text-muted-foreground">
-                {renderSortableHeader("Name", "name")}
-              </TableHead>
-              <TableHead className="text-muted-foreground">
-                {renderSortableHeader("Members", "members")}
-              </TableHead>
-              <TableHead className="text-muted-foreground">Promotion</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {lockedRowCount > 0 ? (
-              placeholderRows.map((placeholderKey, index) => (
-                <Fragment key={placeholderKey}>
+        <div className="relative h-[27.5rem]">
+          <Table className="table-fixed">
+            <colgroup>
+              <col className="w-[30%] sm:w-48" />
+              <col className="w-24 sm:w-28" />
+              <col />
+            </colgroup>
+            <TableHeader>
+              <TableRow className="bg-muted">
+                <TableHead className="text-muted-foreground">
+                  {renderSortableHeader("Name", "name")}
+                </TableHead>
+                <TableHead className="text-muted-foreground">
+                  {renderSortableHeader("Members", "members")}
+                </TableHead>
+                <TableHead className="text-muted-foreground">
+                  Promotion
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {lockedRowCount > 0 ? (
+                placeholderRows.map((placeholderKey) => (
                   <TableRow
-                    className="pointer-events-none select-none blur-[4px]"
+                    key={placeholderKey}
+                    className="h-10 pointer-events-none select-none blur-[4px]"
                     aria-hidden="true"
                   >
-                    <TableCell className="font-medium w-48">
+                    <TableCell className="font-medium truncate">
                       r/community
                     </TableCell>
                     <TableCell>128K</TableCell>
-                    <TableCell>
+                    <TableCell className="truncate">
                       Limited{" "}
                       <span className="text-muted-foreground">
                         — Weekly promotion thread
                       </span>
                     </TableCell>
                   </TableRow>
-                  {index === Math.floor((lockedRowCount - 1) / 2) ? (
-                    <TableRow>
-                      <TableCell colSpan={3} className="bg-muted py-4">
-                        <div className="flex justify-center">
-                          <Button asChild variant="outline">
-                            <Link href="/auth">
-                              Log in or Sign Up{" "}
-                              <span className="text-muted-foreground">
-                                — it's free
-                              </span>
-                            </Link>
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ) : null}
-                </Fragment>
-              ))
-            ) : displayedResults.length === 0 && !isLoading ? (
-              <TableRow>
-                <TableCell
-                  colSpan={3}
-                  className="py-10 text-center text-muted-foreground"
-                >
-                  No subreddits found. Try a different search.
-                </TableCell>
-              </TableRow>
-            ) : (
-              displayedResults.map((subreddit) => (
-                <TableRow key={subreddit.name}>
-                  <TableCell className="font-medium w-48">
-                    <Link
-                      href={`https://www.reddit.com/r/${subreddit.name}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="hover:underline underline-offset-4"
-                    >
-                      r/{subreddit.name}
-                    </Link>
-                  </TableCell>
-                  <TableCell>
-                    {formatMembersCount(subreddit.members_count)}
-                  </TableCell>
-                  <TableCell>
-                    {formatSelfPromotion(subreddit.self_promotion)}
-                    {(subreddit.self_promotion === "allowed_limited" ||
-                      subreddit.self_promotion === "allowed_full") && (
-                      <span className="text-muted-foreground">
-                        {" "}
-                        — {subreddit.self_promotion_detail}
-                      </span>
-                    )}
+                ))
+              ) : displayedResults.length === 0 && !isLoading ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={3}
+                    className="h-[25rem] text-center text-muted-foreground"
+                  >
+                    No subreddits found. Try a different search.
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+              ) : (
+                displayedResults.map((subreddit) => (
+                  <TableRow key={subreddit.name} className="h-10">
+                    <TableCell className="font-medium">
+                      <Link
+                        href={`https://www.reddit.com/r/${subreddit.name}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block truncate hover:underline underline-offset-4"
+                        title={`r/${subreddit.name}`}
+                      >
+                        r/{subreddit.name}
+                      </Link>
+                    </TableCell>
+                    <TableCell>
+                      {formatMembersCount(subreddit.members_count)}
+                    </TableCell>
+                    <TableCell>
+                      <div
+                        className="truncate"
+                        title={
+                          subreddit.self_promotion === "allowed_limited" ||
+                          subreddit.self_promotion === "allowed_full"
+                            ? `${formatSelfPromotion(subreddit.self_promotion)} — ${subreddit.self_promotion_detail}`
+                            : formatSelfPromotion(subreddit.self_promotion)
+                        }
+                      >
+                        {formatSelfPromotion(subreddit.self_promotion)}
+                        {(subreddit.self_promotion === "allowed_limited" ||
+                          subreddit.self_promotion === "allowed_full") && (
+                          <span className="text-muted-foreground">
+                            {" "}
+                            — {subreddit.self_promotion_detail}
+                          </span>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+              {lockedRowCount > 0 || displayedResults.length > 0 || isLoading
+                ? paddingRows.map((paddingKey) => (
+                    <TableRow
+                      key={paddingKey}
+                      aria-hidden="true"
+                      className="h-10 pointer-events-none border-0 hover:bg-transparent"
+                    >
+                      <TableCell colSpan={3} className="p-0" />
+                    </TableRow>
+                  ))
+                : null}
+            </TableBody>
+          </Table>
+          {lockedRowCount > 0 ? (
+            <div className="pointer-events-none absolute inset-x-0 top-10 bottom-0 flex items-center justify-center">
+              <div className="flex w-full justify-center bg-muted/95 py-4">
+                <Button
+                  asChild
+                  variant="outline"
+                  className="pointer-events-auto"
+                >
+                  <Link href="/auth">
+                    Log in or Sign Up{" "}
+                    <span className="text-muted-foreground">— it's free</span>
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          ) : null}
+        </div>
       )}
     </div>
   );
