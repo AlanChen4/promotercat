@@ -3,6 +3,8 @@
 import { SortByDown02Icon, SortByUp02Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import Link from "next/link";
+import { Fragment } from "react";
+import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import {
   Table,
@@ -32,6 +34,7 @@ type ResultsTableProps = {
   errorMessage: string | null;
   totalCount: number;
   displayedResults: SubredditResult[];
+  lockedRowCount: number;
   formatSelfPromotion: (status: SelfPromotionStatus) => string;
   formatMembersCount: (count: number) => string;
   sortState: SortState;
@@ -44,6 +47,7 @@ export function ResultsTable({
   errorMessage,
   totalCount,
   displayedResults,
+  lockedRowCount,
   formatSelfPromotion,
   formatMembersCount,
   sortState,
@@ -51,6 +55,10 @@ export function ResultsTable({
   isSortLoading,
 }: ResultsTableProps) {
   const showLoadingMessage = isLoading && !isSortLoading;
+  const placeholderRows = Array.from(
+    { length: lockedRowCount },
+    (_, offset) => `locked-row-${offset}`,
+  );
 
   const getSortIcon = (field: SortField) => {
     if (sortState?.field !== field) {
@@ -107,7 +115,43 @@ export function ResultsTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {displayedResults.length === 0 && !isLoading ? (
+            {lockedRowCount > 0 ? (
+              placeholderRows.map((placeholderKey, index) => (
+                <Fragment key={placeholderKey}>
+                  <TableRow
+                    className="pointer-events-none select-none blur-[4px]"
+                    aria-hidden="true"
+                  >
+                    <TableCell className="font-medium w-48">
+                      r/community
+                    </TableCell>
+                    <TableCell>128K</TableCell>
+                    <TableCell>
+                      Limited{" "}
+                      <span className="text-muted-foreground">
+                        — Weekly promotion thread
+                      </span>
+                    </TableCell>
+                  </TableRow>
+                  {index === Math.floor((lockedRowCount - 1) / 2) ? (
+                    <TableRow>
+                      <TableCell colSpan={3} className="bg-muted py-4">
+                        <div className="flex justify-center">
+                          <Button asChild variant="outline">
+                            <Link href="/auth">
+                              Log in or Sign Up{" "}
+                              <span className="text-muted-foreground">
+                                — it's free
+                              </span>
+                            </Link>
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ) : null}
+                </Fragment>
+              ))
+            ) : displayedResults.length === 0 && !isLoading ? (
               <TableRow>
                 <TableCell
                   colSpan={3}

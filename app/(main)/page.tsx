@@ -1,16 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ContinueWithGoogleButton } from "@/components/buttons";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { useAuth } from "@/providers/auth-provider";
 import type { Enums } from "@/types/database.types";
 import type { MemberThresholdOption } from "./_components/filters";
@@ -92,15 +82,14 @@ const SEARCH_SUGGESTIONS = [
 ];
 
 export default function HomePage() {
-  const { isAuthenticated, isAuthenticatedLoading } = useAuth();
+  const { isAuthenticated } = useAuth();
   const [searchInput, setSearchInput] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedSelfPromotion, setSelectedSelfPromotion] = useState<
     SelfPromotionStatus[]
   >(DEFAULT_SELF_PROMOTION_SELECTION);
-  const [selectedPage, setPage] = useState(1);
-  const page = isAuthenticated ? selectedPage : 1;
-  const [isSignupOpen, setIsSignupOpen] = useState(false);
+  const [page, setPage] = useState(1);
+  const isLockedPage = page > 1 && !isAuthenticated;
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [results, setResults] = useState<SubredditResult[]>([]);
@@ -129,6 +118,12 @@ export default function HomePage() {
     const abortController = new AbortController();
 
     const fetchData = async () => {
+      if (isLockedPage) {
+        setIsLoading(false);
+        setIsSortLoading(false);
+        setErrorMessage(null);
+        return;
+      }
       setIsLoading(true);
       setErrorMessage(null);
 
@@ -162,8 +157,8 @@ export default function HomePage() {
         }
 
         if (response.status === 401) {
+          setResults([]);
           setPage(1);
-          setIsSignupOpen(true);
           return;
         }
 
@@ -207,6 +202,7 @@ export default function HomePage() {
     searchTerm,
     selectedSelfPromotion,
     page,
+    isLockedPage,
     minimumMembers,
     maximumMembers,
     sortState,
@@ -339,12 +335,6 @@ export default function HomePage() {
   };
 
   const handlePageChange = (nextPage: number) => {
-    if (nextPage > 1 && !isAuthenticated) {
-      if (!isAuthenticatedLoading) {
-        setIsSignupOpen(true);
-      }
-      return;
-    }
     setPage(nextPage);
   };
 
@@ -387,7 +377,15 @@ export default function HomePage() {
         isLoading={isLoading}
         errorMessage={errorMessage}
         totalCount={totalCount}
-        displayedResults={results}
+        displayedResults={isLockedPage ? [] : results}
+        lockedRowCount={
+          isLockedPage
+            ? Math.min(
+                ROWS_PER_PAGE,
+                Math.max(0, totalCount - (page - 1) * ROWS_PER_PAGE),
+              )
+            : 0
+        }
         formatSelfPromotion={formatSelfPromotion}
         formatMembersCount={formatMembersCount}
         sortState={sortState}
@@ -401,29 +399,6 @@ export default function HomePage() {
         paginationItems={paginationItems}
         onPageChange={handlePageChange}
       />
-
-      <Dialog open={isSignupOpen} onOpenChange={setIsSignupOpen}>
-        {totalPages > 1 && !isAuthenticated && !isAuthenticatedLoading ? (
-          <div className="flex flex-col items-center gap-2 py-4">
-            <p className="text-sm text-muted-foreground">
-              Create a free account to view results beyond the first page.
-            </p>
-            <DialogTrigger asChild>
-              <Button>Sign up to see more results</Button>
-            </DialogTrigger>
-          </div>
-        ) : null}
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Sign up to see more results</DialogTitle>
-            <DialogDescription>
-              Create a free account or log in to view results beyond the first
-              page.
-            </DialogDescription>
-          </DialogHeader>
-          <ContinueWithGoogleButton />
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
