@@ -2,6 +2,8 @@
 
 import { Search01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import Image from "next/image";
+import Link from "next/link";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import logo from "@/public/logo.png";
 import type { Enums } from "@/types/database.types";
 
 type SelfPromotionStatus = Enums<"self_promotion_status">;
@@ -58,8 +61,11 @@ export function Filters({
 }: FiltersProps) {
   return (
     <div className="grid gap-4 w-full">
-      <div className="flex w-full items-center gap-2">
-        <div className="relative flex-1">
+      <div className="flex w-full items-center gap-3">
+        <Link href="/" aria-label="PromoterCat home" className="shrink-0">
+          <Image src={logo} alt="PromoterCat" width={42} height={42} priority />
+        </Link>
+        <div className="relative min-w-0 flex-1">
           <HugeiconsIcon
             icon={Search01Icon}
             className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
