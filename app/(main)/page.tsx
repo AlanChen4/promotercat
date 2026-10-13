@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ACTIVITY_THRESHOLD_OPTIONS } from "@/lib/activity";
+import { ACTIVITY_THRESHOLD_OPTIONS } from "@/constants/subreddit-filters";
 import { useAuth } from "@/providers/auth-provider";
 import type { Enums } from "@/types/database.types";
 import { Filters } from "./_components/filters";

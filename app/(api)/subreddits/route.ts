@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { ACTIVITY_THRESHOLD_OPTIONS } from "@/lib/activity";
+import { ACTIVITY_THRESHOLD_OPTIONS } from "@/constants/subreddit-filters";
 import { embedDescription } from "@/lib/ai";
 import { createAdminClient } from "@/lib/supabase/admin-server";
 import { createClient } from "@/lib/supabase/server";
