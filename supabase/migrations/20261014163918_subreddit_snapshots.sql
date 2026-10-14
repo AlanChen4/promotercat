@@ -147,8 +147,14 @@ begin
             raise exception 'activity updates must not include rules';
         end if;
     else
-        if jsonb_typeof(p_rules) is distinct from 'array' or jsonb_array_length(p_rules) = 0 then
-            raise exception 'rules must be a nonempty array';
+        if jsonb_typeof(p_rules) is distinct from 'array' then
+            raise exception 'rules must be an array';
+        end if;
+        if jsonb_array_length(p_rules) = 0 and (
+            p_snapshot->>'self_promotion' is distinct from 'unspecified'
+            or p_snapshot->>'self_promotion_detail' is distinct from ''
+        ) then
+            raise exception 'empty rules require unspecified promotion and an empty detail';
         end if;
         if p_snapshot->>'self_promotion_confidence' is null
            or p_snapshot->>'self_promotion' is null
