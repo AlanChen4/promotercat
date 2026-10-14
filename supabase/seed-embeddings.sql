@@ -43,4 +43,4 @@ set description_embedding = seed_embeddings.embedding
 from seed_embeddings
 join public.subreddits subreddit on subreddit.name = seed_embeddings.name
 where details.subreddit_id = subreddit.id
-  and details.observed_at = '2026-01-01T00:00:00Z'::timestamptz;
+  and details.created_at = '2026-01-01T00:00:00Z'::timestamptz;

@@ -1,51 +1,51 @@
 -- Separate timelines: metadata/rules change less often than weekly activity.
 create table public.subreddit_details (
     subreddit_id uuid not null references public.subreddits(id) on delete cascade,
-    observed_at timestamptz not null default clock_timestamp(),
+    created_at timestamptz not null default clock_timestamp(),
     description text,
     description_embedding extensions.vector(3072),
     self_promotion public.self_promotion_status not null,
     self_promotion_detail text not null,
     self_promotion_confidence double precision check (self_promotion_confidence between 0 and 1),
-    primary key (subreddit_id, observed_at)
+    primary key (subreddit_id, created_at)
 );
-create table public.subreddit_member (
+create table public.subreddit_members (
     subreddit_id uuid not null references public.subreddits(id) on delete cascade,
-    observed_at timestamptz not null default clock_timestamp(),
+    created_at timestamptz not null default clock_timestamp(),
     weekly_active_users bigint check (weekly_active_users >= 0),
-    primary key (subreddit_id, observed_at)
+    primary key (subreddit_id, created_at)
 );
 create table public.subreddit_rules (
     subreddit_id uuid not null,
-    observed_at timestamptz not null,
+    created_at timestamptz not null,
     position integer not null check (position > 0),
     title text not null,
     description text,
-    primary key (subreddit_id, observed_at, position),
-    foreign key (subreddit_id, observed_at)
-        references public.subreddit_details(subreddit_id, observed_at) on delete cascade
+    primary key (subreddit_id, created_at, position),
+    foreign key (subreddit_id, created_at)
+        references public.subreddit_details(subreddit_id, created_at) on delete cascade
 );
 -- Position preserves historical array order and repeated titles without extra UUIDs.
 alter table public.subreddit_details enable row level security;
-alter table public.subreddit_member enable row level security;
+alter table public.subreddit_members enable row level security;
 alter table public.subreddit_rules enable row level security;
-revoke all on public.subreddit_details, public.subreddit_member, public.subreddit_rules
+revoke all on public.subreddit_details, public.subreddit_members, public.subreddit_rules
     from public, anon, authenticated, service_role;
-grant select, insert on public.subreddit_details, public.subreddit_member, public.subreddit_rules
+grant select, insert on public.subreddit_details, public.subreddit_members, public.subreddit_rules
     to service_role;
 
 -- Preserve the last known metadata and rules before removing current-value storage.
 -- Subscriber totals are not weekly activity; leave old activity unknown.
 insert into public.subreddit_details
-    (subreddit_id, observed_at, description, description_embedding,
+    (subreddit_id, created_at, description, description_embedding,
      self_promotion, self_promotion_detail)
 select id, coalesce(last_scraped_at, statement_timestamp()), description,
     description_embedding, self_promotion, self_promotion_detail
 from public.subreddits;
-insert into public.subreddit_member (subreddit_id, observed_at)
+insert into public.subreddit_members (subreddit_id, created_at)
 select id, statement_timestamp() from public.subreddits;
-insert into public.subreddit_rules (subreddit_id, observed_at, position, title, description)
-select rule.subreddit_id, details.observed_at,
+insert into public.subreddit_rules (subreddit_id, created_at, position, title, description)
+select rule.subreddit_id, details.created_at,
     row_number() over (partition by rule.subreddit_id order by rule.title, rule.description, rule.id)::integer,
     rule.title, rule.description
 from public.rules rule
@@ -69,17 +69,17 @@ create view public.current_subreddits with (security_invoker = true) as
 select subreddit.id, subreddit.name,
     details.description, details.description_embedding,
     details.self_promotion, details.self_promotion_detail, details.self_promotion_confidence,
-    members.weekly_active_users, details.observed_at as last_scraped_at
+    members.weekly_active_users, details.created_at as last_scraped_at
 from public.subreddits subreddit
 left join lateral (
     select * from public.subreddit_details
     where subreddit_id = subreddit.id
-    order by observed_at desc limit 1
+    order by created_at desc limit 1
 ) details on true
 left join lateral (
-    select weekly_active_users from public.subreddit_member
+    select weekly_active_users from public.subreddit_members
     where subreddit_id = subreddit.id
-    order by observed_at desc limit 1
+    order by created_at desc limit 1
 ) members on true;
 revoke all on public.current_subreddits from public, anon, authenticated, service_role;
 grant select on public.current_subreddits to service_role;
@@ -173,7 +173,7 @@ begin
     saved_at := clock_timestamp();
     if p_mode <> 'activity' then
         insert into public.subreddit_details
-            (subreddit_id, observed_at, description, description_embedding,
+            (subreddit_id, created_at, description, description_embedding,
              self_promotion, self_promotion_detail, self_promotion_confidence)
         values
             (saved_id, saved_at, p_snapshot->>'description',
@@ -181,12 +181,12 @@ begin
              (p_snapshot->>'self_promotion')::public.self_promotion_status,
              p_snapshot->>'self_promotion_detail',
              (p_snapshot->>'self_promotion_confidence')::double precision);
-        insert into public.subreddit_rules (subreddit_id, observed_at, position, title, description)
+        insert into public.subreddit_rules (subreddit_id, created_at, position, title, description)
         select saved_id, saved_at, rule.position::integer,
             rule.value->>'title', rule.value->>'description'
         from jsonb_array_elements(p_rules) with ordinality as rule(value, position);
     end if;
-    insert into public.subreddit_member (subreddit_id, observed_at, weekly_active_users)
+    insert into public.subreddit_members (subreddit_id, created_at, weekly_active_users)
     values (saved_id, saved_at, activity_count);
     return query select saved_id, case p_mode
         when 'add' then 'added'

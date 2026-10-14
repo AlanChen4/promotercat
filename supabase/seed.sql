@@ -234,30 +234,30 @@ with seed_subreddits (id, name, weekly_active_users, self_promotion, self_promot
     returning id, name
 ), saved_details as (
     insert into public.subreddit_details
-        (subreddit_id, observed_at, description, self_promotion, self_promotion_detail)
+        (subreddit_id, created_at, description, self_promotion, self_promotion_detail)
     select saved.id, '2026-01-01T00:00:00Z'::timestamptz, seed.description,
         seed.self_promotion::public.self_promotion_status, seed.self_promotion_detail
     from saved_subreddits saved join seed_subreddits seed on seed.name = saved.name
-    on conflict (subreddit_id, observed_at) do update set
+    on conflict (subreddit_id, created_at) do update set
         description = excluded.description,
         self_promotion = excluded.self_promotion,
         self_promotion_detail = excluded.self_promotion_detail
-    returning subreddit_id, observed_at
+    returning subreddit_id, created_at
 ), saved_members as (
-    insert into public.subreddit_member (subreddit_id, observed_at, weekly_active_users)
+    insert into public.subreddit_members (subreddit_id, created_at, weekly_active_users)
     select saved.id, '2026-01-01T00:00:00Z'::timestamptz, seed.weekly_active_users
     from saved_subreddits saved join seed_subreddits seed on seed.name = saved.name
-    on conflict (subreddit_id, observed_at) do update set
+    on conflict (subreddit_id, created_at) do update set
         weekly_active_users = excluded.weekly_active_users
 )
-insert into public.subreddit_rules (subreddit_id, observed_at, position, title, description)
-select details.subreddit_id, details.observed_at,
+insert into public.subreddit_rules (subreddit_id, created_at, position, title, description)
+select details.subreddit_id, details.created_at,
     row_number() over (partition by details.subreddit_id order by rule.title, rule.description)::integer,
     rule.title, rule.description
 from saved_details details
 join saved_subreddits saved on saved.id = details.subreddit_id
 join seed_rules rule on rule.subreddit_name = saved.name
-on conflict (subreddit_id, observed_at, position) do update set
+on conflict (subreddit_id, created_at, position) do update set
     title = excluded.title,
     description = excluded.description;
 
