@@ -4,6 +4,7 @@ import { Search01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import Image from "next/image";
 import Link from "next/link";
+import { AccountMenu } from "@/components/account-menu";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -78,6 +79,7 @@ export function Filters({
             className="pl-9 text-sm"
           />
         </div>
+        <AccountMenu />
       </div>
 
       <div className="flex flex-col md:flex-row w-full gap-x-4 gap-y-2">
