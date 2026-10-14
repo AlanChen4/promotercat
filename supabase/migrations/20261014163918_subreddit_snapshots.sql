@@ -1,9 +1,14 @@
--- Separate timelines: metadata/rules change less often than weekly activity.
-create table public.subreddit_details (
+-- Keep descriptions, promotion policies/rules, and weekly activity on separate timelines.
+create table public.subreddit_descriptions (
     subreddit_id uuid not null references public.subreddits(id) on delete cascade,
     created_at timestamptz not null default clock_timestamp(),
     description text,
     description_embedding extensions.vector(3072),
+    primary key (subreddit_id, created_at)
+);
+create table public.subreddit_self_promotion_details (
+    subreddit_id uuid not null references public.subreddits(id) on delete cascade,
+    created_at timestamptz not null default clock_timestamp(),
     self_promotion public.self_promotion_status not null,
     self_promotion_detail text not null,
     self_promotion_confidence double precision check (self_promotion_confidence between 0 and 1),
@@ -23,24 +28,27 @@ create table public.subreddit_rules (
     description text,
     primary key (subreddit_id, created_at, position),
     foreign key (subreddit_id, created_at)
-        references public.subreddit_details(subreddit_id, created_at) on delete cascade
+        references public.subreddit_self_promotion_details(subreddit_id, created_at) on delete cascade
 );
 -- Position preserves historical array order and repeated titles without extra UUIDs.
-alter table public.subreddit_details enable row level security;
+alter table public.subreddit_descriptions enable row level security;
+alter table public.subreddit_self_promotion_details enable row level security;
 alter table public.subreddit_members enable row level security;
 alter table public.subreddit_rules enable row level security;
-revoke all on public.subreddit_details, public.subreddit_members, public.subreddit_rules
+revoke all on public.subreddit_descriptions, public.subreddit_self_promotion_details, public.subreddit_members, public.subreddit_rules
     from public, anon, authenticated, service_role;
-grant select, insert on public.subreddit_details, public.subreddit_members, public.subreddit_rules
+grant select, insert on public.subreddit_descriptions, public.subreddit_self_promotion_details, public.subreddit_members, public.subreddit_rules
     to service_role;
 
 -- Preserve the last known metadata and rules before removing current-value storage.
 -- Subscriber totals are not weekly activity; leave old activity unknown.
-insert into public.subreddit_details
-    (subreddit_id, created_at, description, description_embedding,
-     self_promotion, self_promotion_detail)
-select id, coalesce(last_scraped_at, statement_timestamp()), description,
-    description_embedding, self_promotion, self_promotion_detail
+insert into public.subreddit_descriptions
+    (subreddit_id, created_at, description, description_embedding)
+select id, coalesce(last_scraped_at, statement_timestamp()), description, description_embedding
+from public.subreddits;
+insert into public.subreddit_self_promotion_details
+    (subreddit_id, created_at, self_promotion, self_promotion_detail)
+select id, coalesce(last_scraped_at, statement_timestamp()), self_promotion, self_promotion_detail
 from public.subreddits;
 insert into public.subreddit_members (subreddit_id, created_at)
 select id, statement_timestamp() from public.subreddits;
@@ -49,7 +57,7 @@ select rule.subreddit_id, details.created_at,
     row_number() over (partition by rule.subreddit_id order by rule.title, rule.description, rule.id)::integer,
     rule.title, rule.description
 from public.rules rule
-join public.subreddit_details details on details.subreddit_id = rule.subreddit_id;
+join public.subreddit_self_promotion_details details on details.subreddit_id = rule.subreddit_id;
 
 drop function public.match_subreddits_by_description(extensions.vector, double precision, integer);
 drop table public.rules;
@@ -67,12 +75,17 @@ grant select, insert, update on public.subreddits to service_role;
 
 create view public.current_subreddits with (security_invoker = true) as
 select subreddit.id, subreddit.name,
-    details.description, details.description_embedding,
+    descriptions.description, descriptions.description_embedding,
     details.self_promotion, details.self_promotion_detail, details.self_promotion_confidence,
     members.weekly_active_users, details.created_at as last_scraped_at
 from public.subreddits subreddit
 left join lateral (
-    select * from public.subreddit_details
+    select description, description_embedding from public.subreddit_descriptions
+    where subreddit_id = subreddit.id
+    order by created_at desc limit 1
+) descriptions on true
+left join lateral (
+    select * from public.subreddit_self_promotion_details
     where subreddit_id = subreddit.id
     order by created_at desc limit 1
 ) details on true
@@ -165,20 +178,21 @@ begin
             return;
         end if;
     else
-        -- Both timelines serialize on the stable subreddit identity row.
+        -- All timelines serialize on the stable subreddit identity row.
         select id into saved_id from public.subreddits
         where lower(name) = lower(target_name) for update;
         if saved_id is null then raise exception 'subreddit does not exist; use add'; end if;
     end if;
     saved_at := clock_timestamp();
     if p_mode <> 'activity' then
-        insert into public.subreddit_details
-            (subreddit_id, created_at, description, description_embedding,
-             self_promotion, self_promotion_detail, self_promotion_confidence)
+        insert into public.subreddit_descriptions
+            (subreddit_id, created_at, description, description_embedding)
+        values (saved_id, saved_at, p_snapshot->>'description',
+            (p_snapshot->>'description_embedding')::extensions.vector);
+        insert into public.subreddit_self_promotion_details
+            (subreddit_id, created_at, self_promotion, self_promotion_detail, self_promotion_confidence)
         values
-            (saved_id, saved_at, p_snapshot->>'description',
-             (p_snapshot->>'description_embedding')::extensions.vector,
-             (p_snapshot->>'self_promotion')::public.self_promotion_status,
+            (saved_id, saved_at, (p_snapshot->>'self_promotion')::public.self_promotion_status,
              p_snapshot->>'self_promotion_detail',
              (p_snapshot->>'self_promotion_confidence')::double precision);
         insert into public.subreddit_rules (subreddit_id, created_at, position, title, description)

@@ -328,7 +328,7 @@ Output: one JSON object per result on stdout; errors on stderr. Exit 1 if any
 entry fails; duplicate adds exit 0. Requires Node.js 24+ and Doppler login.
 ${
   command === "list"
-    ? "Lists last_scraped_at, the latest saved details snapshot time (including baselines).\n"
+    ? "Lists last_scraped_at, the latest saved promotion snapshot time (including baselines).\n"
     : `TinyFish batches contain up to 10 URLs. Full refresh uses two regular pages;
 activity-only uses one. Each failed URL is retried once. Cached data is allowed
 (24-hour preference, not a guarantee). Blocked/unloaded policy pages do not

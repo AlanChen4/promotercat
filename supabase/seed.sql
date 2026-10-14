@@ -232,14 +232,18 @@ with seed_subreddits (id, name, weekly_active_users, self_promotion, self_promot
     select id::uuid, name from seed_subreddits
     on conflict (name) do update set name = excluded.name
     returning id, name
+), saved_descriptions as (
+    insert into public.subreddit_descriptions (subreddit_id, created_at, description)
+    select saved.id, '2026-01-01T00:00:00Z'::timestamptz, seed.description
+    from saved_subreddits saved join seed_subreddits seed on seed.name = saved.name
+    on conflict (subreddit_id, created_at) do update set description = excluded.description
 ), saved_details as (
-    insert into public.subreddit_details
-        (subreddit_id, created_at, description, self_promotion, self_promotion_detail)
-    select saved.id, '2026-01-01T00:00:00Z'::timestamptz, seed.description,
+    insert into public.subreddit_self_promotion_details
+        (subreddit_id, created_at, self_promotion, self_promotion_detail)
+    select saved.id, '2026-01-01T00:00:00Z'::timestamptz,
         seed.self_promotion::public.self_promotion_status, seed.self_promotion_detail
     from saved_subreddits saved join seed_subreddits seed on seed.name = saved.name
     on conflict (subreddit_id, created_at) do update set
-        description = excluded.description,
         self_promotion = excluded.self_promotion,
         self_promotion_detail = excluded.self_promotion_detail
     returning subreddit_id, created_at

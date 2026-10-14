@@ -9,44 +9,35 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      subreddit_details: {
+      subreddit_descriptions: {
         Row: {
           created_at: string;
           description: string | null;
           description_embedding: string | null;
-          self_promotion: Database["public"]["Enums"]["self_promotion_status"];
-          self_promotion_confidence: number | null;
-          self_promotion_detail: string;
           subreddit_id: string;
         };
         Insert: {
           created_at?: string;
           description?: string | null;
           description_embedding?: string | null;
-          self_promotion: Database["public"]["Enums"]["self_promotion_status"];
-          self_promotion_confidence?: number | null;
-          self_promotion_detail: string;
           subreddit_id: string;
         };
         Update: {
           created_at?: string;
           description?: string | null;
           description_embedding?: string | null;
-          self_promotion?: Database["public"]["Enums"]["self_promotion_status"];
-          self_promotion_confidence?: number | null;
-          self_promotion_detail?: string;
           subreddit_id?: string;
         };
         Relationships: [
           {
-            foreignKeyName: "subreddit_details_subreddit_id_fkey";
+            foreignKeyName: "subreddit_descriptions_subreddit_id_fkey";
             columns: ["subreddit_id"];
             isOneToOne: false;
             referencedRelation: "current_subreddits";
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "subreddit_details_subreddit_id_fkey";
+            foreignKeyName: "subreddit_descriptions_subreddit_id_fkey";
             columns: ["subreddit_id"];
             isOneToOne: false;
             referencedRelation: "subreddits";
@@ -114,8 +105,47 @@ export type Database = {
             foreignKeyName: "subreddit_rules_subreddit_id_created_at_fkey";
             columns: ["subreddit_id", "created_at"];
             isOneToOne: false;
-            referencedRelation: "subreddit_details";
+            referencedRelation: "subreddit_self_promotion_details";
             referencedColumns: ["subreddit_id", "created_at"];
+          },
+        ];
+      };
+      subreddit_self_promotion_details: {
+        Row: {
+          created_at: string;
+          self_promotion: Database["public"]["Enums"]["self_promotion_status"];
+          self_promotion_confidence: number | null;
+          self_promotion_detail: string;
+          subreddit_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          self_promotion: Database["public"]["Enums"]["self_promotion_status"];
+          self_promotion_confidence?: number | null;
+          self_promotion_detail: string;
+          subreddit_id: string;
+        };
+        Update: {
+          created_at?: string;
+          self_promotion?: Database["public"]["Enums"]["self_promotion_status"];
+          self_promotion_confidence?: number | null;
+          self_promotion_detail?: string;
+          subreddit_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "subreddit_self_promotion_details_subreddit_id_fkey";
+            columns: ["subreddit_id"];
+            isOneToOne: false;
+            referencedRelation: "current_subreddits";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "subreddit_self_promotion_details_subreddit_id_fkey";
+            columns: ["subreddit_id"];
+            isOneToOne: false;
+            referencedRelation: "subreddits";
+            referencedColumns: ["id"];
           },
         ];
       };
