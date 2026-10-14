@@ -9,35 +9,44 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      subreddit_history: {
+      subreddit_details: {
         Row: {
+          description: string | null;
+          description_embedding: string | null;
           observed_at: string;
-          rules: Json | null;
+          self_promotion: Database["public"]["Enums"]["self_promotion_status"];
+          self_promotion_confidence: number | null;
+          self_promotion_detail: string;
           subreddit_id: string;
-          weekly_active_users: number | null;
         };
         Insert: {
+          description?: string | null;
+          description_embedding?: string | null;
           observed_at?: string;
-          rules?: Json | null;
+          self_promotion: Database["public"]["Enums"]["self_promotion_status"];
+          self_promotion_confidence?: number | null;
+          self_promotion_detail: string;
           subreddit_id: string;
-          weekly_active_users?: number | null;
         };
         Update: {
+          description?: string | null;
+          description_embedding?: string | null;
           observed_at?: string;
-          rules?: Json | null;
+          self_promotion?: Database["public"]["Enums"]["self_promotion_status"];
+          self_promotion_confidence?: number | null;
+          self_promotion_detail?: string;
           subreddit_id?: string;
-          weekly_active_users?: number | null;
         };
         Relationships: [
           {
-            foreignKeyName: "subreddit_history_subreddit_id_fkey";
+            foreignKeyName: "subreddit_details_subreddit_id_fkey";
             columns: ["subreddit_id"];
             isOneToOne: false;
             referencedRelation: "current_subreddits";
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "subreddit_history_subreddit_id_fkey";
+            foreignKeyName: "subreddit_details_subreddit_id_fkey";
             columns: ["subreddit_id"];
             isOneToOne: false;
             referencedRelation: "subreddits";
@@ -45,33 +54,83 @@ export type Database = {
           },
         ];
       };
-      subreddits: {
+      subreddit_member: {
+        Row: {
+          observed_at: string;
+          subreddit_id: string;
+          weekly_active_users: number | null;
+        };
+        Insert: {
+          observed_at?: string;
+          subreddit_id: string;
+          weekly_active_users?: number | null;
+        };
+        Update: {
+          observed_at?: string;
+          subreddit_id?: string;
+          weekly_active_users?: number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "subreddit_member_subreddit_id_fkey";
+            columns: ["subreddit_id"];
+            isOneToOne: false;
+            referencedRelation: "current_subreddits";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "subreddit_member_subreddit_id_fkey";
+            columns: ["subreddit_id"];
+            isOneToOne: false;
+            referencedRelation: "subreddits";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      subreddit_rules: {
         Row: {
           description: string | null;
-          description_embedding: string | null;
-          id: string;
-          name: string;
-          self_promotion: Database["public"]["Enums"]["self_promotion_status"];
-          self_promotion_confidence: number | null;
-          self_promotion_detail: string;
+          observed_at: string;
+          position: number;
+          subreddit_id: string;
+          title: string;
         };
         Insert: {
           description?: string | null;
-          description_embedding?: string | null;
-          id?: string;
-          name: string;
-          self_promotion: Database["public"]["Enums"]["self_promotion_status"];
-          self_promotion_confidence?: number | null;
-          self_promotion_detail: string;
+          observed_at: string;
+          position: number;
+          subreddit_id: string;
+          title: string;
         };
         Update: {
           description?: string | null;
-          description_embedding?: string | null;
+          observed_at?: string;
+          position?: number;
+          subreddit_id?: string;
+          title?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "subreddit_rules_subreddit_id_observed_at_fkey";
+            columns: ["subreddit_id", "observed_at"];
+            isOneToOne: false;
+            referencedRelation: "subreddit_details";
+            referencedColumns: ["subreddit_id", "observed_at"];
+          },
+        ];
+      };
+      subreddits: {
+        Row: {
+          id: string;
+          name: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+        };
+        Update: {
           id?: string;
           name?: string;
-          self_promotion?: Database["public"]["Enums"]["self_promotion_status"];
-          self_promotion_confidence?: number | null;
-          self_promotion_detail?: string;
         };
         Relationships: [];
       };
@@ -108,7 +167,6 @@ export type Database = {
           id: string | null;
           last_scraped_at: string | null;
           name: string | null;
-          rules: Json | null;
           self_promotion:
             | Database["public"]["Enums"]["self_promotion_status"]
             | null;

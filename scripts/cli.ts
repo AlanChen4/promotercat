@@ -9,6 +9,10 @@ import { createAiGateway, embedDescription } from "../lib/ai.ts";
 import type { Database, Json, Tables } from "../types/database.types.ts";
 
 type SubredditTarget = { name: string; url: string };
+type ExistingSubreddit = Pick<
+  Tables<"current_subreddits">,
+  "id" | "description" | "description_embedding"
+>;
 type Activity = {
   name: string;
   description: string | null;
@@ -324,7 +328,7 @@ Output: one JSON object per result on stdout; errors on stderr. Exit 1 if any
 entry fails; duplicate adds exit 0. Requires Node.js 24+ and Doppler login.
 ${
   command === "list"
-    ? "Lists last_scraped_at, the latest saved rules snapshot time (including baselines).\n"
+    ? "Lists last_scraped_at, the latest saved details snapshot time (including baselines).\n"
     : `TinyFish batches contain up to 10 URLs. Full refresh uses two regular pages;
 activity-only uses one. Each failed URL is retried once. Cached data is allowed
 (24-hour preference, not a guarantee). Blocked/unloaded policy pages do not
@@ -467,11 +471,11 @@ async function main() {
   for (let offset = 0; offset < targets.length; offset += 10) {
     const batch = targets.slice(offset, offset + 10);
     const pending: SubredditTarget[] = [];
-    const existing = new Map<string, Tables<"subreddits"> | null>();
+    const existing = new Map<string, ExistingSubreddit | null>();
     for (const target of batch) {
       const { data, error } = await db
-        .from("subreddits")
-        .select("*")
+        .from("current_subreddits")
+        .select("id,description,description_embedding")
         .ilike("name", target.name.replaceAll("_", "\\_"))
         .maybeSingle();
       if (error) throw new Error(error.message);

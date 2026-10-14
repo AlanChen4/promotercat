@@ -4,14 +4,15 @@ import { serverEnv } from "@/env";
 import { embedDescription } from "@/lib/ai";
 import { createAdminClient } from "@/lib/supabase/admin-server";
 import { createClient } from "@/lib/supabase/server";
-import type { Enums, Tables } from "@/types/database.types";
+import type { Enums } from "@/types/database.types";
 
 type SelfPromotionStatus = Enums<"self_promotion_status">;
-type SubredditRow = Pick<
-  Tables<"subreddits">,
-  "name" | "self_promotion" | "self_promotion_detail"
-> &
-  Pick<Tables<"subreddit_history">, "weekly_active_users">;
+type SubredditRow = {
+  name: string;
+  self_promotion: SelfPromotionStatus;
+  self_promotion_detail: string;
+  weekly_active_users: number | null;
+};
 type SortField = "name" | "weekly_active";
 type SortDirection = "asc" | "desc";
 
@@ -237,7 +238,8 @@ export async function GET(request: Request) {
     .from("current_subreddits")
     .select("name,self_promotion,self_promotion_detail,weekly_active_users", {
       count: "exact",
-    });
+    })
+    .not("self_promotion", "is", null);
 
   if (selfPromotionFilters.length > 0) {
     query = query.in("self_promotion", selfPromotionFilters);
