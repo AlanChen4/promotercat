@@ -264,8 +264,8 @@ type Command = "add" | "update" | "list";
 const cliEnvSchema = z.object({
   NEXT_PUBLIC_SUPABASE_URL: z.url({ protocol: /^https?$/ }),
   SUPABASE_SERVICE_ROLE_KEY: z.string().trim().min(1),
-  TINYFISH_API_KEY: z.string().trim().min(1).optional(),
-  VERCEL_AI_GATEWAY: z.string().trim().min(1).optional(),
+  TINYFISH_API_KEY: z.string().trim().min(1),
+  VERCEL_AI_GATEWAY: z.string().trim().min(1),
 });
 const commands = new Set(["add", "update", "list"]);
 function helpFor(command?: Command) {
@@ -474,14 +474,6 @@ async function main() {
       } else pending.push(target);
     }
     if (!pending.length) continue;
-    if (!env.TINYFISH_API_KEY)
-      throw new Error(
-        "TINYFISH_API_KEY is missing from the selected Doppler config.",
-      );
-    if (!values["activity-only"] && !env.VERCEL_AI_GATEWAY)
-      throw new Error(
-        "VERCEL_AI_GATEWAY is missing from the selected Doppler config.",
-      );
     const activity = await fetchSubredditBatch(
       pending,
       "activity",
@@ -527,10 +519,6 @@ async function main() {
         const policy = policies?.get(target.name);
         if (!policy || policy instanceof Error)
           throw policy ?? new Error("Missing policy result.");
-        if (!env.VERCEL_AI_GATEWAY)
-          throw new Error(
-            "VERCEL_AI_GATEWAY is missing from the selected Doppler config.",
-          );
         const classification = await classifyPolicy(
           target.name,
           policy,

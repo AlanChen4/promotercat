@@ -1,18 +1,16 @@
 import { z } from "zod";
 
 const envSchema = z.object({
-  NODE_ENV: z
-    .enum(["development", "production", "test"])
-    .default("development"),
+  NODE_ENV: z.enum(["development", "production", "test"]),
   NEXT_PUBLIC_SUPABASE_URL: z.url({ protocol: /^https?$/ }),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().trim().min(1),
-  NEXT_PUBLIC_POSTHOG_KEY: z.string().trim().min(1).optional(),
+  NEXT_PUBLIC_POSTHOG_KEY: z.string().trim().min(1),
 });
 
 const serverEnvSchema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: z.string().trim().min(1),
   VERCEL_AI_GATEWAY: z.string().trim().min(1),
-  CI: z.string().optional(),
+  CI: z.boolean(),
 });
 
 function validateEnv<T extends z.ZodType>(
@@ -68,7 +66,7 @@ function getServerEnv() {
     {
       SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
       VERCEL_AI_GATEWAY: process.env.VERCEL_AI_GATEWAY,
-      CI: process.env.CI,
+      CI: Boolean(process.env.CI),
     },
     "server",
   );
