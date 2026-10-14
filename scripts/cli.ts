@@ -66,7 +66,7 @@ function parseActivity(html: string, target: SubredditTarget): Activity {
 }
 
 function parsePolicy(markdown: string, target: SubredditTarget): Policy {
-  const lines = markdown.split(/\r?\n/);
+  const lines = markdown.split(/\r?\n/).map((line) => line.trim());
   const start = lines.findIndex((line) => {
     const match = line.match(/^#{1,6}\s+\/?r\/([A-Za-z0-9_]+)\s+Rules\s*$/i);
     return match?.[1].toLowerCase() === target.name;
@@ -80,15 +80,19 @@ function parsePolicy(markdown: string, target: SubredditTarget): Policy {
   let current: Rule | undefined;
   let previousNonemptyLine = "";
   for (const line of lines.slice(start + 1)) {
+    // Reddit separates the rules widget from the following sidebar widgets.
+    if (rules.length && /^(?:-{3,}|\*{3,}|_{3,})$/.test(line)) break;
     const heading = line.match(/^##\s+(.+)$/);
     const numberedTitle = previousNonemptyLine
       .match(/^###\s*-\s*\d+\s*(.+)$/)?.[1]
       ?.trim();
+    const numberedRule = /^(?:-\s*)?\d+$/.test(previousNonemptyLine);
     if (
       /^##\s+(?:\/?r\/\w+\s+Rules|Search by Flair|Events|Job Board|Resources|Community(?: Bookmarks)?|Moderators|Apple System Status)\s*$/i.test(
         line,
       ) &&
-      numberedTitle !== heading?.[1].trim()
+      numberedTitle !== heading?.[1].trim() &&
+      !numberedRule
     )
       break;
     policyLines.push(line);
@@ -97,15 +101,15 @@ function parsePolicy(markdown: string, target: SubredditTarget): Policy {
       rules.push(current);
     } else if (
       current &&
-      line.trim() &&
+      line &&
       !/^#{1,6}\s/.test(line) &&
-      !/^\d+$/.test(line.trim())
+      !/^(?:-\s*)?\d+$/.test(line)
     ) {
-      current.description = [current.description, line.trim()]
+      current.description = [current.description, line]
         .filter(Boolean)
         .join("\n");
     }
-    if (line.trim()) previousNonemptyLine = line.trim();
+    if (line) previousNonemptyLine = line;
   }
   if (!rules.length || !rules.some((rule) => rule.description)) {
     throw new Error(
@@ -143,9 +147,9 @@ async function fetchTinyfish(
       format,
       ttl,
       per_url_timeout_ms: 30_000,
-      ...(format === "html"
-        ? { include_selectors: ["shreddit-subreddit-header"] }
-        : {}),
+      // Selectors bypass TinyFish's boilerplate removal, which drops Reddit rules.
+      include_selectors:
+        format === "html" ? ["shreddit-subreddit-header"] : ["body"],
     }),
     signal: AbortSignal.timeout(150_000),
   });
