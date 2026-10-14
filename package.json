@@ -14,7 +14,7 @@
     "db:stop": "supabase stop",
     "db:reset": "supabase db reset",
     "db:status": "supabase status",
-    "subreddits": "node scripts/subreddits.ts"
+    "subreddits": "node scripts/cli.ts"
   },
   "dependencies": {
     "@hugeicons/core-free-icons": "^2.0.0",
