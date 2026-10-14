@@ -1,7 +1,7 @@
 -- Cat-themed local development data.
 -- Counts, descriptions, and promotion policies are illustrative, not verified Reddit data.
 -- Re-running this file updates these examples without duplicating them.
--- Includes one local test account. No billing records or scraped timestamps are created.
+-- Includes one local test account and illustrative history baselines. No billing records are created.
 
 begin;
 
@@ -30,9 +30,9 @@ values (
 )
 on conflict (provider_id, provider) do nothing;
 
-insert into public.subreddits
-    (id, name, weekly_active_users, self_promotion, self_promotion_detail, description)
-values
+-- One fixed, illustrative baseline keeps seeds idempotent and older than scrapes.
+with seed_subreddits (id, name, weekly_active_users, self_promotion, self_promotion_detail, description) as (
+    values
     ('5c3c475c-0d37-5c6c-9964-5ce18208f6c2', 'cats', 340000, 'not_allowed',
      'No ads, referral links, or product promotions.',
      'Photos, stories, and everyday life with pet cats and kittens.'),
@@ -129,119 +129,124 @@ values
     ('6f100628-5334-5691-95ef-6db1ecd096b8', 'CatShopOwners', 700, 'allowed_full',
      'Cat shop owners may share new products and lessons from running a store.',
      'Small businesses selling cat accessories, handmade gifts, and pet products.')
-on conflict (name) do update set
-    weekly_active_users = excluded.weekly_active_users,
-    self_promotion = excluded.self_promotion,
-    self_promotion_detail = excluded.self_promotion_detail,
-    description = excluded.description;
-
--- Three example rules for each community. Join by name so existing row IDs are preserved.
-with seed_rules (id, subreddit_name, title, description) as (
+), seed_rules (subreddit_name, title, description) as (
     values
-        ('31b06a6d-b631-5c2e-be12-384beb393bc7', 'cats', 'Stay on topic', 'Photos, stories, and everyday life with pet cats and kittens.'),
-        ('082036c9-60f2-54e3-a612-737fb308c371', 'cats', 'Promotion policy', 'No ads, referral links, or product promotions.'),
-        ('2be2c467-b4a4-5b9b-a684-c105df0c68ff', 'cats', 'Be kind and protect privacy', 'Give constructive feedback. Do not post personal details about other members.'),
-        ('9a2493a4-859e-5f0b-8ed7-808af63fdff5', 'catpictures', 'Stay on topic', 'Share original cat photography, portraits, and candid kitten pictures.'),
-        ('6eca8d1a-4a20-5f11-b015-3ec7035d4b95', 'catpictures', 'Promotion policy', 'Original cat photos only. No shop links or watermarks.'),
-        ('899a8297-fd91-5d96-ad8c-d2d279286ee0', 'catpictures', 'Be kind and protect privacy', 'Give constructive feedback. Do not post personal details about other members.'),
-        ('9980ce1b-e4bd-5453-93ce-ec5f86af21ed', 'Catswithjobs', 'Stay on topic', 'Funny photos of cats helping in offices, workshops, and home businesses.'),
-        ('e170cb0f-4090-500f-97bf-63d6f083e504', 'Catswithjobs', 'Promotion policy', 'No explicit promotion rule in this sample.'),
-        ('25a85402-b345-5a9c-aecd-d985c341f17f', 'Catswithjobs', 'Be kind and protect privacy', 'Give constructive feedback. Do not post personal details about other members.'),
-        ('f0efc044-4d0b-52f8-9a29-ea56293c0efd', 'IllegallySmolCats', 'Stay on topic', 'Tiny kittens, rescue stories, and photos of very small cats.'),
-        ('57f88622-0772-503e-b05b-308ff4771044', 'IllegallySmolCats', 'Promotion policy', 'No sales posts or fundraising links.'),
-        ('9aceba08-df06-5e10-bb3f-ff70d9f009c8', 'IllegallySmolCats', 'Be kind and protect privacy', 'Give constructive feedback. Do not post personal details about other members.'),
-        ('95f4ff40-0978-5d85-9f82-b7655ce3374f', 'OneOrangeBraincell', 'Stay on topic', 'Orange cat antics, silly behavior, and cat memes.'),
-        ('7de2cc9f-417b-57d7-876a-ed93965b1eb8', 'OneOrangeBraincell', 'Promotion policy', 'Memes welcome; commercial links are not.'),
-        ('f51640ef-34a3-57db-a7a1-5eff33072137', 'OneOrangeBraincell', 'Be kind and protect privacy', 'Give constructive feedback. Do not post personal details about other members.'),
-        ('d0d219d8-1284-55fd-baa8-0ff878d0354e', 'blackcats', 'Stay on topic', 'Black cat photos, adoption stories, and appreciation for miniature house panthers.'),
-        ('dbe563bb-7d9b-5dd4-a01b-e461ba1116e1', 'blackcats', 'Promotion policy', 'No explicit promotion rule in this sample.'),
-        ('1ad54968-dfcc-53e6-b4b4-1652c154a77a', 'blackcats', 'Be kind and protect privacy', 'Give constructive feedback. Do not post personal details about other members.'),
-        ('567ee9c0-ab28-503b-a96c-272a52f056ae', 'standardissuecat', 'Stay on topic', 'Brown tabby cats, their markings, personalities, and everyday adventures.'),
-        ('6e473498-3185-5a28-9f1a-bdb827c7d504', 'standardissuecat', 'Promotion policy', 'No advertising, affiliate links, or merchandise sales.'),
-        ('27523ee3-4621-5580-9697-8ecb5ede5012', 'standardissuecat', 'Be kind and protect privacy', 'Give constructive feedback. Do not post personal details about other members.'),
-        ('f0fd944e-25af-59e7-818c-879e0b373dbc', 'tuxedocats', 'Stay on topic', 'Black and white tuxedo cats, photographs, and stories from their owners.'),
-        ('efdc7eba-4ecc-5bed-93eb-f2debc50c5d6', 'tuxedocats', 'Promotion policy', 'No explicit promotion rule in this sample.'),
-        ('f4fd8e4a-e1b9-5416-a4c2-1f327b0bc114', 'tuxedocats', 'Be kind and protect privacy', 'Give constructive feedback. Do not post personal details about other members.'),
-        ('9234e8b8-3d07-5e5b-85a4-85daf09dd124', 'torties', 'Stay on topic', 'Tortoiseshell cats, their colorful coats, and spirited personalities.'),
-        ('2999fe8d-c6f9-5da4-821b-6af6da5810bf', 'torties', 'Promotion policy', 'No explicit promotion rule in this sample.'),
-        ('31519012-820f-591c-9fb3-07a4e78e2501', 'torties', 'Be kind and protect privacy', 'Give constructive feedback. Do not post personal details about other members.'),
-        ('30e38e53-da62-527d-98ac-6e6ce4ab26f7', 'SiameseCats', 'Stay on topic', 'Siamese cat care, training, behavior, and enrichment ideas.'),
-        ('915b0e01-af5f-5467-83d7-b6d8f4a4dc00', 'SiameseCats', 'Promotion policy', 'Relevant resources may be shared in the monthly advice thread.'),
-        ('4b2f8881-0688-5dae-82e5-2221ea74fa79', 'SiameseCats', 'Be kind and protect privacy', 'Give constructive feedback. Do not post personal details about other members.'),
-        ('4c1b349e-8936-58c4-a5bb-7d3b29e14759', 'MaineCoon', 'Stay on topic', 'Maine Coon grooming, photos, and life with large long-haired cats.'),
-        ('ccd9e6d9-7350-52bc-88c5-97c801cef568', 'MaineCoon', 'Promotion policy', 'No breeder advertising or cat sales.'),
-        ('d3eec5ab-c40c-5038-8392-92b3f6a7e214', 'MaineCoon', 'Be kind and protect privacy', 'Give constructive feedback. Do not post personal details about other members.'),
-        ('84bdca03-f31a-5dc8-824b-ea29a023f3d6', 'ragdolls', 'Stay on topic', 'Ragdoll cat photos, grooming routines, and breed discussions.'),
-        ('557376b8-343b-5185-ae61-92acf2ef3c7f', 'ragdolls', 'Promotion policy', 'No explicit promotion rule in this sample.'),
-        ('023d71b3-4365-57c3-b44c-27b1296dffd7', 'ragdolls', 'Be kind and protect privacy', 'Give constructive feedback. Do not post personal details about other members.'),
-        ('8c484628-1bbd-57ed-b103-8af23208739a', 'BengalCats', 'Stay on topic', 'Bengal cat exercise, interactive play, training, and indoor enrichment.'),
-        ('71083018-45b3-5e45-a430-cc9c00525f70', 'BengalCats', 'Promotion policy', 'Share useful care resources in the weekly discussion thread.'),
-        ('efb21751-224d-5d14-bcbe-16d37d61f4b5', 'BengalCats', 'Be kind and protect privacy', 'Give constructive feedback. Do not post personal details about other members.'),
-        ('597a8e6b-2d27-5d57-bb33-5e04c20f344b', 'catsinsinks', 'Stay on topic', 'Cats sleeping, hiding, or relaxing in sinks and other unexpected places.'),
-        ('b0dfe218-3a5a-5b88-940a-e1a493d8d223', 'catsinsinks', 'Promotion policy', 'Cat photos only. No promotional links.'),
-        ('5383a167-929f-57fe-ac7b-21407dee9221', 'catsinsinks', 'Be kind and protect privacy', 'Give constructive feedback. Do not post personal details about other members.'),
-        ('4e5e41c5-3b9f-53f2-aec2-329e67c4f567', 'catsinboxes', 'Stay on topic', 'Cats enjoying cardboard boxes, homemade forts, and cozy hiding spots.'),
-        ('e6b089de-ec65-575c-8bee-971c88e155d8', 'catsinboxes', 'Promotion policy', 'No explicit promotion rule in this sample.'),
-        ('ed4bcd63-a732-5c58-b268-fbdd804be5ef', 'catsinboxes', 'Be kind and protect privacy', 'Give constructive feedback. Do not post personal details about other members.'),
-        ('2ecc26b7-7dc2-57d7-868f-99ca926a9769', 'CatAdvice', 'Stay on topic', 'Practical cat behavior advice, litter box problems, introductions, and pet care.'),
-        ('b8131cbb-2415-5550-aa06-a5c5dbad207f', 'CatAdvice', 'Promotion policy', 'Disclose your affiliation and link only when answering a relevant question.'),
-        ('5af0787a-2a3c-5165-9f6f-f074518c7605', 'CatAdvice', 'Be kind and protect privacy', 'Give constructive feedback. Do not post personal details about other members.'),
-        ('53b7ecdd-daf4-55e3-b48c-1fb04d9bab78', 'catcare', 'Stay on topic', 'Cat grooming, daily care routines, and helpful resources for new owners.'),
-        ('076dead6-34f7-590d-8407-4a61f78fae76', 'catcare', 'Promotion policy', 'Educational guides are welcome once per week; no direct sales.'),
-        ('b715fc47-04c6-5b36-a4ad-7efc2aa7dd83', 'catcare', 'Be kind and protect privacy', 'Give constructive feedback. Do not post personal details about other members.'),
-        ('973aaf3e-a760-56c1-b431-23ba8a4e7d46', 'CatToys', 'Stay on topic', 'Cat toy makers, puzzle feeders, interactive toys, and product demonstrations.'),
-        ('28205d0d-064d-5b39-bbc2-daa835d15f3f', 'CatToys', 'Promotion policy', 'Share your toys, demos, and shop links. Disclose that you are the maker.'),
-        ('8210ae80-87ac-508f-81de-761ea506469f', 'CatToys', 'Be kind and protect privacy', 'Give constructive feedback. Do not post personal details about other members.'),
-        ('efd1bdd3-7420-5442-9aca-f97bc64d258f', 'CatFurniture', 'Stay on topic', 'Cat shelves, scratching posts, window perches, and furniture design projects.'),
-        ('00759a6d-2b0f-554a-8b39-a46252c23dd3', 'CatFurniture', 'Promotion policy', 'Original cat furniture and product launches are welcome with clear pricing.'),
-        ('fd9b83fc-f5bc-5c85-9587-29e8e4530179', 'CatFurniture', 'Be kind and protect privacy', 'Give constructive feedback. Do not post personal details about other members.'),
-        ('45fe62d9-dd2b-5c2c-a4e2-c5eb1db95019', 'CatArt', 'Stay on topic', 'Original cat illustrations, paintings, digital artwork, and artist portfolios.'),
-        ('8c358eae-a0bb-5d1e-9255-2f5cb36826a6', 'CatArt', 'Promotion policy', 'Artists may share original work, commission pages, and print shops.'),
-        ('f697db08-6b66-5bd2-9dde-26e2c68e01cd', 'CatArt', 'Be kind and protect privacy', 'Give constructive feedback. Do not post personal details about other members.'),
-        ('83307a70-36df-5289-b5e0-b62ac85a7df6', 'CatPhotography', 'Stay on topic', 'Cat photography techniques, lighting, camera gear, and portfolio feedback.'),
-        ('7209635e-d714-50b3-8b56-4dc83b98368d', 'CatPhotography', 'Promotion policy', 'Portfolio links are welcome on Feedback Friday. No unsolicited ads.'),
-        ('8ecc39f2-337d-5d7c-9a6b-df4c4f80c7de', 'CatPhotography', 'Be kind and protect privacy', 'Give constructive feedback. Do not post personal details about other members.'),
-        ('4c9e7b58-f75f-5b77-8422-f8cf399ff648', 'CatCrafts', 'Stay on topic', 'Handmade cat accessories, crochet patterns, sewing projects, and small craft shops.'),
-        ('e56ab0bf-4f9a-5b1d-b7ff-fc856972c90c', 'CatCrafts', 'Promotion policy', 'Handmade cat crafts and shop links are welcome. Include original photos.'),
-        ('6325fde1-fe32-503c-bacb-fb6dab1571f9', 'CatCrafts', 'Be kind and protect privacy', 'Give constructive feedback. Do not post personal details about other members.'),
-        ('f9d2d0ab-ad84-5a6d-9c43-b974fd4ffcef', 'CatGameDev', 'Stay on topic', 'Indie game development featuring cats, cozy games, and feline game characters.'),
-        ('455fbb21-c15a-568b-93a7-bc070859255d', 'CatGameDev', 'Promotion policy', 'Share playable demos and store pages. Include a gameplay clip.'),
-        ('97412fd0-f18e-5659-8e3f-4acdce9a3d2c', 'CatGameDev', 'Be kind and protect privacy', 'Give constructive feedback. Do not post personal details about other members.'),
-        ('276cb1b9-348b-5115-aa09-2f520c6daf55', 'CatTech', 'Stay on topic', 'Cat technology, pet tracking apps, smart feeders, and connected pet gadgets.'),
-        ('e3214a61-5c07-55b1-9f62-1d9825ed43c8', 'CatTech', 'Promotion policy', 'Cat apps and gadgets are welcome with a demo and a clear explanation.'),
-        ('f2b4528e-5878-5990-bfa2-fbb09d39b3f9', 'CatTech', 'Be kind and protect privacy', 'Give constructive feedback. Do not post personal details about other members.'),
-        ('06d42303-7ebc-5d7f-897c-dccc0579262c', 'CatStartups', 'Stay on topic', 'Founders building cat products, pet software, and small businesses for cat owners.'),
-        ('311e9318-40f8-5c33-9ecb-e494aeac722a', 'CatStartups', 'Promotion policy', 'Founders may share launches and request feedback. No repeated posts.'),
-        ('c9dc59d7-4b67-517b-bfd1-aa34dba79a4f', 'CatStartups', 'Be kind and protect privacy', 'Give constructive feedback. Do not post personal details about other members.'),
-        ('96fd8fd9-c874-5924-8ca5-a54ad197b5da', 'CatRescue', 'Stay on topic', 'Cat rescue organizations, shelter cats, adoption events, and volunteer coordination.'),
-        ('ae705cba-975a-51d1-b35a-15681ae6e24e', 'CatRescue', 'Promotion policy', 'Verified rescues may share adoption events; fundraising needs moderator approval.'),
-        ('035401ae-e942-585e-9513-385092a84cea', 'CatRescue', 'Be kind and protect privacy', 'Give constructive feedback. Do not post personal details about other members.'),
-        ('5b92b2da-1ed0-5bd8-b907-58103c8dc1c0', 'CatFosters', 'Stay on topic', 'Fostering kittens, bottle feeding, rescue support, and preparing cats for adoption.'),
-        ('84a453b6-8c11-511c-98a2-c84e552f865c', 'CatFosters', 'Promotion policy', 'Share foster resources in the weekly thread. Ask before posting donation links.'),
-        ('d9aa6108-ab27-5005-b4ca-7e7be8380600', 'CatFosters', 'Be kind and protect privacy', 'Give constructive feedback. Do not post personal details about other members.'),
-        ('5f4c9080-4e5e-5e74-8e0b-116ada3a4fa5', 'SeniorCats', 'Stay on topic', 'Life with older cats, accessible homes, gentle play, and senior pet routines.'),
-        ('42f9d144-dd13-57fe-900f-a98fe31b10e1', 'SeniorCats', 'Promotion policy', 'No explicit promotion rule in this sample.'),
-        ('13ab72f7-c36c-56e6-8f0e-7dcf634eb894', 'SeniorCats', 'Be kind and protect privacy', 'Give constructive feedback. Do not post personal details about other members.'),
-        ('a1c4d898-b1dc-5a6c-9236-415f247aca56', 'KittenCare', 'Stay on topic', 'New kitten care, feeding schedules, socialization, and first-time cat ownership.'),
-        ('d1977891-8ca6-55a5-bdae-2a4edaa81448', 'KittenCare', 'Promotion policy', 'Helpful care guides are welcome; disclose any connection to the resource.'),
-        ('b10813de-a0b9-5388-91b9-8b17b462f0f7', 'KittenCare', 'Be kind and protect privacy', 'Give constructive feedback. Do not post personal details about other members.'),
-        ('1a9fd6b4-01e8-584e-a5cb-e8079fbc05b0', 'CatEnrichment', 'Stay on topic', 'Indoor cat enrichment, climbing spaces, puzzle games, and play routines.'),
-        ('e0bc2194-3e1e-574f-b3ea-61272b1037dd', 'CatEnrichment', 'Promotion policy', 'No explicit promotion rule in this sample.'),
-        ('922c7bec-cf53-5298-a5e3-77306e56dde3', 'CatEnrichment', 'Be kind and protect privacy', 'Give constructive feedback. Do not post personal details about other members.'),
-        ('836e1906-fd48-5bea-925b-9a5af6a00d64', 'CatNutrition', 'Stay on topic', 'Cat food labels, feeding routines, and general nutrition discussions.'),
-        ('9ff846a6-9bd7-5d65-ae9e-1f86b8330794', 'CatNutrition', 'Promotion policy', 'No food brand promotions, affiliate links, or supplement sales.'),
-        ('c7a8568a-1ce2-5746-80e5-9d60c92179b8', 'CatNutrition', 'Be kind and protect privacy', 'Give constructive feedback. Do not post personal details about other members.'),
-        ('5b383e24-8f06-5412-93c1-b5372d0747ac', 'CatShopOwners', 'Stay on topic', 'Small businesses selling cat accessories, handmade gifts, and pet products.'),
-        ('6a8c8af1-6e9e-5e24-8059-a541416de16b', 'CatShopOwners', 'Promotion policy', 'Cat shop owners may share new products and lessons from running a store.'),
-        ('9fa3aa88-8e9f-5896-b0a8-aa83ba156772', 'CatShopOwners', 'Be kind and protect privacy', 'Give constructive feedback. Do not post personal details about other members.')
+        ('cats', 'Stay on topic', 'Photos, stories, and everyday life with pet cats and kittens.'),
+        ('cats', 'Promotion policy', 'No ads, referral links, or product promotions.'),
+        ('cats', 'Be kind and protect privacy', 'Give constructive feedback. Do not post personal details about other members.'),
+        ('catpictures', 'Stay on topic', 'Share original cat photography, portraits, and candid kitten pictures.'),
+        ('catpictures', 'Promotion policy', 'Original cat photos only. No shop links or watermarks.'),
+        ('catpictures', 'Be kind and protect privacy', 'Give constructive feedback. Do not post personal details about other members.'),
+        ('Catswithjobs', 'Stay on topic', 'Funny photos of cats helping in offices, workshops, and home businesses.'),
+        ('Catswithjobs', 'Promotion policy', 'No explicit promotion rule in this sample.'),
+        ('Catswithjobs', 'Be kind and protect privacy', 'Give constructive feedback. Do not post personal details about other members.'),
+        ('IllegallySmolCats', 'Stay on topic', 'Tiny kittens, rescue stories, and photos of very small cats.'),
+        ('IllegallySmolCats', 'Promotion policy', 'No sales posts or fundraising links.'),
+        ('IllegallySmolCats', 'Be kind and protect privacy', 'Give constructive feedback. Do not post personal details about other members.'),
+        ('OneOrangeBraincell', 'Stay on topic', 'Orange cat antics, silly behavior, and cat memes.'),
+        ('OneOrangeBraincell', 'Promotion policy', 'Memes welcome; commercial links are not.'),
+        ('OneOrangeBraincell', 'Be kind and protect privacy', 'Give constructive feedback. Do not post personal details about other members.'),
+        ('blackcats', 'Stay on topic', 'Black cat photos, adoption stories, and appreciation for miniature house panthers.'),
+        ('blackcats', 'Promotion policy', 'No explicit promotion rule in this sample.'),
+        ('blackcats', 'Be kind and protect privacy', 'Give constructive feedback. Do not post personal details about other members.'),
+        ('standardissuecat', 'Stay on topic', 'Brown tabby cats, their markings, personalities, and everyday adventures.'),
+        ('standardissuecat', 'Promotion policy', 'No advertising, affiliate links, or merchandise sales.'),
+        ('standardissuecat', 'Be kind and protect privacy', 'Give constructive feedback. Do not post personal details about other members.'),
+        ('tuxedocats', 'Stay on topic', 'Black and white tuxedo cats, photographs, and stories from their owners.'),
+        ('tuxedocats', 'Promotion policy', 'No explicit promotion rule in this sample.'),
+        ('tuxedocats', 'Be kind and protect privacy', 'Give constructive feedback. Do not post personal details about other members.'),
+        ('torties', 'Stay on topic', 'Tortoiseshell cats, their colorful coats, and spirited personalities.'),
+        ('torties', 'Promotion policy', 'No explicit promotion rule in this sample.'),
+        ('torties', 'Be kind and protect privacy', 'Give constructive feedback. Do not post personal details about other members.'),
+        ('SiameseCats', 'Stay on topic', 'Siamese cat care, training, behavior, and enrichment ideas.'),
+        ('SiameseCats', 'Promotion policy', 'Relevant resources may be shared in the monthly advice thread.'),
+        ('SiameseCats', 'Be kind and protect privacy', 'Give constructive feedback. Do not post personal details about other members.'),
+        ('MaineCoon', 'Stay on topic', 'Maine Coon grooming, photos, and life with large long-haired cats.'),
+        ('MaineCoon', 'Promotion policy', 'No breeder advertising or cat sales.'),
+        ('MaineCoon', 'Be kind and protect privacy', 'Give constructive feedback. Do not post personal details about other members.'),
+        ('ragdolls', 'Stay on topic', 'Ragdoll cat photos, grooming routines, and breed discussions.'),
+        ('ragdolls', 'Promotion policy', 'No explicit promotion rule in this sample.'),
+        ('ragdolls', 'Be kind and protect privacy', 'Give constructive feedback. Do not post personal details about other members.'),
+        ('BengalCats', 'Stay on topic', 'Bengal cat exercise, interactive play, training, and indoor enrichment.'),
+        ('BengalCats', 'Promotion policy', 'Share useful care resources in the weekly discussion thread.'),
+        ('BengalCats', 'Be kind and protect privacy', 'Give constructive feedback. Do not post personal details about other members.'),
+        ('catsinsinks', 'Stay on topic', 'Cats sleeping, hiding, or relaxing in sinks and other unexpected places.'),
+        ('catsinsinks', 'Promotion policy', 'Cat photos only. No promotional links.'),
+        ('catsinsinks', 'Be kind and protect privacy', 'Give constructive feedback. Do not post personal details about other members.'),
+        ('catsinboxes', 'Stay on topic', 'Cats enjoying cardboard boxes, homemade forts, and cozy hiding spots.'),
+        ('catsinboxes', 'Promotion policy', 'No explicit promotion rule in this sample.'),
+        ('catsinboxes', 'Be kind and protect privacy', 'Give constructive feedback. Do not post personal details about other members.'),
+        ('CatAdvice', 'Stay on topic', 'Practical cat behavior advice, litter box problems, introductions, and pet care.'),
+        ('CatAdvice', 'Promotion policy', 'Disclose your affiliation and link only when answering a relevant question.'),
+        ('CatAdvice', 'Be kind and protect privacy', 'Give constructive feedback. Do not post personal details about other members.'),
+        ('catcare', 'Stay on topic', 'Cat grooming, daily care routines, and helpful resources for new owners.'),
+        ('catcare', 'Promotion policy', 'Educational guides are welcome once per week; no direct sales.'),
+        ('catcare', 'Be kind and protect privacy', 'Give constructive feedback. Do not post personal details about other members.'),
+        ('CatToys', 'Stay on topic', 'Cat toy makers, puzzle feeders, interactive toys, and product demonstrations.'),
+        ('CatToys', 'Promotion policy', 'Share your toys, demos, and shop links. Disclose that you are the maker.'),
+        ('CatToys', 'Be kind and protect privacy', 'Give constructive feedback. Do not post personal details about other members.'),
+        ('CatFurniture', 'Stay on topic', 'Cat shelves, scratching posts, window perches, and furniture design projects.'),
+        ('CatFurniture', 'Promotion policy', 'Original cat furniture and product launches are welcome with clear pricing.'),
+        ('CatFurniture', 'Be kind and protect privacy', 'Give constructive feedback. Do not post personal details about other members.'),
+        ('CatArt', 'Stay on topic', 'Original cat illustrations, paintings, digital artwork, and artist portfolios.'),
+        ('CatArt', 'Promotion policy', 'Artists may share original work, commission pages, and print shops.'),
+        ('CatArt', 'Be kind and protect privacy', 'Give constructive feedback. Do not post personal details about other members.'),
+        ('CatPhotography', 'Stay on topic', 'Cat photography techniques, lighting, camera gear, and portfolio feedback.'),
+        ('CatPhotography', 'Promotion policy', 'Portfolio links are welcome on Feedback Friday. No unsolicited ads.'),
+        ('CatPhotography', 'Be kind and protect privacy', 'Give constructive feedback. Do not post personal details about other members.'),
+        ('CatCrafts', 'Stay on topic', 'Handmade cat accessories, crochet patterns, sewing projects, and small craft shops.'),
+        ('CatCrafts', 'Promotion policy', 'Handmade cat crafts and shop links are welcome. Include original photos.'),
+        ('CatCrafts', 'Be kind and protect privacy', 'Give constructive feedback. Do not post personal details about other members.'),
+        ('CatGameDev', 'Stay on topic', 'Indie game development featuring cats, cozy games, and feline game characters.'),
+        ('CatGameDev', 'Promotion policy', 'Share playable demos and store pages. Include a gameplay clip.'),
+        ('CatGameDev', 'Be kind and protect privacy', 'Give constructive feedback. Do not post personal details about other members.'),
+        ('CatTech', 'Stay on topic', 'Cat technology, pet tracking apps, smart feeders, and connected pet gadgets.'),
+        ('CatTech', 'Promotion policy', 'Cat apps and gadgets are welcome with a demo and a clear explanation.'),
+        ('CatTech', 'Be kind and protect privacy', 'Give constructive feedback. Do not post personal details about other members.'),
+        ('CatStartups', 'Stay on topic', 'Founders building cat products, pet software, and small businesses for cat owners.'),
+        ('CatStartups', 'Promotion policy', 'Founders may share launches and request feedback. No repeated posts.'),
+        ('CatStartups', 'Be kind and protect privacy', 'Give constructive feedback. Do not post personal details about other members.'),
+        ('CatRescue', 'Stay on topic', 'Cat rescue organizations, shelter cats, adoption events, and volunteer coordination.'),
+        ('CatRescue', 'Promotion policy', 'Verified rescues may share adoption events; fundraising needs moderator approval.'),
+        ('CatRescue', 'Be kind and protect privacy', 'Give constructive feedback. Do not post personal details about other members.'),
+        ('CatFosters', 'Stay on topic', 'Fostering kittens, bottle feeding, rescue support, and preparing cats for adoption.'),
+        ('CatFosters', 'Promotion policy', 'Share foster resources in the weekly thread. Ask before posting donation links.'),
+        ('CatFosters', 'Be kind and protect privacy', 'Give constructive feedback. Do not post personal details about other members.'),
+        ('SeniorCats', 'Stay on topic', 'Life with older cats, accessible homes, gentle play, and senior pet routines.'),
+        ('SeniorCats', 'Promotion policy', 'No explicit promotion rule in this sample.'),
+        ('SeniorCats', 'Be kind and protect privacy', 'Give constructive feedback. Do not post personal details about other members.'),
+        ('KittenCare', 'Stay on topic', 'New kitten care, feeding schedules, socialization, and first-time cat ownership.'),
+        ('KittenCare', 'Promotion policy', 'Helpful care guides are welcome; disclose any connection to the resource.'),
+        ('KittenCare', 'Be kind and protect privacy', 'Give constructive feedback. Do not post personal details about other members.'),
+        ('CatEnrichment', 'Stay on topic', 'Indoor cat enrichment, climbing spaces, puzzle games, and play routines.'),
+        ('CatEnrichment', 'Promotion policy', 'No explicit promotion rule in this sample.'),
+        ('CatEnrichment', 'Be kind and protect privacy', 'Give constructive feedback. Do not post personal details about other members.'),
+        ('CatNutrition', 'Stay on topic', 'Cat food labels, feeding routines, and general nutrition discussions.'),
+        ('CatNutrition', 'Promotion policy', 'No food brand promotions, affiliate links, or supplement sales.'),
+        ('CatNutrition', 'Be kind and protect privacy', 'Give constructive feedback. Do not post personal details about other members.'),
+        ('CatShopOwners', 'Stay on topic', 'Small businesses selling cat accessories, handmade gifts, and pet products.'),
+        ('CatShopOwners', 'Promotion policy', 'Cat shop owners may share new products and lessons from running a store.'),
+        ('CatShopOwners', 'Be kind and protect privacy', 'Give constructive feedback. Do not post personal details about other members.')
+), saved_subreddits as (
+    insert into public.subreddits (id, name, self_promotion, self_promotion_detail, description)
+    select id::uuid, name, self_promotion::public.self_promotion_status, self_promotion_detail, description
+    from seed_subreddits
+    on conflict (name) do update set
+        self_promotion = excluded.self_promotion,
+        self_promotion_detail = excluded.self_promotion_detail,
+        description = excluded.description
+    returning id, name
 )
-insert into public.rules (id, subreddit_id, title, description)
-select seed_rules.id::uuid, subreddits.id, seed_rules.title, seed_rules.description
-from seed_rules
-join public.subreddits on subreddits.name = seed_rules.subreddit_name
-on conflict (id) do update set
-    subreddit_id = excluded.subreddit_id,
-    title = excluded.title,
-    description = excluded.description;
+insert into public.subreddit_history (subreddit_id, observed_at, weekly_active_users, rules)
+select saved.id, '2026-01-01T00:00:00Z'::timestamptz, seed.weekly_active_users,
+    jsonb_agg(jsonb_build_object('title', rule.title, 'description', rule.description)
+        order by rule.title, rule.description)
+from saved_subreddits saved
+join seed_subreddits seed on seed.name = saved.name
+join seed_rules rule on rule.subreddit_name = saved.name
+group by saved.id, seed.weekly_active_users
+on conflict (subreddit_id, observed_at) do update set
+    weekly_active_users = excluded.weekly_active_users,
+    rules = excluded.rules;
 
 commit;

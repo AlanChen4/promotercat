@@ -9,35 +9,6 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      rules: {
-        Row: {
-          description: string | null;
-          id: string;
-          subreddit_id: string;
-          title: string;
-        };
-        Insert: {
-          description?: string | null;
-          id?: string;
-          subreddit_id: string;
-          title: string;
-        };
-        Update: {
-          description?: string | null;
-          id?: string;
-          subreddit_id?: string;
-          title?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "rules_subreddit_id_fkey";
-            columns: ["subreddit_id"];
-            isOneToOne: false;
-            referencedRelation: "subreddits";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
       subreddit_history: {
         Row: {
           observed_at: string;
@@ -62,6 +33,13 @@ export type Database = {
             foreignKeyName: "subreddit_history_subreddit_id_fkey";
             columns: ["subreddit_id"];
             isOneToOne: false;
+            referencedRelation: "current_subreddits";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "subreddit_history_subreddit_id_fkey";
+            columns: ["subreddit_id"];
+            isOneToOne: false;
             referencedRelation: "subreddits";
             referencedColumns: ["id"];
           },
@@ -72,37 +50,28 @@ export type Database = {
           description: string | null;
           description_embedding: string | null;
           id: string;
-          last_scraped_at: string | null;
-          members_count: number | null;
           name: string;
           self_promotion: Database["public"]["Enums"]["self_promotion_status"];
           self_promotion_confidence: number | null;
           self_promotion_detail: string;
-          weekly_active_users: number | null;
         };
         Insert: {
           description?: string | null;
           description_embedding?: string | null;
           id?: string;
-          last_scraped_at?: string | null;
-          members_count?: number | null;
           name: string;
           self_promotion: Database["public"]["Enums"]["self_promotion_status"];
           self_promotion_confidence?: number | null;
           self_promotion_detail: string;
-          weekly_active_users?: number | null;
         };
         Update: {
           description?: string | null;
           description_embedding?: string | null;
           id?: string;
-          last_scraped_at?: string | null;
-          members_count?: number | null;
           name?: string;
           self_promotion?: Database["public"]["Enums"]["self_promotion_status"];
           self_promotion_confidence?: number | null;
           self_promotion_detail?: string;
-          weekly_active_users?: number | null;
         };
         Relationships: [];
       };
@@ -132,7 +101,23 @@ export type Database = {
       };
     };
     Views: {
-      [_ in never]: never;
+      current_subreddits: {
+        Row: {
+          description: string | null;
+          description_embedding: string | null;
+          id: string | null;
+          last_scraped_at: string | null;
+          name: string | null;
+          rules: Json | null;
+          self_promotion:
+            | Database["public"]["Enums"]["self_promotion_status"]
+            | null;
+          self_promotion_confidence: number | null;
+          self_promotion_detail: string | null;
+          weekly_active_users: number | null;
+        };
+        Relationships: [];
+      };
     };
     Functions: {
       match_subreddits_by_description: {
@@ -142,23 +127,11 @@ export type Database = {
           query_embedding: string;
         };
         Returns: {
-          description: string | null;
-          description_embedding: string | null;
-          id: string;
-          last_scraped_at: string | null;
-          members_count: number | null;
           name: string;
           self_promotion: Database["public"]["Enums"]["self_promotion_status"];
-          self_promotion_confidence: number | null;
           self_promotion_detail: string;
-          weekly_active_users: number | null;
+          weekly_active_users: number;
         }[];
-        SetofOptions: {
-          from: "*";
-          to: "subreddits";
-          isOneToOne: false;
-          isSetofReturn: true;
-        };
       };
       save_subreddit_snapshot: {
         Args: { p_mode: string; p_rules: Json; p_snapshot: Json };

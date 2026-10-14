@@ -9,8 +9,9 @@ import type { Enums, Tables } from "@/types/database.types";
 type SelfPromotionStatus = Enums<"self_promotion_status">;
 type SubredditRow = Pick<
   Tables<"subreddits">,
-  "name" | "self_promotion" | "self_promotion_detail" | "weekly_active_users"
->;
+  "name" | "self_promotion" | "self_promotion_detail"
+> &
+  Pick<Tables<"subreddit_history">, "weekly_active_users">;
 type SortField = "name" | "weekly_active";
 type SortDirection = "asc" | "desc";
 
@@ -233,7 +234,7 @@ export async function GET(request: Request) {
   }
 
   let query = supabaseAdmin
-    .from("subreddits")
+    .from("current_subreddits")
     .select("name,self_promotion,self_promotion_detail,weekly_active_users", {
       count: "exact",
     });
