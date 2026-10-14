@@ -346,7 +346,7 @@ async function fetchPolicyFallback(
     );
   if (!matchesPage(result.output.url))
     throw new Error(
-      "Search returned a different source URL; existing policy was preserved.",
+      `Search returned a different source URL ${JSON.stringify(result.output.url)} for ${target.url}; existing policy was preserved.`,
     );
   if (
     !result.output.complete ||
