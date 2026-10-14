@@ -56,11 +56,11 @@ enabled = true
 schema_paths = []
 
 [db.seed]
-# Cat-themed sample communities and their search embeddings.
+# Local development test account.
 enabled = true
 # Specifies an ordered list of seed files to load during db reset.
 # Supports glob patterns relative to supabase directory: "./seeds/*.sql"
-sql_paths = ["./seed.sql", "./seed-embeddings.sql"]
+sql_paths = ["./seed.sql"]
 
 [db.network_restrictions]
 # Enable management of network restrictions.
