@@ -38,6 +38,35 @@ export type Database = {
           },
         ];
       };
+      subreddit_history: {
+        Row: {
+          observed_at: string;
+          rules: Json | null;
+          subreddit_id: string;
+          weekly_active_users: number | null;
+        };
+        Insert: {
+          observed_at?: string;
+          rules?: Json | null;
+          subreddit_id: string;
+          weekly_active_users?: number | null;
+        };
+        Update: {
+          observed_at?: string;
+          rules?: Json | null;
+          subreddit_id?: string;
+          weekly_active_users?: number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "subreddit_history_subreddit_id_fkey";
+            columns: ["subreddit_id"];
+            isOneToOne: false;
+            referencedRelation: "subreddits";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       subreddits: {
         Row: {
           description: string | null;

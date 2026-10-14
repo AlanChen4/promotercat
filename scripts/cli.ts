@@ -513,11 +513,17 @@ async function main() {
         if (values["activity-only"]) {
           if (!row) throw new Error("Subreddit does not exist; use add.");
           if (!values["dry-run"]) {
-            const { error } = await db
-              .from("subreddits")
-              .update({ weekly_active_users: stats.weekly_active_users })
-              .eq("id", row.id);
+            const { data, error } = await db.rpc("save_subreddit_snapshot", {
+              p_mode: "activity",
+              p_snapshot: {
+                name: target.name,
+                weekly_active_users: stats.weekly_active_users,
+              },
+              p_rules: null,
+            });
             if (error) throw new Error(error.message);
+            if (data.length !== 1)
+              throw new Error("Database returned an unexpected save result.");
           }
           output({
             status: values["dry-run"] ? "dry_run" : "activity_updated",
