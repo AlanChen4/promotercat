@@ -98,6 +98,18 @@ export async function GET(request: Request) {
       error,
     } = await supabase.auth.getUser();
 
+    if (
+      error &&
+      (error.status === undefined ||
+        error.status === 0 ||
+        error.status === 429 ||
+        error.status >= 500)
+    ) {
+      return NextResponse.json(
+        { message: "Unable to verify your session. Please try again." },
+        { status: 503, headers: RESPONSE_HEADERS },
+      );
+    }
     if (error || !user || user.is_anonymous) {
       return NextResponse.json(
         { message: "Sign up or log in to view more results." },
@@ -126,10 +138,18 @@ export async function GET(request: Request) {
 
   const shouldUseSemanticSearch = searchTerm.length > 0;
   if (shouldUseSemanticSearch) {
-    const semanticCandidates = await fetchSemanticCandidates({
-      searchTerm,
-      supabaseAdmin,
-    });
+    let semanticCandidates: SubredditRow[];
+    try {
+      semanticCandidates = await fetchSemanticCandidates({
+        searchTerm,
+        supabaseAdmin,
+      });
+    } catch {
+      return NextResponse.json(
+        { message: "Failed to load subreddits." },
+        { status: 500, headers: RESPONSE_HEADERS },
+      );
+    }
 
     if (semanticCandidates.length === 0) {
       return NextResponse.json(
@@ -285,26 +305,14 @@ async function fetchSemanticCandidates({
     },
   );
 
-  if (error) {
-    console.error("Failed to fetch semantic matches:", error.message);
-    return [];
-  }
+  if (error) throw new Error("Failed to fetch semantic matches.");
 
-  const seen = new Set<string>();
-  const rows: SubredditRow[] = [];
-
-  for (const row of data ?? []) {
-    if (!row?.name || seen.has(row.name)) {
-      continue;
-    }
-    seen.add(row.name);
-    rows.push({
-      name: row.name,
-      self_promotion: row.self_promotion,
-      self_promotion_detail: row.self_promotion_detail,
-      weekly_active_users: row.weekly_active_users,
-    });
-  }
-
-  return rows;
+  return (data ?? []).map(
+    ({ name, self_promotion, self_promotion_detail, weekly_active_users }) => ({
+      name,
+      self_promotion,
+      self_promotion_detail,
+      weekly_active_users,
+    }),
+  );
 }

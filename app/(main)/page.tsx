@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { ACTIVITY_THRESHOLD_OPTIONS } from "@/constants/subreddit-filters";
+import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/providers/auth-provider";
 import type { Enums } from "@/types/database.types";
 import { Filters } from "./_components/filters";
@@ -147,14 +148,13 @@ export default function HomePage() {
         }
 
         if (response.status === 401) {
+          await createClient().auth.signOut({ scope: "local" });
           setResults([]);
-          setPage(1);
           return;
         }
 
         if (!response.ok) {
-          const text = await response.text();
-          throw new Error(text || "Failed to load subreddits.");
+          throw new Error("Failed to load subreddits.");
         }
 
         const data = (await response.json()) as SubredditResponse;
@@ -165,16 +165,11 @@ export default function HomePage() {
 
         setResults(data.subreddits ?? []);
         setTotalCount(data.totalCount ?? 0);
-      } catch (error) {
-        if (
-          error instanceof DOMException &&
-          error.name.toLowerCase() === "aborterror"
-        ) {
+      } catch {
+        if (abortController.signal.aborted) {
           return;
         }
-        const message =
-          error instanceof Error ? error.message : "Failed to load subreddits.";
-        setErrorMessage(message);
+        setErrorMessage("Failed to load subreddits. Please try again.");
         setResults([]);
         setTotalCount(0);
       } finally {
@@ -239,10 +234,6 @@ export default function HomePage() {
     }
     return count.toString();
   };
-
-  const paginationItems = useMemo(() => {
-    return Array.from({ length: totalPages }, (_, index) => index + 1);
-  }, [totalPages]);
 
   const handleFilterChange = (value: SelfPromotionStatus, checked: boolean) => {
     setSelectedSelfPromotion((previous) => {
@@ -389,7 +380,6 @@ export default function HomePage() {
       <SubredditsPagination
         page={page}
         totalPages={totalPages}
-        paginationItems={paginationItems}
         onPageChange={handlePageChange}
       />
     </div>

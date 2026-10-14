@@ -74,8 +74,8 @@ export function ResultsTable({
     const Icon = getSortIcon(field);
     const isActive = sortState?.field === field;
     const sortLabel = isActive
-      ? `Sort by ${field} ${sortState.direction === "asc" ? "ascending" : "descending"}`
-      : `Sort by ${field}`;
+      ? `Sort by ${label.toLowerCase()} ${sortState.direction === "asc" ? "ascending" : "descending"}`
+      : `Sort by ${label.toLowerCase()}`;
 
     return (
       <button

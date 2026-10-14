@@ -13,14 +13,12 @@ import {
 type SubredditsPaginationProps = {
   page: number;
   totalPages: number;
-  paginationItems: number[];
   onPageChange: (nextPage: number) => void;
 };
 
 export function SubredditsPagination({
   page,
   totalPages,
-  paginationItems,
   onPageChange,
 }: SubredditsPaginationProps) {
   if (totalPages <= 1) {
@@ -29,7 +27,7 @@ export function SubredditsPagination({
 
   const visiblePages: (number | "ellipsis-start" | "ellipsis-end")[] =
     totalPages <= 7
-      ? paginationItems
+      ? Array.from({ length: totalPages }, (_, index) => index + 1)
       : page <= 4
         ? [1, 2, 3, 4, 5, "ellipsis-end", totalPages]
         : page >= totalPages - 3

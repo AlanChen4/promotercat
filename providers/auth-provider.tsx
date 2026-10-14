@@ -25,26 +25,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const supabase = createClient();
 
-    const fetchUser = async () => {
-      try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        setUser(user ?? null);
-      } catch (error) {
-        console.error("Error fetching user:", error);
-        setUser(null);
-      } finally {
-        setIsAuthenticatedLoading(false);
-      }
-    };
-
-    fetchUser();
-
+    // Supabase emits INITIAL_SESSION after loading storage, then later auth changes.
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
+      setIsAuthenticatedLoading(false);
     });
 
     return () => {
@@ -56,7 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider
       value={{
         user,
-        isAuthenticated: !!user,
+        isAuthenticated: !!user && !user.is_anonymous,
         isAuthenticatedLoading,
       }}
     >

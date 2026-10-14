@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ContinueWithGoogleButton } from "@/components/buttons";
 import {
@@ -35,17 +34,6 @@ export function AuthForm({ className, ...props }: React.ComponentProps<"div">) {
           </div>
         </CardContent>
       </Card>
-      <div className="text-muted-foreground *:[a]:hover:text-primary text-center text-xs text-balance *:[a]:underline *:[a]:underline-offset-4">
-        By clicking continue, you agree to our{" "}
-        <Link href="#" target="_blank" rel="noopener noreferrer">
-          Terms of Service
-        </Link>{" "}
-        and{" "}
-        <Link href="#" target="_blank" rel="noopener noreferrer">
-          Privacy Policy
-        </Link>
-        .
-      </div>
     </div>
   );
 }
