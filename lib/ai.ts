@@ -1,14 +1,13 @@
 import { createGateway, embed } from "ai";
 
-export function createAiGateway(apiKey = process.env.VERCEL_AI_GATEWAY) {
-  if (!apiKey) throw new Error("VERCEL_AI_GATEWAY is not configured.");
+export function createAiGateway(apiKey: string) {
   return createGateway({ apiKey });
 }
 
 export async function embedDescription(
   text: string,
   taskType: "RETRIEVAL_DOCUMENT" | "RETRIEVAL_QUERY",
-  apiKey?: string,
+  apiKey: string,
 ) {
   const { embedding } = await embed({
     model: createAiGateway(apiKey).embeddingModel(

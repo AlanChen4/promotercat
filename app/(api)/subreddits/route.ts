@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { ACTIVITY_THRESHOLD_OPTIONS } from "@/constants/subreddit-filters";
+import { serverEnv } from "@/env";
 import { embedDescription } from "@/lib/ai";
 import { createAdminClient } from "@/lib/supabase/admin-server";
 import { createClient } from "@/lib/supabase/server";
@@ -272,6 +273,7 @@ async function fetchSemanticCandidates({
   const embeddingValues = await embedDescription(
     `subreddit related to ${searchTerm}`,
     "RETRIEVAL_QUERY",
+    serverEnv.VERCEL_AI_GATEWAY,
   );
 
   const { data, error } = await supabaseAdmin.rpc(

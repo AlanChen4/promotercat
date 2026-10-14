@@ -260,6 +260,13 @@ async function classifyPolicy(name: string, policy: Policy, apiKey: string) {
 }
 
 type Command = "add" | "update" | "list";
+// Operational commands validate only their selected Doppler config, not the web app.
+const cliEnvSchema = z.object({
+  NEXT_PUBLIC_SUPABASE_URL: z.url({ protocol: /^https?$/ }),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().trim().min(1),
+  TINYFISH_API_KEY: z.string().trim().min(1).optional(),
+  VERCEL_AI_GATEWAY: z.string().trim().min(1).optional(),
+});
 const commands = new Set(["add", "update", "list"]);
 function helpFor(command?: Command) {
   if (!command)
@@ -416,12 +423,15 @@ async function main() {
       "Doppler could not load the selected config. Check doppler login and --env.",
     );
   }
-  for (const key of ["NEXT_PUBLIC_SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"])
-    if (!secrets[key])
-      throw new Error(`${key} is missing from the selected Doppler config.`);
+  const parsedEnv = cliEnvSchema.safeParse(secrets);
+  if (!parsedEnv.success)
+    throw new Error(
+      `Invalid CLI environment variables:\n${z.prettifyError(parsedEnv.error)}`,
+    );
+  const env = parsedEnv.data;
   const db = createClient<Database>(
-    secrets.NEXT_PUBLIC_SUPABASE_URL,
-    secrets.SUPABASE_SERVICE_ROLE_KEY,
+    env.NEXT_PUBLIC_SUPABASE_URL,
+    env.SUPABASE_SERVICE_ROLE_KEY,
     { auth: { persistSession: false, autoRefreshToken: false } },
   );
   if (command === "list") {
@@ -464,18 +474,18 @@ async function main() {
       } else pending.push(target);
     }
     if (!pending.length) continue;
-    if (!secrets.TINYFISH_API_KEY)
+    if (!env.TINYFISH_API_KEY)
       throw new Error(
         "TINYFISH_API_KEY is missing from the selected Doppler config.",
       );
-    if (!values["activity-only"] && !secrets.VERCEL_AI_GATEWAY)
+    if (!values["activity-only"] && !env.VERCEL_AI_GATEWAY)
       throw new Error(
         "VERCEL_AI_GATEWAY is missing from the selected Doppler config.",
       );
     const activity = await fetchSubredditBatch(
       pending,
       "activity",
-      secrets.TINYFISH_API_KEY,
+      env.TINYFISH_API_KEY,
       parseActivity,
     );
     const valid = pending.filter(
@@ -487,7 +497,7 @@ async function main() {
         : await fetchSubredditBatch(
             valid,
             "policy",
-            secrets.TINYFISH_API_KEY,
+            env.TINYFISH_API_KEY,
             parsePolicy,
           );
     for (const target of pending) {
@@ -517,10 +527,14 @@ async function main() {
         const policy = policies?.get(target.name);
         if (!policy || policy instanceof Error)
           throw policy ?? new Error("Missing policy result.");
+        if (!env.VERCEL_AI_GATEWAY)
+          throw new Error(
+            "VERCEL_AI_GATEWAY is missing from the selected Doppler config.",
+          );
         const classification = await classifyPolicy(
           target.name,
           policy,
-          secrets.VERCEL_AI_GATEWAY,
+          env.VERCEL_AI_GATEWAY,
         );
         const embedding =
           row?.description === stats.description && row.description_embedding
@@ -529,7 +543,7 @@ async function main() {
                 await embedDescription(
                   `${stats.name}: ${stats.description}`,
                   "RETRIEVAL_DOCUMENT",
-                  secrets.VERCEL_AI_GATEWAY,
+                  env.VERCEL_AI_GATEWAY,
                 ),
               );
         const snapshot = {
