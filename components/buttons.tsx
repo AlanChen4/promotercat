@@ -1,7 +1,58 @@
 "use client";
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { env } from "@/env";
 import { createClient } from "@/lib/supabase/client";
+
+export function ContinueWithSeedUserButton() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const signIn = async () => {
+    setIsLoading(true);
+    setErrorMessage(null);
+    try {
+      if (
+        env.NODE_ENV !== "development" ||
+        !["localhost", "127.0.0.1", "[::1]"].includes(
+          new URL(env.NEXT_PUBLIC_SUPABASE_URL).hostname,
+        )
+      ) {
+        throw new Error("Seed sign-in requires local development.");
+      }
+      const { error } = await createClient().auth.signInWithPassword({
+        email: "miso@promotercat.local",
+        password: "promotercat-local-only",
+      });
+      if (error) throw error;
+    } catch {
+      setErrorMessage(
+        "Could not sign in with the seed user. Check the local database seed.",
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <>
+      <Button
+        variant="outline"
+        className="w-full"
+        onClick={signIn}
+        disabled={isLoading}
+      >
+        {isLoading ? "Signing in..." : "Sign in as Miso"}
+      </Button>
+      {errorMessage ? (
+        <p role="alert" className="text-sm text-destructive">
+          {errorMessage}
+        </p>
+      ) : null}
+    </>
+  );
+}
 
 export function ContinueWithGoogleButton() {
   return (

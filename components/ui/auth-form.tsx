@@ -1,7 +1,10 @@
 "use client";
 
 import { redirect } from "next/navigation";
-import { ContinueWithGoogleButton } from "@/components/buttons";
+import {
+  ContinueWithGoogleButton,
+  ContinueWithSeedUserButton,
+} from "@/components/buttons";
 import {
   Card,
   CardContent,
@@ -9,6 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { env } from "@/env";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/providers/auth-provider";
 
@@ -29,7 +33,11 @@ export function AuthForm({ className, ...props }: React.ComponentProps<"div">) {
         <CardContent>
           <div className="grid gap-6">
             <div className="flex flex-col gap-4">
-              <ContinueWithGoogleButton />
+              {env.NODE_ENV === "development" ? (
+                <ContinueWithSeedUserButton />
+              ) : (
+                <ContinueWithGoogleButton />
+              )}
             </div>
           </div>
         </CardContent>
