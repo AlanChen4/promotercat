@@ -529,24 +529,64 @@ Return JSON with exactly this shape: {"summary": "..."}
 - Return an empty summary when the rules provide no relevant condition.
 
 ## Examples
-Input:
-{"name":"r/WhiskerWorkshop","rules":[{"title":"Sharing your creations","description":"Handmade cat furniture may be promoted only in the Sunday Showcase thread."}],"self_promotion":"allowed_limited"}
-Output:
-{"summary":"Handmade cat furniture may be promoted only in the Sunday Showcase thread."}
 
+### Example 1
 Input:
-{"name":"r/PurrfectPlugins","rules":[{"title":"Community tools","description":"You may share free cat-care plugins that you made, provided you disclose that you are the creator."},{"title":"Keep it friendly","description":"Treat other members with respect."}],"self_promotion":"allowed_limited"}
-Output:
-{"summary":"Free cat-care plugins may be shared if you disclose that you made them."}
+{
+  "name": "r/WhiskerWorkshop",
+  "rules": [
+    {
+      "title": "Sharing your creations",
+      "description": "Handmade cat furniture may be promoted only in the Sunday Showcase thread."
+    }
+  ]
+}
 
-Input:
-{"name":"r/MoonlitMittens","rules":[{"title":"No advertising","description":"Do not advertise or link to your own shop."}],"self_promotion":"not_allowed"}
 Output:
-{"summary":"Advertising and links to your own shop are not allowed."}`,
+{
+  "summary": "Handmade cat furniture may be promoted only in the Sunday Showcase thread."
+}
+
+### Example 2
+Input:
+{
+  "name": "r/PurrfectPlugins",
+  "rules": [
+    {
+      "title": "Community tools",
+      "description": "You may share free cat-care plugins that you made, provided you disclose that you are the creator."
+    },
+    {
+      "title": "Keep it friendly",
+      "description": "Treat other members with respect."
+    }
+  ]
+}
+
+Output:
+{
+  "summary": "Free cat-care plugins may be shared if you disclose that you made them."
+}
+
+### Example 3
+Input:
+{
+  "name": "r/MoonlitMittens",
+  "rules": [
+    {
+      "title": "No advertising",
+      "description": "Do not advertise or link to your own shop."
+    }
+  ]
+}
+
+Output:
+{
+  "summary": "Advertising and links to your own shop are not allowed."
+}`,
       prompt: JSON.stringify({
         name: `r/${name}`,
         rules: policy.rules,
-        self_promotion: status,
       }),
       output: Output.object({
         schema: z.object({
