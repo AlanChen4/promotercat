@@ -26,6 +26,8 @@ export function Filters({
       <div className="flex flex-wrap gap-x-4 gap-y-2">
         {selfPromotionOptions.map((option) => {
           const checkboxId = `self-promotion-${option.value}`;
+          const checked = selectedSelfPromotion.includes(option.value);
+          const readOnly = checked && selectedSelfPromotion.length === 1;
           return (
             <div
               key={option.value}
@@ -33,10 +35,13 @@ export function Filters({
             >
               <Checkbox
                 id={checkboxId}
-                checked={selectedSelfPromotion.includes(option.value)}
-                onCheckedChange={(checked) =>
-                  onSelfPromotionChange(option.value, Boolean(checked))
-                }
+                checked={checked}
+                aria-readonly={readOnly || undefined}
+                onCheckedChange={(nextChecked) => {
+                  if (!readOnly) {
+                    onSelfPromotionChange(option.value, Boolean(nextChecked));
+                  }
+                }}
               />
               <Label htmlFor={checkboxId} className="text-muted-foreground">
                 {option.label}

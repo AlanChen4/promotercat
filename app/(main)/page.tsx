@@ -108,10 +108,15 @@ function SearchPage() {
   const selectedSelfPromotion = useMemo(() => {
     const raw = params.get("self_promotion");
     if (raw === null) return DEFAULT_SELF_PROMOTION_SELECTION;
-    return raw.split(",").flatMap((value) => {
-      const parsed = selfPromotionSchema.safeParse(value);
-      return parsed.success ? [parsed.data] : [];
-    });
+    const selection = [
+      ...new Set(
+        raw.split(",").flatMap((value) => {
+          const parsed = selfPromotionSchema.safeParse(value);
+          return parsed.success ? [parsed.data] : [];
+        }),
+      ),
+    ];
+    return selection.length ? selection : DEFAULT_SELF_PROMOTION_SELECTION;
   }, [params]);
   const page = z.coerce
     .number()
@@ -257,6 +262,7 @@ function SearchPage() {
     const selection = checked
       ? [...new Set([...selectedSelfPromotion, value])]
       : selectedSelfPromotion.filter((item) => item !== value);
+    if (selection.length === 0) return;
     updateSearchParams({ self_promotion: selection.join(","), page: null });
   };
 
