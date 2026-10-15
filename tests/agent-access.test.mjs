@@ -453,6 +453,59 @@ test(
         );
         assert.equal((await quota(first)).day_count, 1000);
       });
+      await t.test(
+        "route responses preserve redirects, cache policy, and validation",
+        async () => {
+          for (const path of [
+            "/.well-known/oauth-protected-resource",
+            "/.well-known/oauth-protected-resource/mcp",
+          ]) {
+            const response = await request(path);
+            assert.equal(response.status, 200);
+            assert.equal(
+              response.headers.get("cache-control"),
+              "public, max-age=300",
+            );
+            assert.equal(
+              response.headers.get("access-control-allow-origin"),
+              "*",
+            );
+          }
+          const callback = await request(
+            "/auth/callback?next=/%3Fsearch%3Dgame",
+            {
+              redirect: "manual",
+            },
+          );
+          assert.equal(callback.status, 307);
+          assert.equal(new URL(callback.headers.get("location")).pathname, "/");
+          assert.equal(
+            new URL(callback.headers.get("location")).searchParams.get(
+              "search",
+            ),
+            "game",
+          );
+          assert.equal(
+            callback.headers.get("cache-control"),
+            "private, no-store",
+          );
+          const cron = await request("/api/cron/subreddits");
+          assert.equal(cron.status, 401);
+          assert.equal(await cron.text(), "Unauthorized");
+          const connections = await request("/api/oauth/connections");
+          assert.equal(connections.status, 401);
+          assert.equal(
+            connections.headers.get("cache-control"),
+            "private, no-store",
+          );
+          const malformed = await request("/api/oauth/decision", {
+            method: "POST",
+            headers: { origin: base, "Content-Type": "application/json" },
+            body: "{}",
+          });
+          assert.equal(malformed.status, 400);
+        },
+      );
       await t.test("token refresh preserves account quota", async () => {
         const count = (await quota(first)).day_count;
         const response = await fetch(`${supabaseUrl}/auth/v1/oauth/token`, {
@@ -482,6 +535,21 @@ test(
               "grant execute on function public.admit_agent_request(uuid) to service_role",
             );
           }
+          db(
+            "revoke execute on function public.is_active_agent_session(uuid, uuid, uuid) from service_role",
+          );
+          try {
+            const response = await toolRequest(provider);
+            assert.equal(response.status, 503);
+            assert.equal(
+              response.headers.get("cache-control"),
+              "private, no-store",
+            );
+          } finally {
+            db(
+              "grant execute on function public.is_active_agent_session(uuid, uuid, uuid) to service_role",
+            );
+          }
           const anon = createClient(
             supabaseUrl,
             process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
@@ -506,6 +574,15 @@ test(
             const response = await toolRequest(provider);
             assert.equal(response.status, 200);
             assert.equal((await response.json()).result.isError, true);
+            const website = await request("/subreddits");
+            assert.equal(website.status, 503);
+            assert.deepEqual(await website.json(), {
+              message: "Failed to load subreddits.",
+            });
+            assert.equal(
+              website.headers.get("cache-control"),
+              "private, no-store",
+            );
           } finally {
             db("grant select on public.current_subreddits to service_role");
           }

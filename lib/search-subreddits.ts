@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { embedDescription } from "@/lib/ai";
+import { ApiError, callService } from "@/lib/api-handler";
 import { env } from "@/lib/env";
 import {
   RESULTS_PER_PAGE,
@@ -19,7 +20,6 @@ const NAME_STOP_WORDS = new Set(
     " ",
   ),
 );
-const RESPONSE_HEADERS = { "Cache-Control": "private, no-store" };
 
 function parsePage(requestedPage: string | null): number {
   const parsed = Number(requestedPage);
@@ -66,29 +66,18 @@ export async function searchSubreddits(request: Request) {
 
   const shouldUseSemanticSearch = searchTerm.length > 0;
   if (shouldUseSemanticSearch) {
-    let semanticCandidates: SubredditRow[];
-    try {
-      semanticCandidates = await fetchSemanticCandidates({
-        searchTerm,
-        supabaseAdmin,
-      });
-    } catch {
-      return NextResponse.json(
-        { message: "Failed to load subreddits." },
-        { status: 500, headers: RESPONSE_HEADERS },
-      );
-    }
+    const semanticCandidates = await fetchSemanticCandidates({
+      searchTerm,
+      supabaseAdmin,
+    });
 
     if (semanticCandidates.length === 0) {
-      return NextResponse.json(
-        {
-          subreddits: [],
-          totalCount: 0,
-          page: currentPage,
-          pageSize,
-        },
-        { headers: RESPONSE_HEADERS },
-      );
+      return NextResponse.json({
+        subreddits: [],
+        totalCount: 0,
+        page: currentPage,
+        pageSize,
+      });
     }
 
     let filteredCandidates = semanticCandidates;
@@ -130,15 +119,12 @@ export async function searchSubreddits(request: Request) {
     const sliceEnd = sliceStart + pageSize;
     const paginated = orderedCandidates.slice(sliceStart, sliceEnd);
 
-    return NextResponse.json(
-      {
-        subreddits: paginated,
-        totalCount,
-        page: currentPage,
-        pageSize,
-      },
-      { headers: RESPONSE_HEADERS },
-    );
+    return NextResponse.json({
+      subreddits: paginated,
+      totalCount,
+      page: currentPage,
+      pageSize,
+    });
   }
 
   let query = supabaseAdmin
@@ -153,55 +139,52 @@ export async function searchSubreddits(request: Request) {
   }
 
   const effectiveSortField = sortField ?? "weekly_active";
-  const { data, error, count } = await query
-    .order(
-      effectiveSortField === "weekly_active" ? "weekly_active_users" : "name",
-      {
-        ascending: sortField ? sortDirection === "asc" : true,
-        nullsFirst: false,
-      },
-    )
-    .order("name", { ascending: true })
-    .range(rangeStart, rangeEnd);
+  const { data, error, count } = await callService(
+    "Failed to load subreddits.",
+    () =>
+      query
+        .order(
+          effectiveSortField === "weekly_active"
+            ? "weekly_active_users"
+            : "name",
+          {
+            ascending: sortField ? sortDirection === "asc" : true,
+            nullsFirst: false,
+          },
+        )
+        .order("name", { ascending: true })
+        .range(rangeStart, rangeEnd),
+  );
 
   // PostgREST returns 416 for a valid page beyond the last row.
   if (error?.code === "PGRST103") {
-    const total = await supabaseAdmin
-      .from("current_subreddits")
-      .select("name", { count: "exact", head: true })
-      .not("self_promotion", "is", null)
-      .in(
-        "self_promotion",
-        selfPromotionFilters.length
-          ? selfPromotionFilters
-          : selfPromotionSchema.options,
-      );
-    if (!total.error)
-      return NextResponse.json(
-        {
-          subreddits: [],
-          totalCount: total.count ?? 0,
-          page: currentPage,
-          pageSize,
-        },
-        { headers: RESPONSE_HEADERS },
-      );
-  }
-  if (error) {
-    return NextResponse.json(
-      { message: "Failed to load subreddits." },
-      { status: 500, headers: RESPONSE_HEADERS },
+    const total = await callService("Failed to load subreddits.", () =>
+      supabaseAdmin
+        .from("current_subreddits")
+        .select("name", { count: "exact", head: true })
+        .not("self_promotion", "is", null)
+        .in(
+          "self_promotion",
+          selfPromotionFilters.length
+            ? selfPromotionFilters
+            : selfPromotionSchema.options,
+        ),
     );
+    if (!total.error)
+      return NextResponse.json({
+        subreddits: [],
+        totalCount: total.count ?? 0,
+        page: currentPage,
+        pageSize,
+      });
   }
-  return NextResponse.json(
-    {
-      subreddits: (data ?? []) as SubredditRow[],
-      totalCount: count ?? 0,
-      page: currentPage,
-      pageSize,
-    },
-    { headers: RESPONSE_HEADERS },
-  );
+  if (error) throw new ApiError(503, "Failed to load subreddits.");
+  return NextResponse.json({
+    subreddits: (data ?? []) as SubredditRow[],
+    totalCount: count ?? 0,
+    page: currentPage,
+    pageSize,
+  });
 }
 
 type SemanticCandidateArgs = {
@@ -217,23 +200,23 @@ async function fetchSemanticCandidates({
   const nameTerms = [
     ...new Set(query.toLowerCase().match(/[a-z0-9_]+/g) ?? []),
   ].filter((term) => term.length > 1 && !NAME_STOP_WORDS.has(term));
-  const embeddingValues = await embedDescription(
-    query,
-    "RETRIEVAL_QUERY",
-    env.VERCEL_AI_GATEWAY,
+  const embeddingValues = await callService(
+    "Search embeddings are unavailable.",
+    () => embedDescription(query, "RETRIEVAL_QUERY", env.VERCEL_AI_GATEWAY),
   );
 
-  const { data, error } = await supabaseAdmin.rpc(
-    "match_subreddits_by_description",
-    {
-      query_embedding: JSON.stringify(embeddingValues),
-      match_threshold: SEMANTIC_MATCH_THRESHOLD,
-      match_count: SEMANTIC_MATCH_COUNT,
-      name_terms: nameTerms,
-    },
+  const { data, error } = await callService(
+    "Failed to fetch semantic matches.",
+    () =>
+      supabaseAdmin.rpc("match_subreddits_by_description", {
+        query_embedding: JSON.stringify(embeddingValues),
+        match_threshold: SEMANTIC_MATCH_THRESHOLD,
+        match_count: SEMANTIC_MATCH_COUNT,
+        name_terms: nameTerms,
+      }),
   );
 
-  if (error) throw new Error("Failed to fetch semantic matches.");
+  if (error) throw new ApiError(503, "Failed to fetch semantic matches.");
 
   return data ?? [];
 }

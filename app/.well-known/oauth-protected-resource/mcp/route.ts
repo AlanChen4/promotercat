@@ -1,11 +1,14 @@
 import { NextResponse } from "next/server";
 import { oauthMetadata } from "@/lib/agent-oauth";
+import { withApiHandler } from "@/lib/api-handler";
 
-export function GET(request: Request) {
-  return NextResponse.json(oauthMetadata(request), {
-    headers: {
-      "Access-Control-Allow-Origin": "*",
-      "Cache-Control": "public, max-age=300",
-    },
-  });
-}
+export const GET = withApiHandler(
+  (request) => {
+    return NextResponse.json(oauthMetadata(request), {
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+      },
+    });
+  },
+  { cacheControl: "public, max-age=300" },
+);

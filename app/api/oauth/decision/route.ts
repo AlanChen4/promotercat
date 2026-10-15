@@ -1,59 +1,46 @@
 import { NextResponse } from "next/server";
-import { AGENT_HEADERS } from "@/lib/agent-api";
-import { createClient } from "@/lib/supabase/server";
+import { ApiError, callService, withApiHandler } from "@/lib/api-handler";
+import { isAuthServiceError, requireSession } from "@/lib/api-session";
 
-export async function POST(request: Request) {
+export const POST = withApiHandler(async (request) => {
   if (request.headers.get("origin") !== new URL(request.url).origin)
-    return NextResponse.json(
-      { message: "A same-origin request is required." },
-      { status: 403, headers: AGENT_HEADERS },
-    );
-  const form = await request.formData();
-  const authorizationId = form.get("authorization_id");
-  const decision = form.get("decision");
+    throw new ApiError(403, "A same-origin request is required.");
+  const form = await request.formData().catch(() => null);
+  const authorizationId = form?.get("authorization_id");
+  const decision = form?.get("decision");
   if (
     typeof authorizationId !== "string" ||
     !authorizationId ||
     !["approve", "deny"].includes(String(decision))
   )
-    return NextResponse.json(
-      { message: "Invalid connection decision." },
-      { status: 400, headers: AGENT_HEADERS },
-    );
-  try {
-    const client = await createClient();
-    const {
-      data: { user },
-      error: userError,
-    } = await client.auth.getUser();
-    if (userError || !user || user.is_anonymous)
-      return NextResponse.json(
-        { message: "Sign in before connecting your agent." },
-        { status: 401, headers: AGENT_HEADERS },
-      );
-    const { data, error } =
+    throw new ApiError(400, "Invalid connection decision.");
+  const client = await requireSession("Sign in before connecting your agent.");
+  const { data, error } = await callService(
+    "Connection service unavailable. Please try again.",
+    () =>
       decision === "approve"
-        ? await client.auth.oauth.approveAuthorization(authorizationId, {
+        ? client.auth.oauth.approveAuthorization(authorizationId, {
             skipBrowserRedirect: true,
           })
-        : await client.auth.oauth.denyAuthorization(authorizationId, {
+        : client.auth.oauth.denyAuthorization(authorizationId, {
             skipBrowserRedirect: true,
-          });
-    if (error || !data)
-      return NextResponse.json(
-        {
-          message:
-            "Connection request expired or could not be completed. Start again from your agent.",
-        },
-        { status: 400, headers: AGENT_HEADERS },
+          }),
+  );
+  if (error) {
+    if (isAuthServiceError(error))
+      throw new ApiError(
+        503,
+        "Connection service unavailable. Please try again.",
       );
-    const response = NextResponse.redirect(data.redirect_url, 303);
-    response.headers.set("Cache-Control", "private, no-store");
-    return response;
-  } catch {
-    return NextResponse.json(
-      { message: "Connection service unavailable. Please try again." },
-      { status: 503, headers: AGENT_HEADERS },
+    throw new ApiError(
+      400,
+      "Connection request expired or could not be completed. Start again from your agent.",
     );
   }
-}
+  if (!data)
+    throw new ApiError(
+      503,
+      "Connection service unavailable. Please try again.",
+    );
+  return NextResponse.redirect(data.redirect_url, 303);
+});

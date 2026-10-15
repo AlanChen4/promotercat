@@ -13,6 +13,12 @@ Add a desktop-only For Agents button beside the self-promotion filters. It opens
 - Include client logo tabs in the draggable header, copyable plugin installation commands, and published limits. Use an icon that fades to a checkmark after copying. No usage dashboard, account section, sample prompt, or direct-MCP instructions in this window.
 - Anyone can read installation instructions. Sign-in happens during the OAuth connection flow.
 
+## Route handling
+
+- Wrap all route handlers in `withApiHandler`. Default responses to private, no-store; explicitly allow public caching for OAuth metadata.
+- Use `ApiError` for safe HTTP errors and `callService` around external calls. Return 503 for dependency failures and a sanitized 500 for unexpected bugs. Preserve Next.js control-flow exceptions, redirects, cookies, and protocol headers.
+- Share session checks through `requireSession`. Keep OAuth challenges, quota responses, and MCP tool errors explicit.
+
 ## OAuth and MCP
 
 - Use Supabase's OAuth 2.1 server with dynamic public client registration, authorization-code flow with PKCE, and managed access/refresh tokens.

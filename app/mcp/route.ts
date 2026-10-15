@@ -6,8 +6,9 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { AGENT_HEADERS, admissionSchema } from "@/lib/agent-api";
+import { admissionSchema } from "@/lib/agent-api";
 import { agentResource, authenticateAgent } from "@/lib/agent-oauth";
+import { ApiError, callService, withApiHandler } from "@/lib/api-handler";
 import { env } from "@/lib/env";
 import { searchSubreddits } from "@/lib/search-subreddits";
 import {
@@ -38,11 +39,11 @@ const inputSchema = z
 function json(body: unknown, status: number, headers = {}) {
   return NextResponse.json(body, {
     status,
-    headers: { ...AGENT_HEADERS, ...headers },
+    headers,
   });
 }
 
-export async function POST(request: Request) {
+export const POST = withApiHandler(async (request) => {
   const origin = request.headers.get("origin");
   if (origin && origin !== new URL(agentResource(request)).origin)
     return json({ message: "Origin is not allowed." }, 403);
@@ -82,29 +83,26 @@ export async function POST(request: Request) {
       return json({ message: "Unsupported MCP protocol version." }, 400);
     if (!inputSchema.safeParse(rpc.data.params.arguments ?? {}).success)
       return json({ message: "Invalid search parameters." }, 400);
-    try {
-      const { data, error } = await createAdminClient(env).rpc(
-        "admit_agent_request",
-        { p_account_id: auth.accountId },
-      );
-      if (error) throw error;
-      const admission = admissionSchema.parse(data);
-      if (!admission.allowed)
-        return json(
-          {
-            message: "Search limit reached.",
-            allowance: admission.allowance,
-            resetAt: admission.resetAt,
-          },
-          429,
-          { "Retry-After": String(admission.retryAfter) },
-        );
-    } catch {
+    const message = "Rate limiting is unavailable. Please try again.";
+    const { data, error } = await callService(message, () =>
+      createAdminClient(env).rpc("admit_agent_request", {
+        p_account_id: auth.accountId,
+      }),
+    );
+    if (error) throw new ApiError(503, message);
+    const parsedAdmission = admissionSchema.safeParse(data);
+    if (!parsedAdmission.success) throw new ApiError(503, message);
+    const admission = parsedAdmission.data;
+    if (!admission.allowed)
       return json(
-        { message: "Rate limiting is unavailable. Please try again." },
-        503,
+        {
+          message: "Search limit reached.",
+          allowance: admission.allowance,
+          resetAt: admission.resetAt,
+        },
+        429,
+        { "Retry-After": String(admission.retryAfter) },
       );
-    }
   }
   const server = new McpServer(
     { name: "promotercat", version: "0.1.0" },
@@ -172,14 +170,13 @@ export async function POST(request: Request) {
     const response = await transport.handleRequest(request, {
       parsedBody: body,
     });
-    response.headers.set("Cache-Control", "private, no-store");
     return response;
   } finally {
     await server.close();
   }
-}
+});
 
-export async function GET(request: Request) {
+export const GET = withApiHandler(async (request) => {
   const auth = await authenticateAgent(request);
   return (
     auth.response ??
@@ -187,5 +184,5 @@ export async function GET(request: Request) {
       Allow: "POST",
     })
   );
-}
+});
 export const DELETE = GET;

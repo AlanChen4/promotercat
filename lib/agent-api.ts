@@ -1,7 +1,5 @@
 import { z } from "zod";
 
-export const AGENT_HEADERS = { "Cache-Control": "private, no-store" };
-
 export const admissionSchema = z.discriminatedUnion("allowed", [
   z.object({ allowed: z.literal(true) }),
   z.object({
