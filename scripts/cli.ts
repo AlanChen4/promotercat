@@ -532,39 +532,51 @@ You will be given the different rules belonging to a subreddit. Your task is to 
 ### Example 1
 Input:
 {
-  "name": "r/WhiskerWorkshop",
+  "name": "r/WhiskerFoundry",
   "rules": [
     {
-      "title": "Sharing your creations",
-      "description": "Handmade cat furniture may be promoted only in the Sunday Showcase thread."
+      "title": "From your workbench",
+      "description": "Show cat furniture you built on Wednesdays or Saturdays, using the Workshop flair and a photo of the finished piece."
+    },
+    {
+      "title": "Where links belong",
+      "description": "Put your shop link in the first comment and say that you own the shop. Leave out coupon codes and mailing-list invitations."
+    },
+    {
+      "title": "Keep adoption listings elsewhere",
+      "description": "This community does not host adoption listings."
     }
   ]
 }
 
 Output:
 {
-  "summary": "Handmade cat furniture may be promoted only in the Sunday Showcase thread."
+  "summary": "Cat furniture you built may be posted on Wednesdays or Saturdays with Workshop flair and a finished-piece photo; place shop links in the first comment, disclose ownership, and omit coupon codes and mailing-list invitations."
 }
 
 ### Example 2
 Input:
 {
-  "name": "r/PurrfectPlugins",
+  "name": "r/PurrfectTimers",
   "rules": [
     {
-      "title": "Community tools",
-      "description": "You may share free cat-care plugins that you made, provided you disclose that you are the creator."
+      "title": "Answering tool requests",
+      "description": "A free feeding-schedule tool you made can be linked in a relevant answer to someone asking for help."
     },
     {
-      "title": "Keep it friendly",
-      "description": "Treat other members with respect."
+      "title": "Tools with paid features",
+      "description": "Announce these on the first Thursday of each month. Each post needs the App Author flair, a screenshot, and the price before the link. Posts consisting only of a discount code will be deleted."
+    },
+    {
+      "title": "Showing how it works",
+      "description": "A walkthrough is welcome, but entirely optional."
     }
   ]
 }
 
 Output:
 {
-  "summary": "Free cat-care plugins may be shared if you disclose that you made them."
+  "summary": "Free feeding-schedule tools may be linked in relevant help replies; tools with paid features may be announced on the first Thursday of each month with App Author flair, a screenshot, and the price before the link, while discount-code-only posts are prohibited and walkthroughs are optional."
 }
 
 ### Example 3
@@ -573,15 +585,23 @@ Input:
   "name": "r/MoonlitMittens",
   "rules": [
     {
-      "title": "No advertising",
-      "description": "Do not advertise or link to your own shop."
+      "title": "No storefronts",
+      "description": "Shop links, sales offers, and commission requests are not allowed in posts or comments."
+    },
+    {
+      "title": "Construction questions",
+      "description": "You may attach a single close-up of something you made when asking a construction question, provided the image contains no URL or price tag."
+    },
+    {
+      "title": "Topic boundaries",
+      "description": "Questions must concern sewing accessories for cats, not general pet health."
     }
   ]
 }
 
 Output:
 {
-  "summary": "Advertising and links to your own shop are not allowed."
+  "summary": "Shop links, sales offers, and commission requests are banned; a single close-up of your own work is allowed with a cat-accessory construction question if the image contains no URL or price tag."
 }`,
       prompt: JSON.stringify({
         name: `r/${name}`,
