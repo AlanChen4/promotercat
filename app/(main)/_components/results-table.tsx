@@ -2,6 +2,7 @@
 
 import {
   Alert02Icon,
+  Cancel01Icon,
   Search01Icon,
   SortByDown02Icon,
   SortByUp02Icon,
@@ -182,16 +183,28 @@ export function ResultsTable({
           />
         </div>
         {searchInput.trim() ? (
-          <p
-            className="shrink-0 text-sm text-muted-foreground"
-            aria-live="polite"
-          >
-            {showLoadingMessage ? (
-              <Spinner />
-            ) : (
-              `${totalCount.toLocaleString()} found`
-            )}
-          </p>
+          <div className="flex shrink-0 items-center gap-2">
+            <button
+              type="button"
+              aria-label="Clear search"
+              title="Clear search"
+              className="cursor-pointer rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
+              onClick={() => onSearchInputChange("")}
+            >
+              <HugeiconsIcon
+                icon={Cancel01Icon}
+                className="size-4"
+                aria-hidden="true"
+              />
+            </button>
+            <p className="text-sm text-muted-foreground" aria-live="polite">
+              {showLoadingMessage ? (
+                <Spinner />
+              ) : (
+                `${totalCount.toLocaleString()} found`
+              )}
+            </p>
+          </div>
         ) : null}
         <button
           type="button"
