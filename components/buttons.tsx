@@ -5,7 +5,15 @@ import { Button } from "@/components/ui/button";
 import { env } from "@/lib/env";
 import { createClient } from "@/lib/supabase/client";
 
-export function ContinueWithSeedUserButton() {
+export function SignInOptions({ returnTo }: { returnTo: string }) {
+  return env.NODE_ENV === "development" ? (
+    <ContinueWithSeedUserButton />
+  ) : (
+    <ContinueWithGoogleButton returnTo={returnTo} />
+  );
+}
+
+function ContinueWithSeedUserButton() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -54,7 +62,7 @@ export function ContinueWithSeedUserButton() {
   );
 }
 
-export function ContinueWithGoogleButton({ returnTo }: { returnTo: string }) {
+function ContinueWithGoogleButton({ returnTo }: { returnTo: string }) {
   return (
     <Button
       variant="outline"

@@ -3,7 +3,6 @@
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { z } from "zod";
-import { AccountMenu } from "@/components/account-menu";
 import {
   RESULTS_PER_PAGE,
   type SelfPromotionStatus,
@@ -294,12 +293,8 @@ function SearchPage() {
 
   return (
     <div className="mx-auto flex max-w-4xl flex-col items-center gap-2 p-4">
-      <div className="flex w-full items-center justify-end">
-        <AccountMenu />
-      </div>
-
       <ResultsTable
-        signInHref={`/auth?${new URLSearchParams({ next: returnTo })}`}
+        returnTo={returnTo}
         filters={
           <Filters
             selectedSelfPromotion={selectedSelfPromotion}

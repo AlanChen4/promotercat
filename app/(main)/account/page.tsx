@@ -1,7 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { SignInOptions } from "@/components/buttons";
 import {
   Card,
   CardContent,
@@ -31,9 +30,7 @@ export default function AccountPage() {
           ) : user ? (
             <p className="text-sm text-muted-foreground">{user.email}</p>
           ) : (
-            <Button asChild variant="outline">
-              <Link href="/auth">Log in</Link>
-            </Button>
+            <SignInOptions returnTo="/" />
           )}
         </CardContent>
       </Card>

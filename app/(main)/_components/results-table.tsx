@@ -12,8 +12,9 @@ import { GripVertical } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { type ReactNode, useEffect, useRef, useState } from "react";
+import { AccountMenu } from "@/components/account-menu";
+import { SignInOptions } from "@/components/buttons";
 import { GitHubStars } from "@/components/github-stars";
-import { Button } from "@/components/ui/button";
 import {
   Empty,
   EmptyContent,
@@ -42,7 +43,7 @@ import logo from "@/public/logo.png";
 import { type SearchSuggestion, SearchSuggestions } from "./search-suggestions";
 
 type ResultsTableProps = {
-  signInHref: string;
+  returnTo: string;
   filters: ReactNode;
   pagination: ReactNode;
   suggestions: SearchSuggestion[];
@@ -62,7 +63,7 @@ type ResultsTableProps = {
 };
 
 export function ResultsTable({
-  signInHref,
+  returnTo,
   filters,
   pagination,
   suggestions,
@@ -439,22 +440,16 @@ export function ResultsTable({
           {lockedRowCount > 0 && !showSkeleton ? (
             <div className="pointer-events-none absolute inset-x-0 top-10 bottom-0 flex items-center justify-center">
               <div className="flex w-full justify-center bg-muted/95 py-4">
-                <Button
-                  asChild
-                  variant="outline"
-                  className="pointer-events-auto"
-                >
-                  <Link href={signInHref}>
-                    Log in or Sign Up{" "}
-                    <span className="text-muted-foreground">— it's free</span>
-                  </Link>
-                </Button>
+                <div className="pointer-events-auto w-full max-w-xs px-4">
+                  <SignInOptions returnTo={returnTo} />
+                </div>
               </div>
             </div>
           ) : null}
         </div>
       )}
       <div className="flex h-11 items-center gap-2 rounded-b-xl border-t bg-muted/30 px-2 sm:px-4">
+        <AccountMenu />
         <div className="min-w-0 flex-1 overflow-x-auto">{pagination}</div>
         <GitHubStars />
       </div>

@@ -70,7 +70,8 @@ export function AccountMenu() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
-        align="end"
+        align="start"
+        side="top"
         className="w-60 max-w-[calc(100vw-2rem)]"
       >
         <DropdownMenuLabel>
