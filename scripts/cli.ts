@@ -549,7 +549,7 @@ Input:
 
 Output:
 {
-  "summary": "Promotion only in the weekly Maker Monday thread"
+  "summary": "Weekly Maker Monday thread only."
 }
 
 ### Example 2
@@ -595,7 +595,7 @@ Input:
 
 Output:
 {
-  "summary": "Account credit in comments; no ads, shop links, or follower requests"
+  "summary": "Allowed in comments; no ads, shop links, or follower requests"
 }`,
       prompt: JSON.stringify({
         name: `r/${name}`,
