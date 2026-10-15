@@ -22,6 +22,7 @@ type Activity = {
 };
 type Rule = { title: string; description: string | null };
 type Policy = { markdown: string; rules: Rule[] };
+type ApifyCommunity = { policy: Policy; description: string | null };
 
 class IncompletePolicyError extends Error {
   constructor() {
@@ -269,6 +270,7 @@ const apifyCommunitySchema = z.object({
   name: z.string(),
   url: z.string(),
   subredditType: z.literal("public"),
+  publicDescription: z.string().nullish(),
   rules: z
     .array(
       z.object({
@@ -325,13 +327,13 @@ async function apifyRequest(
   return response.json();
 }
 
-async function fetchApifyPolicies(
+async function fetchApifyCommunities(
   targets: SubredditTarget[],
   apiKeys: string[],
   signal?: AbortSignal,
-): Promise<Map<string, Policy | Error>> {
-  const policies = new Map<string, Policy | Error>();
-  if (!targets.length) return policies;
+): Promise<Map<string, ApifyCommunity | Error>> {
+  const communities = new Map<string, ApifyCommunity | Error>();
+  if (!targets.length) return communities;
   signal?.throwIfAborted();
   let selected:
     | { apiKey: string; run: z.infer<typeof apifyRunSchema>["data"] }
@@ -434,15 +436,18 @@ async function fetchApifyPolicies(
         .join("\n\n");
       if (markdown.length > 80_000)
         throw new Error("Rules exceed the classifier input budget.");
-      policies.set(target.name, { rules, markdown });
+      communities.set(target.name, {
+        policy: { rules, markdown },
+        description: community.publicDescription ?? null,
+      });
     } catch (error) {
-      policies.set(
+      communities.set(
         target.name,
         error instanceof Error ? error : new Error(String(error)),
       );
     }
   }
-  return policies;
+  return communities;
 }
 
 async function classifyPolicy(
@@ -568,7 +573,7 @@ ${
     ? "Lists last_scraped_at, the latest saved promotion snapshot time (including baselines).\n"
     : `TinyFish batches contain up to 10 URLs. Full refresh uses two regular pages;
 activity-only uses one. Each failed URL is retried once. Cached data is allowed
-(24-hour preference, not a guarantee). Missing rules use one paid Apify batch (256 MB), without posts, comments, or AI analysis.
+(24-hour preference, not a guarantee). Missing rules or descriptions use one paid Apify batch (256 MB), without posts, comments, or AI analysis.
 APIFY_API_KEYS is a JSON array of keys, tried in order on confirmed quota rejection.
 Once a run starts, polling and results use the same key; other failures do not rotate keys.
 Communities below 2,500 weekly active users are skipped before fetching policy.
@@ -841,17 +846,14 @@ export async function ingestSubreddits(
         } catch (error) {
           report({ status: "failed", url: target.url, error: message(error) });
         }
-      } else if (stats.description === null)
-        report({
-          status: "failed",
-          url: target.url,
-          error: "Source description is missing; existing data was preserved.",
-        });
-      else qualified.push(target);
+      } else qualified.push(target);
     }
     if (!qualified.length) return;
     const policies = await fetchSubredditBatch(
-      qualified,
+      qualified.filter(
+        (target) =>
+          (activity.get(target.name) as Activity).description !== null,
+      ),
       "policy",
       env.TINYFISH_API_KEY,
       parsePolicy,
@@ -869,9 +871,9 @@ export async function ingestSubreddits(
   const fallback = prepared
     .filter(({ policy }) => policy instanceof Error)
     .map(({ target }) => target);
-  let apify: Map<string, Policy | Error>;
+  let apify: Map<string, ApifyCommunity | Error>;
   try {
-    apify = await fetchApifyPolicies(
+    apify = await fetchApifyCommunities(
       fallback,
       env.APIFY_API_KEYS,
       options.signal,
@@ -887,10 +889,22 @@ export async function ingestSubreddits(
     async ({ target, stats, row, policy: fetched }) => {
       try {
         const policySource = fetched instanceof Error ? "apify" : "tinyfish";
+        const community = apify.get(target.name);
         const policy =
-          fetched instanceof Error ? apify.get(target.name) : fetched;
+          fetched instanceof Error
+            ? community instanceof Error
+              ? community
+              : community?.policy
+            : fetched;
         if (!policy || policy instanceof Error)
           throw policy ?? new Error("Missing Apify policy result.");
+        const description =
+          stats.description ??
+          (community instanceof Error ? null : community?.description);
+        if (description == null)
+          throw new Error(
+            "Neither TinyFish nor Apify returned a description; existing data was preserved.",
+          );
         const classification = await classifyPolicy(
           target.name,
           policy,
@@ -909,11 +923,11 @@ export async function ingestSubreddits(
           return;
         }
         const embedding =
-          row?.description === stats.description && row.description_embedding
+          row?.description === description && row.description_embedding
             ? row.description_embedding
             : JSON.stringify(
                 await embedDescription(
-                  `${stats.name}: ${stats.description}`,
+                  `${stats.name}: ${description}`,
                   "RETRIEVAL_DOCUMENT",
                   env.VERCEL_AI_GATEWAY,
                   options.signal,
@@ -923,6 +937,7 @@ export async function ingestSubreddits(
           p_mode: options.command,
           p_snapshot: {
             ...stats,
+            description,
             ...classification,
             description_embedding: embedding,
           } as Json,
