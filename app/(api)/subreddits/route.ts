@@ -14,6 +14,12 @@ import { createClient } from "@/lib/supabase/server";
 
 const SEMANTIC_MATCH_THRESHOLD = 0.5;
 const SEMANTIC_MATCH_COUNT = 200;
+// These words help the semantic query, but should not independently match names.
+const NAME_STOP_WORDS = new Set(
+  "a an and are as at be by for from i in is it my of on or our that the this to we with you your".split(
+    " ",
+  ),
+);
 const RESPONSE_HEADERS = { "Cache-Control": "private, no-store" };
 
 function parsePage(requestedPage: string | null): number {
@@ -211,8 +217,12 @@ async function fetchSemanticCandidates({
   searchTerm,
   supabaseAdmin,
 }: SemanticCandidateArgs): Promise<SubredditRow[]> {
+  const query = searchTerm.replace(/^r\//i, "");
+  const nameTerms = [
+    ...new Set(query.toLowerCase().match(/[a-z0-9_]+/g) ?? []),
+  ].filter((term) => term.length > 1 && !NAME_STOP_WORDS.has(term));
   const embeddingValues = await embedDescription(
-    searchTerm,
+    query,
     "RETRIEVAL_QUERY",
     env.VERCEL_AI_GATEWAY,
   );
@@ -223,9 +233,7 @@ async function fetchSemanticCandidates({
       query_embedding: JSON.stringify(embeddingValues),
       match_threshold: SEMANTIC_MATCH_THRESHOLD,
       match_count: SEMANTIC_MATCH_COUNT,
-      name_terms: [
-        ...new Set(searchTerm.toLowerCase().match(/[a-z0-9_]+/g) ?? []),
-      ],
+      name_terms: nameTerms,
     },
   );
 

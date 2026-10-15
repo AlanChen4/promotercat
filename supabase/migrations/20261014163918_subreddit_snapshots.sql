@@ -117,7 +117,12 @@ as $$
     cross join lateral (
         select exists (
             select 1 from unnest(name_terms) term
-            where term <> '' and strpos(lower(current.name), term) > 0
+            -- Short words must start a name segment: cat must not match education.
+            where length(term) > 1 and (
+                starts_with(lower(current.name), term)
+                or strpos(lower(current.name), '_' || term) > 0
+                or (length(term) >= 4 and strpos(lower(current.name), term) > 0)
+            )
         ) as matches_name
     ) name_match
     where current.self_promotion is not null
