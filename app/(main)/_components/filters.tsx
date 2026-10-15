@@ -31,7 +31,7 @@ export function Filters({
           return (
             <div
               key={option.value}
-              className="flex items-center gap-1.5 text-sm text-muted-foreground"
+              className={`flex items-center gap-1.5 text-sm text-muted-foreground${readOnly ? " opacity-50" : ""}`}
             >
               <Checkbox
                 id={checkboxId}
