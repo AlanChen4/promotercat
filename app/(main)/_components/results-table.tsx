@@ -42,6 +42,57 @@ import type {
 import logo from "@/public/logo.png";
 import { type SearchSuggestion, SearchSuggestions } from "./search-suggestions";
 
+function PromotionText({
+  status,
+  detail,
+}: {
+  status: string;
+  detail: string | null;
+}) {
+  const previewRef = useRef<HTMLDivElement>(null);
+  const [isTruncated, setIsTruncated] = useState(false);
+
+  useEffect(() => {
+    const preview = previewRef.current;
+    if (!preview || !(status || detail)) return;
+    const measure = () => {
+      setIsTruncated(preview.scrollWidth > preview.clientWidth);
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(preview);
+    return () => observer.disconnect();
+  }, [status, detail]);
+
+  const content = (
+    <>
+      {status}
+      {detail ? (
+        <span className="ml-2 text-muted-foreground">{detail}</span>
+      ) : null}
+    </>
+  );
+
+  return (
+    <div className="relative min-h-5">
+      <div
+        ref={previewRef}
+        aria-hidden="true"
+        className={`absolute inset-x-0 top-0 truncate transition-opacity duration-400 ease-[cubic-bezier(0.4,0,0.2,1)] motion-reduce:transition-none ${isTruncated ? "group-hover:opacity-0 group-focus-within:opacity-0" : ""}`}
+      >
+        {content}
+      </div>
+      <div
+        className={`grid grid-rows-[0fr] opacity-0 transition-[grid-template-rows,opacity] duration-400 ease-[cubic-bezier(0.4,0,0.2,1)] motion-reduce:transition-none ${isTruncated ? "group-hover:grid-rows-[1fr] group-hover:opacity-100 group-focus-within:grid-rows-[1fr] group-focus-within:opacity-100" : ""}`}
+      >
+        <div className="min-h-0 overflow-hidden whitespace-normal break-words">
+          {content}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 type ResultsTableProps = {
   returnTo: string;
   filters: ReactNode;
@@ -396,29 +447,10 @@ export function ResultsTable({
                       {formatActivityCount(subreddit.weekly_active_users)}
                     </TableCell>
                     <TableCell>
-                      <div className="relative min-h-5">
-                        <div
-                          aria-hidden="true"
-                          className="absolute inset-x-0 top-0 truncate transition-opacity duration-400 ease-[cubic-bezier(0.4,0,0.2,1)] group-hover:opacity-0 group-focus-within:opacity-0 motion-reduce:transition-none"
-                        >
-                          {formatSelfPromotion(subreddit.self_promotion)}
-                          {subreddit.self_promotion_detail ? (
-                            <span className="ml-2 text-muted-foreground">
-                              {subreddit.self_promotion_detail}
-                            </span>
-                          ) : null}
-                        </div>
-                        <div className="grid grid-rows-[0fr] opacity-0 transition-[grid-template-rows,opacity] duration-400 ease-[cubic-bezier(0.4,0,0.2,1)] group-hover:grid-rows-[1fr] group-hover:opacity-100 group-focus-within:grid-rows-[1fr] group-focus-within:opacity-100 motion-reduce:transition-none">
-                          <div className="min-h-0 overflow-hidden whitespace-normal break-words">
-                            {formatSelfPromotion(subreddit.self_promotion)}
-                            {subreddit.self_promotion_detail ? (
-                              <span className="ml-2 text-muted-foreground">
-                                {subreddit.self_promotion_detail}
-                              </span>
-                            ) : null}
-                          </div>
-                        </div>
-                      </div>
+                      <PromotionText
+                        status={formatSelfPromotion(subreddit.self_promotion)}
+                        detail={subreddit.self_promotion_detail}
+                      />
                     </TableCell>
                   </TableRow>
                 ))
