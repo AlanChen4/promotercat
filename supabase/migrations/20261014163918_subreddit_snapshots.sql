@@ -3,7 +3,7 @@ create table public.subreddit_descriptions (
     subreddit_id uuid not null references public.subreddits(id) on delete cascade,
     created_at timestamptz not null default clock_timestamp(),
     description text,
-    description_embedding extensions.vector(3072),
+    description_embedding extensions.vector(4096),
     primary key (subreddit_id, created_at)
 );
 create table public.subreddit_self_promotion_details (
@@ -43,8 +43,9 @@ grant select, insert on public.subreddit_descriptions, public.subreddit_self_pro
 -- Preserve the last known metadata and rules before removing current-value storage.
 -- Subscriber totals are not weekly activity; leave old activity unknown.
 insert into public.subreddit_descriptions
-    (subreddit_id, created_at, description, description_embedding)
-select id, coalesce(last_scraped_at, statement_timestamp()), description, description_embedding
+    (subreddit_id, created_at, description)
+-- Gemini vectors cannot be searched with Qwen; regenerate them after migration.
+select id, coalesce(last_scraped_at, statement_timestamp()), description
 from public.subreddits;
 insert into public.subreddit_self_promotion_details
     (subreddit_id, created_at, self_promotion, self_promotion_detail)
@@ -99,7 +100,7 @@ revoke all on public.current_subreddits from public, anon, authenticated, servic
 grant select on public.current_subreddits to service_role;
 
 create function public.match_subreddits_by_description(
-    query_embedding extensions.vector(3072), match_threshold float, match_count int
+    query_embedding extensions.vector(4096), match_threshold float, match_count int
 )
 returns table (
     name text, self_promotion public.self_promotion_status,

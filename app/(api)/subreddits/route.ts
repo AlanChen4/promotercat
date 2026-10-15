@@ -12,7 +12,7 @@ import {
 import { createAdminClient } from "@/lib/supabase/admin-server";
 import { createClient } from "@/lib/supabase/server";
 
-const SEMANTIC_MATCH_THRESHOLD = 0.69;
+const SEMANTIC_MATCH_THRESHOLD = 0.5;
 const SEMANTIC_MATCH_COUNT = 200;
 const RESPONSE_HEADERS = { "Cache-Control": "private, no-store" };
 
@@ -212,7 +212,7 @@ async function fetchSemanticCandidates({
   supabaseAdmin,
 }: SemanticCandidateArgs): Promise<SubredditRow[]> {
   const embeddingValues = await embedDescription(
-    `subreddit related to ${searchTerm}`,
+    searchTerm,
     "RETRIEVAL_QUERY",
     env.VERCEL_AI_GATEWAY,
   );
