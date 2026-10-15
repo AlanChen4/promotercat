@@ -519,11 +519,12 @@ export async function classifyPolicy(
     const summary = await generateText({
       model: gateway("openai/gpt-6-luna"),
       system: `## Task
-You will be given the different rules belonging to a subreddit. Your task is to summarize, in 1 sentence, the policies regarding self-promotion.
+You will be given the different rules belonging to a subreddit. Your task is to briefly summarize the policies regarding self-promotion.
 
 ## Rules
 - Capture nuances that affect self-promotion, such as required flair, weekly megathreads, posting days, limits, and exceptions.
-- Write one concise English sentence that states each allowed route and its conditions directly, including exceptions for other activities. Preserve meaning before shortening.
+- Aim for fewer than 12 words. Use short phrases; complete sentences are not required.
+- State allowed routes and their conditions directly, including exceptions. Preserve meaning before shortening.
 - Use common words and numerals. Omit introductions, commentary, and unrelated rules.
 - Do not include r/subreddit references. For example, if the subreddit is r/running, do NOT include r/running in the summary.
 - Return an empty summary when the rules provide no relevant condition.
@@ -548,7 +549,7 @@ Input:
 
 Output:
 {
-  "summary": "Shop links, commissions, and your own products belong only in the weekly Maker Monday thread."
+  "summary": "Promotion only in the weekly Maker Monday thread"
 }
 
 ### Example 2
@@ -573,7 +574,7 @@ Input:
 
 Output:
 {
-  "summary": "Use Creator flair and disclose sales when sharing your art, patterns, or tutorials; wait 30 days between repeat links and omit affiliate or referral links."
+  "summary": "Creator flair/disclosure required; 30 days between repeat links; no affiliate/referral links"
 }
 
 ### Example 3
@@ -594,7 +595,7 @@ Input:
 
 Output:
 {
-  "summary": "Credit your photography account in comments; no ads, shop links, or requests for followers."
+  "summary": "Account credit in comments; no ads, shop links, or follower requests"
 }`,
       prompt: JSON.stringify({
         name: `r/${name}`,
