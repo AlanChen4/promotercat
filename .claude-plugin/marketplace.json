@@ -1,0 +1,16 @@
+{
+  "name": "promotercat",
+  "owner": {
+    "name": "PromoterCat"
+  },
+  "plugins": [
+    {
+      "name": "reddit",
+      "source": "./plugins/claude",
+      "description": "Find Reddit communities and their self-promotion rules."
+    }
+  ],
+  "metadata": {
+    "description": "Search Reddit communities with PromoterCat."
+  }
+}

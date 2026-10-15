@@ -93,9 +93,15 @@ function updateSearchParams(
 
 export default function HomePage() {
   return (
-    <Suspense>
-      <SearchPage />
-    </Suspense>
+    <>
+      <div
+        aria-hidden="true"
+        className="fixed inset-0 -z-10 bg-[url('/japan.jpg')] bg-cover bg-center bg-no-repeat"
+      />
+      <Suspense>
+        <SearchPage />
+      </Suspense>
+    </>
   );
 }
 
@@ -292,7 +298,7 @@ function SearchPage() {
   const returnTo = params.toString() ? `/?${params.toString()}` : "/";
 
   return (
-    <div className="mx-auto flex max-w-4xl flex-col items-center gap-2 p-4">
+    <div className="relative z-10 mx-auto flex max-w-4xl flex-col items-center gap-2 p-4">
       <ResultsTable
         returnTo={returnTo}
         filters={

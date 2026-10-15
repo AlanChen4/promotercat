@@ -25,6 +25,7 @@ posthog.init(env.NEXT_PUBLIC_POSTHOG_KEY, {
   api_host: "/ingest",
   ui_host: "https://us.posthog.com",
   defaults: "2025-05-24",
+  session_recording: { blockSelector: ".ph-no-record" },
   capture_exceptions: true, // This enables capturing exceptions using Error Tracking, set to false if you don't want this
   debug: env.NODE_ENV === "development",
 });

@@ -1,0 +1,60 @@
+version = 1
+name = "Doppler"
+
+[setup]
+script = '''
+#!/usr/bin/env bash
+set -euo pipefail
+{ set +x; } 2>/dev/null || true
+
+PROJECT="web"
+CONFIG="dev"
+ROOT="$(git rev-parse --show-toplevel)"
+cd "$ROOT"
+
+echo "[setup] Installing dependencies"
+pnpm install
+
+try_doppler_token() {
+  local token="$1"
+  [ -n "$token" ] || return 1
+  if DOPPLER_TOKEN="$token" doppler run --no-fallback \
+    --project "$PROJECT" --config "$CONFIG" -- true >/dev/null 2>&1; then
+    MY_DOPPLER_TOKEN="$token"
+    return 0
+  fi
+  return 1
+}
+
+MY_DOPPLER_TOKEN=""
+try_doppler_token "${DOPPLER_TOKEN:-}" || true
+
+# Prefer an explicit source, then the primary checkout and other worktrees.
+if [ -z "$MY_DOPPLER_TOKEN" ]; then
+  while IFS= read -r scope; do
+    [ -n "$scope" ] && [ -d "$scope" ] || continue
+    token="$(doppler configure get token --plain --scope "$scope" 2>/dev/null || true)"
+    if try_doppler_token "$token"; then
+      echo "[setup] Reusing Doppler credentials from $scope"
+      break
+    fi
+  done < <(
+    printf '%s\n' "${DOPPLER_SOURCE_ROOT:-}"
+    git -c core.quotePath=false worktree list --porcelain | sed -n 's/^worktree //p'
+  )
+fi
+
+if [ -z "$MY_DOPPLER_TOKEN" ]; then
+  echo "[setup] No existing Doppler login can access $PROJECT/$CONFIG." >&2
+  echo "[setup] Set DOPPLER_SOURCE_ROOT to a checkout already configured for Doppler, or export DOPPLER_TOKEN, then retry." >&2
+  exit 1
+fi
+
+# Persist the credentials in the local Doppler configuration, never in Git.
+doppler configure set "token=$MY_DOPPLER_TOKEN" \
+  "project=$PROJECT" "config=$CONFIG" --scope "$ROOT" --silent >/dev/null
+unset MY_DOPPLER_TOKEN token
+
+doppler run --no-read-env --no-fallback -- true
+echo "[setup] Doppler $PROJECT/$CONFIG is ready"
+'''

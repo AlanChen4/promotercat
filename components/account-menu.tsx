@@ -63,9 +63,9 @@ export function AccountMenu() {
           className="rounded-full"
           aria-label="Open account menu"
         >
-          <Avatar className="size-9">
+          <Avatar className="size-6">
             <AvatarImage src={avatarUrl} alt="" />
-            <AvatarFallback>{initials}</AvatarFallback>
+            <AvatarFallback className="text-xs">{initials}</AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>

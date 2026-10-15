@@ -20,6 +20,7 @@ import {
 } from "react";
 import { AccountMenu } from "@/components/account-menu";
 import { SignInOptions } from "@/components/buttons";
+import { ForAgents } from "@/components/for-agents";
 import { GitHubStars } from "@/components/github-stars";
 import {
   Empty,
@@ -311,7 +312,10 @@ export function ResultsTable({
           <GripVertical className="size-4" aria-hidden="true" />
         </button>
       </div>
-      <div className="border-b px-4 py-3">{filters}</div>
+      <div className="flex flex-wrap items-center gap-3 border-b px-4 py-3">
+        <div className="min-w-0 flex-1">{filters}</div>
+        <ForAgents />
+      </div>
       {showSkeleton ? (
         <output className="sr-only">Loading results</output>
       ) : null}

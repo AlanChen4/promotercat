@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "promotercat": {
+      "type": "http",
+      "url": "https://www.promotercat.com/mcp",
+      "oauth": {
+        "scopes": "email"
+      }
+    }
+  }
+}
