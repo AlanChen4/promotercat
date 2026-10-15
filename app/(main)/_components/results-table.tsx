@@ -386,7 +386,7 @@ export function ResultsTable({
                         href={`https://www.reddit.com/r/${subreddit.name}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="block truncate hover:underline underline-offset-4"
+                        className="block truncate transition-colors duration-200 hover:text-orange-600 focus-visible:text-orange-600 motion-reduce:transition-none"
                         title={`r/${subreddit.name}`}
                       >
                         r/{subreddit.name}
