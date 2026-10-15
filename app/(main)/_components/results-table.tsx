@@ -42,6 +42,7 @@ import logo from "@/public/logo.png";
 import { type SearchSuggestion, SearchSuggestions } from "./search-suggestions";
 
 type ResultsTableProps = {
+  signInHref: string;
   filters: ReactNode;
   pagination: ReactNode;
   suggestions: SearchSuggestion[];
@@ -61,6 +62,7 @@ type ResultsTableProps = {
 };
 
 export function ResultsTable({
+  signInHref,
   filters,
   pagination,
   suggestions,
@@ -435,7 +437,7 @@ export function ResultsTable({
                   variant="outline"
                   className="pointer-events-auto"
                 >
-                  <Link href="/auth">
+                  <Link href={signInHref}>
                     Log in or Sign Up{" "}
                     <span className="text-muted-foreground">— it's free</span>
                   </Link>

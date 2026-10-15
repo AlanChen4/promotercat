@@ -10,10 +10,14 @@ import { env } from "@/lib/env";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/providers/auth-provider";
 
-export function AuthForm({ className, ...props }: React.ComponentProps<"div">) {
+export function AuthForm({
+  returnTo = "/",
+  className,
+  ...props
+}: React.ComponentProps<"div"> & { returnTo?: string }) {
   const { isAuthenticated } = useAuth();
   if (isAuthenticated) {
-    return redirect("/");
+    return redirect(returnTo);
   }
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
@@ -27,7 +31,7 @@ export function AuthForm({ className, ...props }: React.ComponentProps<"div">) {
               {env.NODE_ENV === "development" ? (
                 <ContinueWithSeedUserButton />
               ) : (
-                <ContinueWithGoogleButton />
+                <ContinueWithGoogleButton returnTo={returnTo} />
               )}
             </div>
           </div>

@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useMemo, useState } from "react";
+import { z } from "zod";
 import { AccountMenu } from "@/components/account-menu";
 import {
   RESULTS_PER_PAGE,
@@ -9,6 +11,9 @@ import {
   type SortState,
   type SubredditResponse,
   type SubredditResult,
+  selfPromotionSchema,
+  sortDirectionSchema,
+  sortFieldSchema,
 } from "@/lib/subreddits";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/providers/auth-provider";
@@ -41,8 +46,6 @@ const DEFAULT_SELF_PROMOTION_SELECTION: SelfPromotionStatus[] = [
   "unspecified",
 ];
 
-const DEFAULT_SORT_STATE: SortState = null;
-
 const SEARCH_DEBOUNCE_MS = 300;
 const SEARCH_SUGGESTIONS = [
   {
@@ -72,49 +75,88 @@ const SEARCH_SUGGESTIONS = [
   },
 ];
 
+function updateSearchParams(
+  updates: Record<string, string | null>,
+  replace = false,
+) {
+  const params = new URLSearchParams(window.location.search);
+  for (const [key, value] of Object.entries(updates)) {
+    if (value === null) params.delete(key);
+    else params.set(key, value);
+  }
+  const query = params.toString();
+  window.history[replace ? "replaceState" : "pushState"](
+    null,
+    "",
+    `${window.location.pathname}${query ? `?${query}` : ""}`,
+  );
+}
+
 export default function HomePage() {
-  const { isAuthenticated } = useAuth();
-  const [searchInput, setSearchInput] = useState("");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedSelfPromotion, setSelectedSelfPromotion] = useState<
-    SelfPromotionStatus[]
-  >(DEFAULT_SELF_PROMOTION_SELECTION);
-  const [page, setPage] = useState(1);
+  return (
+    <Suspense>
+      <SearchPage />
+    </Suspense>
+  );
+}
+
+function SearchPage() {
+  const { isAuthenticated, isAuthenticatedLoading } = useAuth();
+  const params = useSearchParams();
+  const searchTerm = params.get("search")?.trim() ?? "";
+  const [searchInput, setSearchInput] = useState(searchTerm);
+  const selectedSelfPromotion = useMemo(() => {
+    const raw = params.get("self_promotion");
+    if (raw === null) return DEFAULT_SELF_PROMOTION_SELECTION;
+    return raw.split(",").flatMap((value) => {
+      const parsed = selfPromotionSchema.safeParse(value);
+      return parsed.success ? [parsed.data] : [];
+    });
+  }, [params]);
+  const page = z.coerce
+    .number()
+    .int()
+    .positive()
+    .catch(1)
+    .parse(params.get("page") ?? 1);
+  const sortState = useMemo<SortState>(() => {
+    const field = sortFieldSchema.safeParse(params.get("sort"));
+    const direction = sortDirectionSchema.safeParse(
+      params.get("sort_direction"),
+    );
+    return field.success && direction.success
+      ? { field: field.data, direction: direction.data }
+      : null;
+  }, [params]);
   const isLockedPage = page > 1 && !isAuthenticated;
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(Boolean(searchTerm));
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [results, setResults] = useState<SubredditResult[]>([]);
   const [totalCount, setTotalCount] = useState(0);
-  const [sortState, setSortState] = useState<SortState>(DEFAULT_SORT_STATE);
   const [isSortLoading, setIsSortLoading] = useState(false);
+
+  useEffect(() => {
+    setSearchInput(searchTerm);
+  }, [searchTerm]);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
       const trimmedSearch = searchInput.trim();
       if (searchTerm !== trimmedSearch) {
-        setIsLoading(Boolean(trimmedSearch));
-        setErrorMessage(null);
-        setPage(1);
-        setSearchTerm(trimmedSearch);
+        updateSearchParams({ search: trimmedSearch || null, page: null }, true);
       }
     }, SEARCH_DEBOUNCE_MS);
-
     return () => window.clearTimeout(timeout);
   }, [searchInput, searchTerm]);
 
   useEffect(() => {
+    if (isAuthenticatedLoading) return;
     const abortController = new AbortController();
 
     const fetchData = async () => {
       if (!searchTerm) {
         setResults([]);
         setTotalCount(0);
-        setIsLoading(false);
-        setIsSortLoading(false);
-        setErrorMessage(null);
-        return;
-      }
-      if (isLockedPage) {
         setIsLoading(false);
         setIsSortLoading(false);
         setErrorMessage(null);
@@ -134,7 +176,7 @@ export default function HomePage() {
         query.set("sort", sortState.field);
         query.set("sort_direction", sortState.direction);
       }
-      query.set("page", String(page));
+      query.set("page", String(isLockedPage ? 1 : page));
 
       try {
         const response = await fetch(`/subreddits?${query.toString()}`, {
@@ -162,7 +204,7 @@ export default function HomePage() {
           return;
         }
 
-        setResults(data.subreddits ?? []);
+        setResults(isLockedPage ? [] : (data.subreddits ?? []));
         setTotalCount(data.totalCount ?? 0);
       } catch {
         if (abortController.signal.aborted) {
@@ -182,7 +224,14 @@ export default function HomePage() {
     fetchData();
 
     return () => abortController.abort();
-  }, [searchTerm, selectedSelfPromotion, page, isLockedPage, sortState]);
+  }, [
+    searchTerm,
+    selectedSelfPromotion,
+    page,
+    isLockedPage,
+    sortState,
+    isAuthenticatedLoading,
+  ]);
 
   const totalPages = useMemo(() => {
     return Math.max(1, Math.ceil(totalCount / RESULTS_PER_PAGE));
@@ -205,62 +254,37 @@ export default function HomePage() {
   };
 
   const handleFilterChange = (value: SelfPromotionStatus, checked: boolean) => {
-    setSelectedSelfPromotion((previous) => {
-      let nextSelection = previous;
-
-      if (checked && !previous.includes(value)) {
-        nextSelection = [...previous, value];
-      }
-
-      if (!checked && previous.includes(value)) {
-        nextSelection = previous.filter((item) => item !== value);
-      }
-
-      if (nextSelection !== previous) {
-        setPage(1);
-      }
-
-      return nextSelection;
-    });
+    const selection = checked
+      ? [...new Set([...selectedSelfPromotion, value])]
+      : selectedSelfPromotion.filter((item) => item !== value);
+    updateSearchParams({ self_promotion: selection.join(","), page: null });
   };
 
   const handleSortToggle = (field: SortField) => {
     setIsSortLoading(true);
-    setSortState((previous) => {
-      let nextState: SortState;
-      if (!previous || previous.field !== field) {
-        nextState = { field, direction: "desc" };
-      } else if (previous.direction === "desc") {
-        nextState = { field, direction: "asc" };
-      } else {
-        nextState = null;
-      }
-
-      if (
-        (previous?.field ?? null) !== (nextState?.field ?? null) ||
-        (previous?.direction ?? null) !== (nextState?.direction ?? null)
-      ) {
-        setPage(1);
-      }
-
-      return nextState;
+    const next: SortState =
+      sortState?.field !== field
+        ? { field, direction: "desc" }
+        : sortState.direction === "desc"
+          ? { field, direction: "asc" }
+          : null;
+    updateSearchParams({
+      sort: next?.field ?? null,
+      sort_direction: next?.direction ?? null,
+      page: null,
     });
   };
 
   const handlePageChange = (nextPage: number) => {
-    setPage(nextPage);
+    updateSearchParams({ page: nextPage === 1 ? null : String(nextPage) });
   };
 
   const handleSuggestionSelect = (query: string) => {
     setSearchInput(query);
-    const trimmedQuery = query.trim();
-    if (searchTerm !== trimmedQuery) {
-      setIsLoading(Boolean(trimmedQuery));
-      setErrorMessage(null);
-      setPage(1);
-      setSearchTerm(trimmedQuery);
-    }
+    updateSearchParams({ search: query, page: null });
   };
+
+  const returnTo = params.toString() ? `/?${params.toString()}` : "/";
 
   return (
     <div className="mx-auto flex max-w-4xl flex-col items-center gap-2 p-4">
@@ -269,6 +293,7 @@ export default function HomePage() {
       </div>
 
       <ResultsTable
+        signInHref={`/auth?${new URLSearchParams({ next: returnTo })}`}
         filters={
           <Filters
             selectedSelfPromotion={selectedSelfPromotion}

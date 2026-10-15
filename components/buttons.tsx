@@ -54,17 +54,18 @@ export function ContinueWithSeedUserButton() {
   );
 }
 
-export function ContinueWithGoogleButton() {
+export function ContinueWithGoogleButton({ returnTo }: { returnTo: string }) {
   return (
     <Button
       variant="outline"
       className="w-full"
       onClick={async () => {
         const supabase = createClient();
-        const redirectTo = `${window.location.origin}/auth/callback`;
+        const callback = new URL("/auth/callback", window.location.origin);
+        callback.searchParams.set("next", returnTo);
         await supabase.auth.signInWithOAuth({
           provider: "google",
-          options: { redirectTo },
+          options: { redirectTo: callback.href },
         });
       }}
     >
