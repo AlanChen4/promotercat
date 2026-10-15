@@ -150,7 +150,11 @@ export function ResultsTable({
         className="flex cursor-pointer items-center gap-2 rounded p-1"
       >
         <span>{label}</span>
-        <HugeiconsIcon icon={Icon} className="size-4" />
+        <HugeiconsIcon
+          icon={Icon}
+          className="size-4 shrink-0 translate-y-px"
+          aria-hidden="true"
+        />
       </button>
     );
   };
