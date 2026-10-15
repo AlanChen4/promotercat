@@ -105,14 +105,14 @@ create function public.match_subreddits_by_description(
 )
 returns table (
     name text, self_promotion public.self_promotion_status,
-    self_promotion_detail text, weekly_active_users bigint, similarity double precision
+    self_promotion_detail text, weekly_active_users bigint
 )
 language sql
 security invoker
 set search_path = public, extensions, pg_temp
 as $$
     select current.name, current.self_promotion, current.self_promotion_detail,
-        current.weekly_active_users, -(current.description_embedding <#> query_embedding)
+        current.weekly_active_users
     from public.current_subreddits current
     cross join lateral (
         select exists (

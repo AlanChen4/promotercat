@@ -200,7 +200,6 @@ export type Database = {
           name: string;
           self_promotion: Database["public"]["Enums"]["self_promotion_status"];
           self_promotion_detail: string;
-          similarity: number;
           weekly_active_users: number;
         }[];
       };
