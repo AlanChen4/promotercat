@@ -22,6 +22,7 @@ export type SubredditResult = {
   self_promotion: SelfPromotionStatus;
   self_promotion_detail: string;
   weekly_active_users: number | null;
+  similarity?: number | null;
 };
 export type SubredditResponse = {
   subreddits: SubredditResult[];

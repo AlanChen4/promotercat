@@ -305,7 +305,7 @@ export function ResultsTable({
                     <TableCell className="truncate">
                       Limited{" "}
                       <span className="text-muted-foreground">
-                        — Weekly promotion thread
+                        Weekly promotion thread
                       </span>
                     </TableCell>
                   </TableRow>
@@ -362,15 +362,29 @@ export function ResultsTable({
                 displayedResults.map((subreddit) => (
                   <TableRow key={subreddit.name} className="h-10">
                     <TableCell className="font-medium">
-                      <Link
-                        href={`https://www.reddit.com/r/${subreddit.name}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block truncate hover:underline underline-offset-4"
-                        title={`r/${subreddit.name}`}
-                      >
-                        r/{subreddit.name}
-                      </Link>
+                      <div className="flex min-w-0 items-center gap-2">
+                        {subreddit.similarity != null ? (
+                          <span
+                            className="shrink-0 text-xs font-normal tabular-nums text-muted-foreground"
+                            title="Embedding similarity to your search"
+                          >
+                            {Math.round(
+                              Math.max(0, Math.min(1, subreddit.similarity)) *
+                                100,
+                            )}
+                            %
+                          </span>
+                        ) : null}
+                        <Link
+                          href={`https://www.reddit.com/r/${subreddit.name}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="min-w-0 truncate hover:underline underline-offset-4"
+                          title={`r/${subreddit.name}`}
+                        >
+                          r/{subreddit.name}
+                        </Link>
+                      </div>
                     </TableCell>
                     <TableCell>
                       {formatActivityCount(subreddit.weekly_active_users)}
@@ -380,15 +394,15 @@ export function ResultsTable({
                         className="truncate"
                         title={
                           subreddit.self_promotion_detail
-                            ? `${formatSelfPromotion(subreddit.self_promotion)} — ${subreddit.self_promotion_detail}`
+                            ? `${formatSelfPromotion(subreddit.self_promotion)}: ${subreddit.self_promotion_detail}`
                             : formatSelfPromotion(subreddit.self_promotion)
                         }
                       >
                         {formatSelfPromotion(subreddit.self_promotion)}
                         {subreddit.self_promotion_detail ? (
-                          <span className="text-muted-foreground">
+                          <span className="ml-2 text-muted-foreground">
                             {" "}
-                            — {subreddit.self_promotion_detail}
+                            {subreddit.self_promotion_detail}
                           </span>
                         ) : null}
                       </div>
