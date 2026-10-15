@@ -280,6 +280,12 @@ const apifyCommunitySchema = z.object({
     .max(100),
 });
 
+class ApifyUsageExhaustedError extends Error {
+  constructor() {
+    super("Apify account usage is exhausted.");
+  }
+}
+
 async function apifyRequest(
   path: string,
   apiKey: string,
@@ -294,37 +300,80 @@ async function apifyRequest(
     },
     signal: requestSignal(70_000, signal),
   });
-  if (!response.ok) throw new Error(`Apify returned HTTP ${response.status}.`);
+  if (!response.ok) {
+    const body = z
+      .object({ error: z.object({ type: z.string(), message: z.string() }) })
+      .safeParse(await response.json().catch(() => null));
+    if ([400, 402, 403].includes(response.status) && body.success) {
+      const { type, message } = body.data.error;
+      if (
+        type === "not-enough-usage-to-run-paid-actor" ||
+        (["platform-feature-disabled", "limit-reached"].includes(type) &&
+          /\b(?:monthly|usage|credit|spend|spending|balance)\b/i.test(
+            message,
+          ) &&
+          /\b(?:limit|exceeded|exhausted|insufficient|not enough|reached)\b/i.test(
+            message,
+          ))
+      ) {
+        throw new ApifyUsageExhaustedError();
+      }
+    }
+    // Do not echo response bodies: they can contain sensitive request details.
+    throw new Error(`Apify returned HTTP ${response.status}.`);
+  }
   return response.json();
 }
 
 async function fetchApifyPolicies(
   targets: SubredditTarget[],
-  apiKey: string,
+  apiKeys: string[],
   signal?: AbortSignal,
 ): Promise<Map<string, Policy | Error>> {
   const policies = new Map<string, Policy | Error>();
   if (!targets.length) return policies;
   signal?.throwIfAborted();
-  // Never retry the POST: an uncertain response may already have started a paid run.
-  let run = apifyRunSchema.parse(
-    await apifyRequest(
-      `acts/harshmaur~reddit-scraper-pro/runs?memory=256&timeout=240&waitForFinish=60&restartOnError=false&maxTotalChargeUsd=${(0.01 + targets.length * 0.0015 + 0.01).toFixed(4)}`,
-      apiKey,
-      {
-        method: "POST",
-        body: JSON.stringify({
-          startUrls: targets.map(({ url }) => ({ url })),
-          maxPostsCount: 0,
-          maxCommentsCount: 0,
-          maxCommunitiesCount: targets.length,
-          crawlCommentsPerPost: false,
-          aiAnalysis: false,
-        }),
-      },
-      signal,
-    ),
-  ).data;
+  let selected:
+    | { apiKey: string; run: z.infer<typeof apifyRunSchema>["data"] }
+    | undefined;
+  for (const [index, apiKey] of apiKeys.entries()) {
+    signal?.throwIfAborted();
+    try {
+      const { data: run } = apifyRunSchema.parse(
+        await apifyRequest(
+          `acts/harshmaur~reddit-scraper-pro/runs?memory=256&timeout=240&waitForFinish=60&restartOnError=false&maxTotalChargeUsd=${(0.01 + targets.length * 0.0015 + 0.01).toFixed(4)}`,
+          apiKey,
+          {
+            method: "POST",
+            body: JSON.stringify({
+              startUrls: targets.map(({ url }) => ({ url })),
+              maxPostsCount: 0,
+              maxCommentsCount: 0,
+              maxCommunitiesCount: targets.length,
+              crawlCommentsPerPost: false,
+              aiAnalysis: false,
+            }),
+          },
+          signal,
+        ),
+      );
+      selected = { apiKey, run };
+      break;
+    } catch (error) {
+      // Only a confirmed quota rejection allows another start attempt.
+      // An uncertain POST response may already have created a paid run.
+      if (!(error instanceof ApifyUsageExhaustedError)) throw error;
+      process.stderr.write(
+        `${JSON.stringify({ status: "apify_key_exhausted", key_index: index + 1 })}\n`,
+      );
+    }
+  }
+  if (!selected)
+    throw new Error(
+      `All ${apiKeys.length} Apify API keys have exhausted their usage.`,
+    );
+  const { apiKey } = selected;
+  let { run } = selected;
   process.stderr.write(
     `${JSON.stringify({ status: "apify_started", run_id: run.id, communities: targets.length, memory_mb: 256 })}\n`,
   );
@@ -520,6 +569,8 @@ ${
     : `TinyFish batches contain up to 10 URLs. Full refresh uses two regular pages;
 activity-only uses one. Each failed URL is retried once. Cached data is allowed
 (24-hour preference, not a guarantee). Missing rules use one paid Apify batch (256 MB), without posts, comments, or AI analysis.
+APIFY_API_KEYS is a JSON array of keys, tried in order on confirmed quota rejection.
+Once a run starts, polling and results use the same key; other failures do not rotate keys.
 Communities below 2,500 weekly active users are skipped before fetching policy.
 Incomplete or mismatched rules
 do not replace existing data. Processing time does not guarantee source freshness.
@@ -822,7 +873,7 @@ export async function ingestSubreddits(
   try {
     apify = await fetchApifyPolicies(
       fallback,
-      env.APIFY_API_KEY,
+      env.APIFY_API_KEYS,
       options.signal,
     );
   } catch (error) {

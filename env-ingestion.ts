@@ -5,7 +5,21 @@ export const ingestionEnvSchema = z.object({
   NEXT_PUBLIC_SUPABASE_URL: z.url({ protocol: /^https?$/ }),
   SUPABASE_SERVICE_ROLE_KEY: z.string().trim().min(1),
   TINYFISH_API_KEY: z.string().trim().min(1),
-  APIFY_API_KEY: z.string().trim().min(1),
+  APIFY_API_KEYS: z
+    .string()
+    .transform((raw, ctx) => {
+      try {
+        return JSON.parse(raw) as unknown;
+      } catch {
+        ctx.addIssue({
+          code: "custom",
+          message: "Use a JSON array of Apify API keys.",
+        });
+        return z.NEVER;
+      }
+    })
+    .pipe(z.array(z.string().trim().min(1)).min(1))
+    .transform((keys) => [...new Set(keys)]),
   VERCEL_AI_GATEWAY: z.string().trim().min(1),
 });
 
