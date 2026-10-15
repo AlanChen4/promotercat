@@ -522,6 +522,7 @@ export async function classifyPolicy(
 You will be given the different rules belonging to a subreddit. Your task is to summarize, in 1 sentence, the policies regarding self-promotion.
 
 ## Rules
+- Capture nuances that affect self-promotion, such as required flair, weekly megathreads, posting days, limits, and exceptions.
 - Write one concise English sentence that states each allowed route and its conditions directly, including exceptions for other activities. Preserve meaning before shortening.
 - Use common words and numerals. Omit introductions, commentary, and unrelated rules.
 - Do not include r/subreddit references. For example, if the subreddit is r/running, do NOT include r/running in the summary.
@@ -532,76 +533,68 @@ You will be given the different rules belonging to a subreddit. Your task is to 
 ### Example 1
 Input:
 {
-  "name": "r/WhiskerFoundry",
+  "name": "r/CatMakers",
   "rules": [
     {
-      "title": "From your workbench",
-      "description": "Show cat furniture you built on Wednesdays or Saturdays, using the Workshop flair and a photo of the finished piece."
+      "title": "Keep promotion in the weekly thread",
+      "description": "Shop links, commissions, and products you made belong in the weekly Maker Monday thread. Standalone promotional posts will be removed."
     },
     {
-      "title": "Where links belong",
-      "description": "Put your shop link in the first comment and say that you own the shop. Leave out coupon codes and mailing-list invitations."
-    },
-    {
-      "title": "Keep adoption listings elsewhere",
-      "description": "This community does not host adoption listings."
+      "title": "Be kind",
+      "description": "Give constructive feedback. Personal attacks and insults will be removed."
     }
   ]
 }
 
 Output:
 {
-  "summary": "Cat furniture you built may be posted on Wednesdays or Saturdays with Workshop flair and a finished-piece photo; place shop links in the first comment, disclose ownership, and omit coupon codes and mailing-list invitations."
+  "summary": "Shop links, commissions, and your own products belong only in the weekly Maker Monday thread."
 }
 
 ### Example 2
 Input:
 {
-  "name": "r/PurrfectTimers",
+  "name": "r/CatCrafts",
   "rules": [
     {
-      "title": "Answering tool requests",
-      "description": "A free feeding-schedule tool you made can be linked in a relevant answer to someone asking for help."
+      "title": "Sharing your work",
+      "description": "Sharing cat art, patterns, or tutorials you made is fine. Use the Creator flair and disclose if the post promotes something you sell."
     },
     {
-      "title": "Tools with paid features",
-      "description": "Announce these on the first Thursday of each month. Each post needs the App Author flair, a screenshot, and the price before the link. Posts consisting only of a discount code will be deleted."
+      "title": "Spam and referral links",
+      "description": "Leave at least 30 days before sharing the same link again. Affiliate and referral links are not allowed."
     },
     {
-      "title": "Showing how it works",
-      "description": "A walkthrough is welcome, but entirely optional."
+      "title": "Stay on topic",
+      "description": "Posts must be about making things for cats or cat-themed crafts."
     }
   ]
 }
 
 Output:
 {
-  "summary": "Free feeding-schedule tools may be linked in relevant help replies; tools with paid features may be announced on the first Thursday of each month with App Author flair, a screenshot, and the price before the link, while discount-code-only posts are prohibited and walkthroughs are optional."
+  "summary": "Use Creator flair and disclose sales when sharing your art, patterns, or tutorials; wait 30 days between repeat links and omit affiliate or referral links."
 }
 
 ### Example 3
 Input:
 {
-  "name": "r/MoonlitMittens",
+  "name": "r/CatPhotoClub",
   "rules": [
     {
-      "title": "No storefronts",
-      "description": "Shop links, sales offers, and commission requests are not allowed in posts or comments."
+      "title": "No advertising",
+      "description": "No ads or shop links in posts or comments. You may credit your own photography account in the comments, but do not ask for followers."
     },
     {
-      "title": "Construction questions",
-      "description": "You may attach a single close-up of something you made when asking a construction question, provided the image contains no URL or price tag."
-    },
-    {
-      "title": "Topic boundaries",
-      "description": "Questions must concern sewing accessories for cats, not general pet health."
+      "title": "Original photos only",
+      "description": "Post photos you took yourself. Do not repost other people's work."
     }
   ]
 }
 
 Output:
 {
-  "summary": "Shop links, sales offers, and commission requests are banned; a single close-up of your own work is allowed with a cat-accessory construction question if the image contains no URL or price tag."
+  "summary": "Credit your photography account in comments; no ads, shop links, or requests for followers."
 }`,
       prompt: JSON.stringify({
         name: `r/${name}`,
