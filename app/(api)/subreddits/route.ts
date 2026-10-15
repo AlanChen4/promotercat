@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { ACTIVITY_THRESHOLD_OPTIONS } from "@/constants/subreddit-filters";
 import { embedDescription } from "@/lib/ai";
 import { env } from "@/lib/env";
 import {
@@ -16,10 +15,6 @@ import { createClient } from "@/lib/supabase/server";
 const SEMANTIC_MATCH_THRESHOLD = 0.69;
 const SEMANTIC_MATCH_COUNT = 200;
 const RESPONSE_HEADERS = { "Cache-Control": "private, no-store" };
-
-const ACTIVITY_THRESHOLDS = ACTIVITY_THRESHOLD_OPTIONS.map(
-  (option) => option.value,
-);
 
 function parsePage(requestedPage: string | null): number {
   const parsed = Number(requestedPage);
@@ -40,17 +35,6 @@ function extractSelfPromotionFilters(
     const result = selfPromotionSchema.safeParse(value.trim().toLowerCase());
     return result.success ? [result.data] : [];
   });
-}
-
-function parseActivityBoundary(rawValue: string | null): number | null {
-  if (!rawValue) {
-    return null;
-  }
-  const parsed = Number(rawValue);
-  if (!Number.isFinite(parsed) || !ACTIVITY_THRESHOLDS.includes(parsed)) {
-    return null;
-  }
-  return parsed;
 }
 
 export async function GET(request: Request) {
@@ -86,12 +70,6 @@ export async function GET(request: Request) {
       );
     }
   }
-  const minActivity = parseActivityBoundary(
-    url.searchParams.get("min_weekly_active"),
-  );
-  const maxActivity = parseActivityBoundary(
-    url.searchParams.get("max_weekly_active"),
-  );
   const requestedSortField = sortFieldSchema.safeParse(
     url.searchParams.get("sort")?.toLowerCase(),
   ).data;
@@ -145,25 +123,6 @@ export async function GET(request: Request) {
       );
     }
 
-    if (minActivity !== null) {
-      filteredCandidates = filteredCandidates.filter(
-        (candidate) =>
-          candidate.weekly_active_users !== null &&
-          candidate.weekly_active_users >= minActivity,
-      );
-    }
-
-    if (
-      maxActivity !== null &&
-      (minActivity === null || maxActivity >= minActivity)
-    ) {
-      filteredCandidates = filteredCandidates.filter(
-        (candidate) =>
-          candidate.weekly_active_users !== null &&
-          candidate.weekly_active_users <= maxActivity,
-      );
-    }
-
     let orderedCandidates = filteredCandidates;
     if (sortField) {
       const directionMultiplier = sortDirection === "asc" ? 1 : -1;
@@ -214,16 +173,6 @@ export async function GET(request: Request) {
     query = query.in("self_promotion", selfPromotionFilters);
   }
 
-  if (minActivity !== null) {
-    query = query.gte("weekly_active_users", minActivity);
-  }
-
-  if (
-    maxActivity !== null &&
-    (minActivity === null || maxActivity >= minActivity)
-  ) {
-    query = query.lte("weekly_active_users", maxActivity);
-  }
   const effectiveSortField = sortField ?? "weekly_active";
   const { data, error, count } = await query
     .order(

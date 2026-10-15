@@ -1,9 +1,26 @@
 "use client";
 
-import { SortByDown02Icon, SortByUp02Icon } from "@hugeicons/core-free-icons";
+import {
+  Alert02Icon,
+  Search01Icon,
+  SortByDown02Icon,
+  SortByUp02Icon,
+} from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { GripVertical } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import {
   Table,
@@ -19,8 +36,16 @@ import type {
   SortState,
   SubredditResult,
 } from "@/lib/subreddits";
+import logo from "@/public/logo.png";
+import { type SearchSuggestion, SearchSuggestions } from "./search-suggestions";
 
 type ResultsTableProps = {
+  filters: ReactNode;
+  pagination: ReactNode;
+  suggestions: SearchSuggestion[];
+  onSuggestionSelect: (query: string) => void;
+  searchInput: string;
+  onSearchInputChange: (value: string) => void;
   isLoading: boolean;
   errorMessage: string | null;
   totalCount: number;
@@ -34,6 +59,12 @@ type ResultsTableProps = {
 };
 
 export function ResultsTable({
+  filters,
+  pagination,
+  suggestions,
+  onSuggestionSelect,
+  searchInput,
+  onSearchInputChange,
   isLoading,
   errorMessage,
   totalCount,
@@ -45,7 +76,47 @@ export function ResultsTable({
   onSortToggle,
   isSortLoading,
 }: ResultsTableProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef<{
+    pointerId: number;
+    clientX: number;
+    clientY: number;
+    x: number;
+    y: number;
+    minX: number;
+    maxX: number;
+    minY: number;
+    maxY: number;
+  } | null>(null);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+
+  useEffect(() => {
+    const resetPosition = () => {
+      dragRef.current = null;
+      setIsDragging(false);
+      setPosition({ x: 0, y: 0 });
+    };
+    window.addEventListener("resize", resetPosition);
+    return () => window.removeEventListener("resize", resetPosition);
+  }, []);
+
+  const getMovementBounds = () => {
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (!rect) return null;
+    return {
+      minX: position.x - rect.left,
+      maxX:
+        position.x + Math.max(0, window.innerWidth - rect.width) - rect.left,
+      minY: position.y - rect.top,
+      maxY:
+        position.y + Math.max(0, window.innerHeight - rect.height) - rect.top,
+    };
+  };
+
   const showLoadingMessage = isLoading && !isSortLoading;
+  const showSkeleton =
+    isLoading && (!isSortLoading || displayedResults.length === 0);
   const placeholderRows = Array.from(
     { length: lockedRowCount },
     (_, offset) => `locked-row-${offset}`,
@@ -84,17 +155,95 @@ export function ResultsTable({
   };
 
   return (
-    <div className="rounded-xl border bg-card w-full max-w-4xl">
-      <div className="flex h-11 justify-between items-center border-b px-4">
-        <p className="text-sm text-muted-foreground">
-          {showLoadingMessage ? (
-            <Spinner />
-          ) : (
-            `${totalCount.toLocaleString()} subreddit${totalCount === 1 ? "" : "s"} found`
-          )}
-        </p>
+    <div
+      ref={containerRef}
+      className="relative rounded-xl border bg-card w-full max-w-4xl"
+      aria-busy={isLoading}
+      style={{ transform: `translate(${position.x}px, ${position.y}px)` }}
+    >
+      <div className="flex h-11 items-center gap-3 border-b px-4">
+        <div className="relative min-w-0 flex-1">
+          <HugeiconsIcon
+            icon={Search01Icon}
+            className="absolute left-0 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+          />
+          <Input
+            id="subreddit-search"
+            aria-label="Search subreddits"
+            placeholder='Keywords separated by commas (e.g. "gaming, game development")'
+            value={searchInput}
+            onChange={(event) => onSearchInputChange(event.target.value)}
+            className="border-0 bg-transparent pl-6 shadow-none text-sm focus-visible:border-transparent focus-visible:ring-0"
+          />
+        </div>
+        {searchInput.trim() ? (
+          <p
+            className="shrink-0 text-sm text-muted-foreground"
+            aria-live="polite"
+          >
+            {showLoadingMessage ? (
+              <Spinner />
+            ) : (
+              `${totalCount.toLocaleString()} found`
+            )}
+          </p>
+        ) : null}
+        <button
+          type="button"
+          aria-label="Move results table"
+          title="Drag to move"
+          className={`hidden md:inline-flex shrink-0 touch-none select-none rounded p-1 text-muted-foreground hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring ${isDragging ? "cursor-grabbing" : "cursor-grab"}`}
+          onPointerDown={(event) => {
+            if (
+              !event.isPrimary ||
+              event.button !== 0 ||
+              event.pointerType === "touch" ||
+              !window.matchMedia("(min-width: 768px)").matches
+            )
+              return;
+            const bounds = getMovementBounds();
+            if (!bounds) return;
+            event.currentTarget.setPointerCapture(event.pointerId);
+            dragRef.current = {
+              pointerId: event.pointerId,
+              clientX: event.clientX,
+              clientY: event.clientY,
+              ...position,
+              ...bounds,
+            };
+            setIsDragging(true);
+          }}
+          onPointerMove={(event) => {
+            const drag = dragRef.current;
+            if (!drag || drag.pointerId !== event.pointerId) return;
+            setPosition({
+              x: Math.max(
+                drag.minX,
+                Math.min(drag.maxX, drag.x + event.clientX - drag.clientX),
+              ),
+              y: Math.max(
+                drag.minY,
+                Math.min(drag.maxY, drag.y + event.clientY - drag.clientY),
+              ),
+            });
+          }}
+          onPointerUp={(event) => {
+            if (event.currentTarget.hasPointerCapture(event.pointerId))
+              event.currentTarget.releasePointerCapture(event.pointerId);
+          }}
+          onLostPointerCapture={() => {
+            dragRef.current = null;
+            setIsDragging(false);
+          }}
+        >
+          <GripVertical className="size-4" aria-hidden="true" />
+        </button>
       </div>
-      {errorMessage ? (
+      <div className="border-b px-4 py-3">{filters}</div>
+      {showSkeleton ? (
+        <output className="sr-only">Loading results</output>
+      ) : null}
+      {errorMessage && !isLoading ? (
         <div className="flex h-[27.5rem] items-center px-4 text-sm text-destructive">
           {errorMessage}
         </div>
@@ -120,7 +269,28 @@ export function ResultsTable({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {lockedRowCount > 0 ? (
+              {showSkeleton ? (
+                Array.from(
+                  { length: 10 },
+                  (_, index) => `loading-row-${index}`,
+                ).map((key) => (
+                  <TableRow
+                    key={key}
+                    className="h-10 pointer-events-none"
+                    aria-hidden="true"
+                  >
+                    <TableCell>
+                      <div className="h-4 w-3/4 rounded bg-muted motion-safe:animate-pulse" />
+                    </TableCell>
+                    <TableCell>
+                      <div className="h-4 w-16 rounded bg-muted motion-safe:animate-pulse" />
+                    </TableCell>
+                    <TableCell>
+                      <div className="h-4 w-5/6 rounded bg-muted motion-safe:animate-pulse" />
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : lockedRowCount > 0 ? (
                 placeholderRows.map((placeholderKey) => (
                   <TableRow
                     key={placeholderKey}
@@ -140,12 +310,51 @@ export function ResultsTable({
                   </TableRow>
                 ))
               ) : displayedResults.length === 0 && !isLoading ? (
-                <TableRow>
+                <TableRow className="hover:bg-transparent">
                   <TableCell
                     colSpan={3}
                     className="h-[25rem] text-center text-muted-foreground"
                   >
-                    No subreddits found. Try a different search.
+                    <Empty>
+                      <EmptyHeader>
+                        <EmptyMedia
+                          variant={searchInput.trim() ? "icon" : "default"}
+                        >
+                          {searchInput.trim() ? (
+                            <HugeiconsIcon icon={Alert02Icon} />
+                          ) : (
+                            <Image
+                              src={logo}
+                              alt="PromoterCat"
+                              width={64}
+                              height={64}
+                            />
+                          )}
+                        </EmptyMedia>
+                        <EmptyTitle>
+                          {searchInput.trim()
+                            ? "No matches this time"
+                            : "Find your purr-fect community"}
+                        </EmptyTitle>
+                        {searchInput.trim() ? (
+                          <EmptyDescription>
+                            Try different keywords.
+                          </EmptyDescription>
+                        ) : (
+                          <EmptyDescription>
+                            Try a suggested search below to see how it works
+                          </EmptyDescription>
+                        )}
+                      </EmptyHeader>
+                      {searchInput.trim() ? null : (
+                        <EmptyContent className="max-w-none">
+                          <SearchSuggestions
+                            suggestions={suggestions}
+                            onSelect={onSuggestionSelect}
+                          />
+                        </EmptyContent>
+                      )}
+                    </Empty>
                   </TableCell>
                 </TableRow>
               ) : (
@@ -186,7 +395,8 @@ export function ResultsTable({
                   </TableRow>
                 ))
               )}
-              {lockedRowCount > 0 || displayedResults.length > 0 || isLoading
+              {!showSkeleton &&
+              (lockedRowCount > 0 || displayedResults.length > 0 || isLoading)
                 ? paddingRows.map((paddingKey) => (
                     <TableRow
                       key={paddingKey}
@@ -199,7 +409,7 @@ export function ResultsTable({
                 : null}
             </TableBody>
           </Table>
-          {lockedRowCount > 0 ? (
+          {lockedRowCount > 0 && !showSkeleton ? (
             <div className="pointer-events-none absolute inset-x-0 top-10 bottom-0 flex items-center justify-center">
               <div className="flex w-full justify-center bg-muted/95 py-4">
                 <Button
@@ -217,6 +427,9 @@ export function ResultsTable({
           ) : null}
         </div>
       )}
+      <div className="flex h-11 items-center rounded-b-xl border-t bg-muted/30 px-4">
+        {pagination}
+      </div>
     </div>
   );
 }

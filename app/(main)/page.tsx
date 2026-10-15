@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ACTIVITY_THRESHOLD_OPTIONS } from "@/constants/subreddit-filters";
+import { AccountMenu } from "@/components/account-menu";
 import {
   RESULTS_PER_PAGE,
   type SelfPromotionStatus,
@@ -15,7 +15,6 @@ import { useAuth } from "@/providers/auth-provider";
 import { Filters } from "./_components/filters";
 import { SubredditsPagination } from "./_components/pagination";
 import { ResultsTable } from "./_components/results-table";
-import { SearchSuggestions } from "./_components/search-suggestions";
 
 const SELF_PROMOTION_OPTIONS: {
   label: string;
@@ -42,7 +41,6 @@ const DEFAULT_SELF_PROMOTION_SELECTION: SelfPromotionStatus[] = [
   "unspecified",
 ];
 
-const ACTIVITY_FILTER_ANY_VALUE = "any";
 const DEFAULT_SORT_STATE: SortState = null;
 
 const SEARCH_DEBOUNCE_MS = 300;
@@ -73,34 +71,39 @@ export default function HomePage() {
   >(DEFAULT_SELF_PROMOTION_SELECTION);
   const [page, setPage] = useState(1);
   const isLockedPage = page > 1 && !isAuthenticated;
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [results, setResults] = useState<SubredditResult[]>([]);
   const [totalCount, setTotalCount] = useState(0);
-  const [minimumActivity, setMinimumActivity] = useState<number | null>(null);
-  const [maximumActivity, setMaximumActivity] = useState<number | null>(null);
   const [sortState, setSortState] = useState<SortState>(DEFAULT_SORT_STATE);
   const [isSortLoading, setIsSortLoading] = useState(false);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
       const trimmedSearch = searchInput.trim();
-      setSearchTerm((previous) => {
-        if (previous === trimmedSearch) {
-          return previous;
-        }
+      if (searchTerm !== trimmedSearch) {
+        setIsLoading(Boolean(trimmedSearch));
+        setErrorMessage(null);
         setPage(1);
-        return trimmedSearch;
-      });
+        setSearchTerm(trimmedSearch);
+      }
     }, SEARCH_DEBOUNCE_MS);
 
     return () => window.clearTimeout(timeout);
-  }, [searchInput]);
+  }, [searchInput, searchTerm]);
 
   useEffect(() => {
     const abortController = new AbortController();
 
     const fetchData = async () => {
+      if (!searchTerm) {
+        setResults([]);
+        setTotalCount(0);
+        setIsLoading(false);
+        setIsSortLoading(false);
+        setErrorMessage(null);
+        return;
+      }
       if (isLockedPage) {
         setIsLoading(false);
         setIsSortLoading(false);
@@ -116,12 +119,6 @@ export default function HomePage() {
       }
       if (selectedSelfPromotion.length > 0) {
         query.set("self_promotion", selectedSelfPromotion.join(","));
-      }
-      if (minimumActivity !== null) {
-        query.set("min_weekly_active", String(minimumActivity));
-      }
-      if (maximumActivity !== null) {
-        query.set("max_weekly_active", String(maximumActivity));
       }
       if (sortState) {
         query.set("sort", sortState.field);
@@ -175,41 +172,11 @@ export default function HomePage() {
     fetchData();
 
     return () => abortController.abort();
-  }, [
-    searchTerm,
-    selectedSelfPromotion,
-    page,
-    isLockedPage,
-    minimumActivity,
-    maximumActivity,
-    sortState,
-  ]);
+  }, [searchTerm, selectedSelfPromotion, page, isLockedPage, sortState]);
 
   const totalPages = useMemo(() => {
     return Math.max(1, Math.ceil(totalCount / RESULTS_PER_PAGE));
   }, [totalCount]);
-
-  const isMinimumOpenEnded = useMemo(() => {
-    if (minimumActivity === null) {
-      return false;
-    }
-    return ACTIVITY_THRESHOLD_OPTIONS.some(
-      (option) => option.value === minimumActivity && option.isOpenEnded,
-    );
-  }, [minimumActivity]);
-
-  const maximumActivityOptions = useMemo(() => {
-    const cappedOptions = ACTIVITY_THRESHOLD_OPTIONS.filter(
-      (option) => !option.isOpenEnded,
-    );
-    if (minimumActivity === null) {
-      return cappedOptions;
-    }
-    if (isMinimumOpenEnded) {
-      return [];
-    }
-    return cappedOptions.filter((option) => option.value >= minimumActivity);
-  }, [minimumActivity, isMinimumOpenEnded]);
 
   const formatSelfPromotion = (status: SelfPromotionStatus) =>
     SELF_PROMOTION_LABELS[status];
@@ -247,46 +214,6 @@ export default function HomePage() {
     });
   };
 
-  const handleMinimumActivityChange = (value: string) => {
-    const nextValue =
-      value === ACTIVITY_FILTER_ANY_VALUE ? null : Number(value);
-    const isOpenEndedSelection = ACTIVITY_THRESHOLD_OPTIONS.some(
-      (option) => option.value === nextValue && option.isOpenEnded,
-    );
-    setMinimumActivity((previous) => {
-      if (previous === nextValue) {
-        return previous;
-      }
-      setPage(1);
-      return nextValue;
-    });
-    setMaximumActivity((previousMax) => {
-      if (isOpenEndedSelection) {
-        return previousMax === null ? previousMax : null;
-      }
-      if (
-        nextValue === null ||
-        previousMax === null ||
-        previousMax >= nextValue
-      ) {
-        return previousMax;
-      }
-      return null;
-    });
-  };
-
-  const handleMaximumActivityChange = (value: string) => {
-    const nextValue =
-      value === ACTIVITY_FILTER_ANY_VALUE ? null : Number(value);
-    setMaximumActivity((previous) => {
-      if (previous === nextValue) {
-        return previous;
-      }
-      setPage(1);
-      return nextValue;
-    });
-  };
-
   const handleSortToggle = (field: SortField) => {
     setIsSortLoading(true);
     setSortState((previous) => {
@@ -317,40 +244,33 @@ export default function HomePage() {
   const handleSuggestionSelect = (query: string) => {
     setSearchInput(query);
     const trimmedQuery = query.trim();
-    setSearchTerm((previous) => {
-      if (previous === trimmedQuery) {
-        return previous;
-      }
+    if (searchTerm !== trimmedQuery) {
+      setIsLoading(Boolean(trimmedQuery));
+      setErrorMessage(null);
       setPage(1);
-      return trimmedQuery;
-    });
+      setSearchTerm(trimmedQuery);
+    }
   };
 
   return (
     <div className="mx-auto flex max-w-4xl flex-col items-center gap-2 p-4">
-      <Filters
-        searchInput={searchInput}
-        selectedSelfPromotion={selectedSelfPromotion}
-        selfPromotionOptions={SELF_PROMOTION_OPTIONS}
-        minimumActivity={minimumActivity}
-        maximumActivity={maximumActivity}
-        isMinimumOpenEnded={isMinimumOpenEnded}
-        maximumActivityOptions={maximumActivityOptions}
-        activityThresholdOptions={ACTIVITY_THRESHOLD_OPTIONS}
-        activityFilterAnyValue={ACTIVITY_FILTER_ANY_VALUE}
-        onSearchInputChange={setSearchInput}
-        onSelfPromotionChange={handleFilterChange}
-        onMinimumActivityChange={handleMinimumActivityChange}
-        onMaximumActivityChange={handleMaximumActivityChange}
-      />
-
-      <SearchSuggestions
-        suggestions={SEARCH_SUGGESTIONS}
-        onSelect={handleSuggestionSelect}
-      />
+      <div className="flex w-full items-center justify-end">
+        <AccountMenu />
+      </div>
 
       <ResultsTable
-        isLoading={isLoading}
+        filters={
+          <Filters
+            selectedSelfPromotion={selectedSelfPromotion}
+            selfPromotionOptions={SELF_PROMOTION_OPTIONS}
+            onSelfPromotionChange={handleFilterChange}
+          />
+        }
+        suggestions={SEARCH_SUGGESTIONS}
+        onSuggestionSelect={handleSuggestionSelect}
+        searchInput={searchInput}
+        onSearchInputChange={setSearchInput}
+        isLoading={isLoading || searchInput.trim() !== searchTerm}
         errorMessage={errorMessage}
         totalCount={totalCount}
         displayedResults={isLockedPage ? [] : results}
@@ -367,12 +287,15 @@ export default function HomePage() {
         sortState={sortState}
         onSortToggle={handleSortToggle}
         isSortLoading={isSortLoading}
-      />
-
-      <SubredditsPagination
-        page={page}
-        totalPages={totalPages}
-        onPageChange={handlePageChange}
+        pagination={
+          totalPages > 1 ? (
+            <SubredditsPagination
+              page={page}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+            />
+          ) : null
+        }
       />
     </div>
   );

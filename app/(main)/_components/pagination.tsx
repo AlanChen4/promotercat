@@ -62,8 +62,9 @@ export function SubredditsPagination({
                 onPageChange(page - 1);
               }
             }}
-            aria-disabled={page === 1}
-            className={page === 1 ? "pointer-events-none opacity-50" : ""}
+            aria-hidden={page === 1}
+            tabIndex={page === 1 ? -1 : undefined}
+            className={`transition-opacity duration-200 motion-reduce:transition-none ${page === 1 ? "pointer-events-none opacity-0" : "opacity-100"}`}
           />
         </PaginationItem>
         {visiblePages.map((pageNumber) => (
@@ -96,10 +97,9 @@ export function SubredditsPagination({
                 onPageChange(page + 1);
               }
             }}
-            aria-disabled={page === totalPages}
-            className={
-              page === totalPages ? "pointer-events-none opacity-50" : ""
-            }
+            aria-hidden={page === totalPages}
+            tabIndex={page === totalPages ? -1 : undefined}
+            className={`transition-opacity duration-200 motion-reduce:transition-none ${page === totalPages ? "pointer-events-none opacity-0" : "opacity-100"}`}
           />
         </PaginationItem>
       </PaginationContent>
