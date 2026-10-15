@@ -1,5 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { readFile } from "node:fs/promises";
+import { setTimeout as delay } from "node:timers/promises";
 import { pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
 import { createClient } from "@supabase/supabase-js";
@@ -162,12 +163,17 @@ async function fetchTinyfish(
       urls,
       format,
       ttl,
-      per_url_timeout_ms: 30_000,
+      per_url_timeout_ms: 60_000,
       // Selectors bypass TinyFish's boilerplate removal, which drops Reddit rules.
       include_selectors: includeSelectors,
     }),
     signal: requestSignal(150_000, signal),
   });
+  if (response.status === 408 || response.status === 504)
+    throw new DOMException(
+      `TinyFish Fetch returned HTTP ${response.status}.`,
+      "TimeoutError",
+    );
   if (!response.ok)
     throw new Error(
       `TinyFish Fetch returned HTTP ${response.status}${response.status === 402 ? ": daily allowance or wallet exhausted" : ""}.`,
@@ -186,8 +192,30 @@ async function fetchSubredditBatch<T>(
     throw new Error("TinyFish batches may contain at most 10 URLs.");
   const values = new Map<string, T | Error>();
   let pending = targets;
-  for (const ttl of [86_400, 0]) {
-    if (!pending.length) break;
+  for (const [attempt, ttl] of [86_400, 0, 0].entries()) {
+    if (attempt === 2) {
+      // Give only activity timeouts one extra fresh fetch; never repeat successes.
+      pending =
+        kind === "activity"
+          ? pending.filter((target) => {
+              const error = values.get(target.name);
+              return (
+                error instanceof Error &&
+                (error.name === "TimeoutError" ||
+                  /\b(?:timeout|timed out)\b/i.test(error.message))
+              );
+            })
+          : [];
+    }
+    if (!pending.length || signal?.aborted) break;
+    if (attempt > 0) {
+      try {
+        await delay(2_000, undefined, { signal });
+      } catch (error) {
+        if (signal?.aborted) break;
+        throw error;
+      }
+    }
     const urls = pending.map((target) =>
       kind === "activity" ? target.url : `${target.url}about/`,
     );
@@ -572,7 +600,9 @@ ${
   command === "list"
     ? "Lists last_scraped_at, the latest saved promotion snapshot time (including baselines).\n"
     : `TinyFish batches contain up to 10 URLs. Full refresh uses two regular pages;
-activity-only uses one. Each failed URL is retried once. Cached data is allowed
+activity-only uses one. Failed URLs are retried once; activity timeouts get one
+extra retry (three attempts total). Fetches allow 60 seconds per URL, with a
+two-second pause before each retry. Retries request fresh data. Cached data is allowed
 (24-hour preference, not a guarantee). Missing rules or descriptions use one paid Apify batch (256 MB), without posts, comments, or AI analysis.
 APIFY_API_KEYS is a JSON array of keys, tried in order on confirmed quota rejection.
 Once a run starts, polling and results use the same key; other failures do not rotate keys.
