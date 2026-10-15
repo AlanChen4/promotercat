@@ -437,7 +437,7 @@ async function fetchApifyCommunities(
   return communities;
 }
 
-async function classifyPolicy(
+export async function classifyPolicy(
   name: string,
   policy: Policy,
   apiKey: string,

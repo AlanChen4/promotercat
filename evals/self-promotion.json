@@ -1,0 +1,479 @@
+[
+  {
+    "name": "jewelrymaking",
+    "source": "https://www.reddit.com/r/jewelrymaking/about/",
+    "expected": "not_allowed",
+    "rules": [
+      {
+        "title": "Promotional content",
+        "description": "All Self-Promotion or attempted sale of jewelry, including mentions of your shop, website, instagram, etc, are not welcome on the subreddit. If you'd like users to be able to find your shop or other socials, we recommend stickying a post on your own profile with your links! Users can visit if they're interested in seeing more!"
+      },
+      {
+        "title": "Behavioral Guidelines",
+        "description": "To ensure a healthy and inclusive community environment, users are expected to maintain a respectful and mature tone. Avoid spam, harassment, insults, encouragement of harm, hate speech and discrimination, even if it is in a joking manner. NSFW content will not be tolerated under any circumstances. \n\nIn most situations, politics are absolutely unnecessary in this space, and will be removed if issues arise."
+      },
+      {
+        "title": "Content Guidelines",
+        "description": "All showcase submissions should be based on the creation of jewelry, and every piece should feature at least one unique hand made component or feature. Complete jewelry kits, or other mass produced jewelry are not allowed under any circumstances. \n\nRequesting commissioned pieces *must* use the Request flair, and *must* have their own unique design. Requesting someone to recreate a design by another jeweler or designer is not allowed."
+      },
+      {
+        "title": "Title and Flair Guidelines",
+        "description": "Titles should accurately reflect the post's topic with reasonable length. Avoid excessively short, long, or nondescript titles. Karma-seeking \"Upvote if you think ...\", clickbait titles, or titles driving engagement to a website or other avenue of revenue will be removed. \n\nSubmission Flairs must accurately fit the submission, Guides, Requests, Showcases, and Questions should all be labeled as such."
+      }
+    ]
+  },
+  {
+    "name": "writinghelp",
+    "source": "https://www.reddit.com/r/writinghelp/about/",
+    "expected": "not_allowed",
+    "rules": [
+      {
+        "title": "Be pleasant",
+        "description": "Nothing less than patient, relaxed discourse over the English language & narrative form. We're all here to teach & learn in good faith."
+      },
+      {
+        "title": "No prompts",
+        "description": "This subreddit is for direct writing education & help, not entertainment purposes like creative writing exercises. Click [here](https://www.reddit.com/r/writinghelp/wiki/subreddits#wiki_category.3A_prompts.2Fchallenges) for some prompt subreddits to visit though!"
+      },
+      {
+        "title": "No posting for entertainment",
+        "description": "This subreddit is for direct writing education & help, not entertainment. Showcase your work in [these subreddits](https://www.reddit.com/r/writinghelp/wiki/subreddits#wiki_category.3A_showcase_your_work) though!"
+      },
+      {
+        "title": "No self-promotion or promotion of writing services",
+        "description": "This subreddit is for direct writing education & help, not self-promotion as a writer or editor/beta, nor general promotion of certain writing services or programs. Legitimate reviews of the latter are acceptable, though."
+      },
+      {
+        "title": "No unethical content (cheating)",
+        "description": "This subreddit is for direct writing education & help, not unethical writing 'tricks.' Posts asking how best to plagiarize or otherwise cheat will be removed."
+      },
+      {
+        "title": "No hiring/recruiting writers/editors",
+        "description": "This subreddit is for direct writing education & help, not the hiring or recruitment of writers for your project(s) or personal editors/betas for your writing."
+      },
+      {
+        "title": "Critique content should be in the post bodytext",
+        "description": "It's difficult to edit content on a different platform than the one you're gonna be submitting your edits, so we're not going to ask that of our users willing to critique."
+      },
+      {
+        "title": "Critique content should be properly formatted",
+        "description": "Badly formatted content (walls of text, for example) will be removed."
+      },
+      {
+        "title": "Mark content 'NSFW' if it's NSFW",
+        "description": "Pretty self-explanatory."
+      },
+      {
+        "title": "There is a 150 total karma requirement",
+        "description": "If you don't have 150 karma, please message the mods"
+      },
+      {
+        "title": "We are not here to write FOR you",
+        "description": "r/writinghelp is not a place for others to do your job. This sub is for getting help with writing, not having others do your job for you."
+      }
+    ]
+  },
+  {
+    "name": "jobs",
+    "source": "https://www.reddit.com/r/jobs/about/",
+    "expected": "not_allowed",
+    "rules": [
+      {
+        "title": "No Job Posts, No Self Promotion",
+        "description": "This community is not a jobs board.\n\nNo Job Posts or Self Promotion of any kind. Posts and/or comments of any \"job boards\", \"job listings\", \"recruiters\", \"services\", \"references\", \"surveys\", \"ads\"- regardless of \"free\" or \"paid\" are not allowed. This includes asking people to find a job for you.  If you want to advertise, please [buy an ad](https://www.reddit.com/advertising/).\n\nIf you want to post a survey send a mod mail to get approval first."
+      },
+      {
+        "title": "General conduct",
+        "description": "General Conduct - This is a professional, family friendly sub - Foul Language is not welcome. Please keep discussions civil.  No posts or comments making personal attacks or wishing harm to others or themselves."
+      },
+      {
+        "title": "Post titles must be specific",
+        "description": "Please be specific with your post title.  Refrain from using vague titles such as \"I need help\" and similar."
+      },
+      {
+        "title": "Articles may be posted as links",
+        "description": "Articles may be posted as links. The title of article submissions must begin with \"[Article]\". All other types of content, including videos, must be submitted as a text post."
+      },
+      {
+        "title": "No off-topic Posts",
+        "description": "Posts which do not relate to job/career advice are not allowed. Posts primarily consisting of complaints about co-workers, bosses, recruiters, or otherwise \"low quality posts\" will be removed if flagged. We will be lenient, as long as the post is related to /r/jobs ( The core mission of /r/jobs is for \"How to get a Job\" or \"How to quit a job\" ), we will allow it as long as it follows all other rules."
+      },
+      {
+        "title": "Repeated Questions",
+        "description": "Posts that are just repeating questions that have already been asked and answered are not allowed.  Search before posting as such lazy postings will be removed."
+      },
+      {
+        "title": "Politics",
+        "description": "This is not a forum for you to advocate for your politics, this is a forum for questions directly relating to jobs and job searches.  There are plenty of other subreddits where you can discuss politics."
+      },
+      {
+        "title": "You must provide mods a link if you message us about a post being caught in the filter.",
+        "description": "If you reach out to us via modmail about a post needing approval, you MUST provide a link to the post or comment in question. If you do not, it will be ignored and you may get a short ban."
+      }
+    ]
+  },
+  {
+    "name": "cpp",
+    "source": "https://www.reddit.com/r/cpp/about/",
+    "expected": "allowed_limited",
+    "rules": [
+      {
+        "title": "NO AI CONTENT",
+        "description": "AI-generated posts and comments are NOT allowed in this subreddit. DON'T use AI to \"polish\" or translate your words. We WILL notice. We MAY ban you without warning."
+      },
+      {
+        "title": "Question/Help Posts",
+        "description": "Questions and help posts are off-topic for this subreddit. Use r/cpp_questions, r/cscareerquestions, or StackOverflow instead."
+      },
+      {
+        "title": "Project Posts",
+        "description": "Personal projects written in C++ should be shared in the pinned \"Show and Tell\" post. Only major, established libraries/tools used by C++ programmers are eligible for top-level posts (e.g. Clang, GCC, MSVC, Boost, fmt, if you’re not sure then send modmail). NO BUILD SYSTEMS."
+      },
+      {
+        "title": "Other Languages",
+        "description": "Posts about other languages (e.g. Carbon, Rust, Val, etc.) are off-topic *unless* there is substantial content directed at C++ programmers writing C++. That is, either posts about interop from the C++ side, or posts about interesting ideas *from* another language that can be applied *to* C++."
+      },
+      {
+        "title": "Job Posts",
+        "description": "Employers looking for C++ developers and individuals looking for work must use the pinned \"C++ Jobs\" post."
+      },
+      {
+        "title": "Off-Topic",
+        "description": "Sir, this is a Wendy's."
+      }
+    ]
+  },
+  {
+    "name": "videogames",
+    "source": "https://www.reddit.com/r/videogames/about/",
+    "expected": "allowed_limited",
+    "rules": [
+      {
+        "title": "Follow Reddit’s Sitewide Rules",
+        "description": "All users must adhere to Reddit's Content Policy."
+      },
+      {
+        "title": "Seriously Offensive Language & Harassment",
+        "description": "We maintain a **zero-tolerance** policy for toxic behavior. \n\nThis includes, but is not limited to: racism, sexism, hate speech, targeted harassment, stalking across threads/subreddits, attacking sexuality, homophobia/transphobia and personal attacks (including attacks on a user’s family or personal life). \n\nUsers violating this standard will be subject to a permanent ban at moderator discretion."
+      },
+      {
+        "title": "Non-gaming Related Content",
+        "description": "All posts must be related to video games.\n\nThis includes, but is not limited to: pictures, meme templates, questions, videos, and relevant discussions.\n\nPosts not related to video games or gaming will be removed."
+      },
+      {
+        "title": "Low Quality Content",
+        "description": "Posts that are low quality will be removed at the discretion of the moderation team. \n\nLow-quality posts that will be removed:\n\n1. Personal lists like: \"top games\", \"about me\", \"favorite games\"\n2. Vague questions and **game suggestions**\n3. Posts with vague titles\n4. Other repetitive posts or memes\n5. AI generated content\n6. Surveys, kickstarts, petitions, or spam\n7. Research solicitation/interviews/data mining"
+      },
+      {
+        "title": "Hacks, Cheats, Piracy-related Content",
+        "description": "Posts or comments that promote, request, provide, or facilitate video game piracy, cheats and hacks **are not allowed**.\n\nDiscussions about emulators and modifications to games that do not affect other players’ experiences (in the case of single player games) may be allowed."
+      },
+      {
+        "title": "NSFW Content",
+        "description": "We do not allow NSFW posts, imagery, suggestions, or commentary in our subreddit. \n\nAs a SFW community subreddit, all content deemed NSFW will be automatically removed."
+      },
+      {
+        "title": "Spoiler Content",
+        "description": "All video game spoilers in posts and comments must be marked as such.\n\nFormatting:\n`>!SPOILER GOES HERE!<`\n\nSpoilers are not allowed in submission titles."
+      },
+      {
+        "title": "Self Promotions",
+        "description": "Self-promotion is only allowed in the Weekly Showcase megathread.\n\nSelf-promotion refers to:\n- sharing your own content (videos, streams, articles, or projects)\n- Steam links to personal creations/games\n- hyping other peoples' games\n\nBuying, selling, trading, or promoting products—including game keys, accounts, merchandise, or other services—is **not allowed** anywhere on the subreddit."
+      },
+      {
+        "title": "Buying, Selling, or Trading",
+        "description": "Posts or comments attempting to buy, sell, trade, give away, or advertise items or services are not allowed. This includes both physical items and digital goods such as video game codes, keys, or accounts. \n\nr/videogames is a place for discussion about video games, not a marketplace."
+      },
+      {
+        "title": "Non-English Content",
+        "description": "Any post you make should be written in English.\n\nYou are still welcome to comment non-English comments, but keep posts in English (use a translator if you must)."
+      },
+      {
+        "title": "Redirect to megathread",
+        "description": "This includes controversial posts, complaints specific to a single game, posts that are too short to generate meaningful discussion, repetitive topics with the same takeaways, and similar low-effort content. We redirect these kinds of comments to the megathread, where these topics can be more easily discussed without overpopulating the general feed with them."
+      }
+    ]
+  },
+  {
+    "name": "fountainpens",
+    "source": "https://www.reddit.com/r/fountainpens/about/",
+    "expected": "allowed_limited",
+    "rules": [
+      {
+        "title": "Be civil, courteous and respectful at all times",
+        "description": "Be civil, courteous and respectful at all times. Don't be rude, don't troll, don't spam, don't gatekeep. \n\n\n\n Insulting, mocking, attacking other users based on age, race, gender (identity or presentation), sexual orientation, physical/mental health, occupation or opinions about fountain pens is not allowed. Observe good Reddiquette especially: remember the human. Criticize ideas not people."
+      },
+      {
+        "title": "Stay on topic",
+        "description": "All submissions to /r/fountainpens must relate to one or more of the following three topics:  \n\n* The hobby of fountain pens\n* The greater fountain pen community, e.g., inks, papers, accessories, etc.\n* The career of significant fountain pen community members, including (but not limited to) major retailers, manufacturers, and primarily fountain pen-based influencers or social media personalities.\n\nNo NSFW/NSFL content, even if marked, no firearms, blood or gore. No profanities in post titles"
+      },
+      {
+        "title": "No commercial transactions. Buy/sell/trade requests belong on r/pen_swap",
+        "description": "No buying, selling, trading or commercial transactions.\nThis sub is for discussion and sharing, don’t treat it as your personal e-commerce.\nIf you want to buy, sell, or trade pens, inks, paper, or accessories, go to r/Pen_Swap, which has rules in place to help prevent scams.\nLinks to products or services are allowed only if they comply with Rule #8 and all transactions must happen off-Reddit."
+      },
+      {
+        "title": "No AI-generated media",
+        "description": "Posts and comments featuring user-generated AI media of pens, handwriting et similia are not allowed (firsttime offenders will be temporarily banned, repeat offenders will be permanently banned)\n\nAI-generated text *may* be considered on a case-by-case basis at the sole discretion of the mods."
+      },
+      {
+        "title": "Please name what you are using/showing",
+        "description": "Please name what you're using/showing: If you post a photo, please name the pens and inks you're using or showing. It's not mandatory, but it's a small effort that helps others learn and keeps the subreddit useful and informative. Posts without context may get a friendly reminder via the “r5” automod trigger by other users."
+      },
+      {
+        "title": "Vendors and Self-Promotion",
+        "description": "Vendors who engage in the community with discussions are more than welcome, but vendors who only self-promote are not. For more information, see the [wiki](https://www.reddit.com/r/fountainpens/wiki/index#wiki_vendors).Affiliate links aren't allowed.Sellers, makers, and retailers must be transparent about their affiliation. If their username does not include their shop or brand name, a flair will be added to indicate their status. Launches of apps, databases, platforms et similia aren’t allowed."
+      },
+      {
+        "title": "Contests, giveaways, AMAs and surveys must have prior approval",
+        "description": "Prior approval from a moderator is required for all giveaway/AMA posts. Large giveaways or contests may be stickied with moderator approval for a maximum of seven (7) days. Small giveaways or pay-it-forward posts may also be posted on r/pen_swap. For AMAs you will be required to prove who you are in some way."
+      },
+      {
+        "title": "No recent reposts",
+        "description": "If a post has been made in the past 14 days, do not make it again.  Instead, use the subreddit search function before posting to make sure that it is an original post.  \n\nIn some situations, posting about a topic again can be appropriate if a substantial amount of time has passed, or if there are new or significant updates that warrant their own submission."
+      },
+      {
+        "title": "Report button abuse",
+        "description": "Using the report button as a \"super downvote\" or as a means to harass, silence, or deter other users from participating is a violation of Reddit rules. **Report abuse will be flagged for admin review.**"
+      },
+      {
+        "title": "Observe Reddit's sitewide rules and content policy",
+        "description": "https://redditinc.com/policies/content-policy"
+      }
+    ]
+  },
+  {
+    "name": "gameassets",
+    "source": "https://www.reddit.com/r/gameassets/about/",
+    "expected": "allowed_limited",
+    "rules": [
+      {
+        "title": "Only free assets accepted",
+        "description": "Game assets have to be available for free (forever) and should be available as a download without requiring the user to register or share their email address."
+      },
+      {
+        "title": "No requests or questions",
+        "description": "We only accept game asset submissions. No questions, requests or work-in-progress posts."
+      },
+      {
+        "title": "Game assets should include license",
+        "description": "Game asset submissions should include a proper license, either in text or reference to commonly used licensed (like Creative Commons)"
+      },
+      {
+        "title": "No tutorials or videos without download",
+        "description": "Tutorials or videos can only be posted if the final result (game assets) is included as a download and adheres to the rest of the rules. When submitting sounds or music assets, post the download link to your assets (not a link to YouTube)."
+      },
+      {
+        "title": "No crypto/NFT related submissions",
+        "description": "We do not accept submissions that are crypto or NFT related, or are hosted on websites that promote the use of crypto or NFTs."
+      },
+      {
+        "title": "No game assets made using generative AI",
+        "description": "Submissions of game assets made using generative AI are not allowed."
+      },
+      {
+        "title": "No mean spirited comments",
+        "description": "We'd like our community to be positive, you're free to provide feedback or give critique but we do not appreciate mean spirited comments"
+      },
+      {
+        "title": "Post must include link",
+        "description": "When submitting game assets, your post should be the link or include the link to your free asset. No 'link in comments'"
+      },
+      {
+        "title": "No illegal downloads/ripping",
+        "description": "We do not allow links or downloads to ripped assets or illegal downloads, when posting you MUST own the rights or license to the asset you are posting, or the assets must be public domain or other license that allows free distribution."
+      }
+    ]
+  },
+  {
+    "name": "weaving",
+    "source": "https://www.reddit.com/r/weaving/about/",
+    "expected": "allowed_limited",
+    "rules": [
+      {
+        "title": "Not weaving? Not allowed.",
+        "description": "Your post must be related directly to the craft of weaving. Fibers are preferred, but other mediums are welcome"
+      },
+      {
+        "title": "No Sales or Trades",
+        "description": "Please no direct sales or trades of any sort, including yarns, looms, and equipment."
+      },
+      {
+        "title": "No stolen valor",
+        "description": "Posts that are unoriginal or stolen will be removed."
+      },
+      {
+        "title": "Label your sources",
+        "description": "Please use the Tutorials and Resources flair for these posts. If you'd like to share historical/inspirational works, please include a credit to the artist in the title if possible. Posts of others work without credit or a link to the original source are subject to removal."
+      },
+      {
+        "title": "No links to Amazon or Etsy",
+        "description": "They create bots! Yuck!\n\nLinks to weaving drafts or examples of woven crafts on Pinterest are still ok.\n- Links to loom manufacturers websites, weaving supply stores, your favorite loom oil or wax, &c. are still ok. \n\nPlease feel free to report questionable or inauthentic behavior to the mod team."
+      },
+      {
+        "title": "No AI Content",
+        "description": "If you post a picture or text that is obviously generated by a non-human, the post will be removed. Multiple AI posts will result in permanent bans."
+      },
+      {
+        "title": "No Self-Promotion",
+        "description": "Yes of course we WANT you to post your projects! But repeated posting of the same project, especially multiple postings in several days, is not allowed. Don’t abuse it."
+      }
+    ]
+  },
+  {
+    "name": "profile_only",
+    "source": "synthetic",
+    "expected": "not_allowed",
+    "rules": [
+      {
+        "title": "No self-promotion",
+        "description": "Self-promotion is banned. Put shop links on your own profile instead."
+      }
+    ]
+  },
+  {
+    "name": "other_subreddit",
+    "source": "synthetic",
+    "expected": "not_allowed",
+    "rules": [
+      {
+        "title": "No advertising",
+        "description": "Do not promote your products here. Use r/ArtSale instead."
+      }
+    ]
+  },
+  {
+    "name": "ordinary_discussion",
+    "source": "synthetic",
+    "expected": "unspecified",
+    "rules": [
+      {
+        "title": "Stay on topic",
+        "description": "Discuss relevant products and be polite."
+      }
+    ]
+  },
+  {
+    "name": "explicit_welcome",
+    "source": "synthetic",
+    "expected": "allowed_full",
+    "rules": [
+      {
+        "title": "Creators welcome",
+        "description": "You may promote your own creations. Stay relevant and do not spam."
+      }
+    ]
+  },
+  {
+    "name": "handsew",
+    "source": "https://www.reddit.com/r/handsew/about/",
+    "expected": "allowed_limited",
+    "rules": [
+      {
+        "title": "Handsewn Projects Only",
+        "description": "Handsewn projects only, you can post handsewn details of projects that combine hand and machine sewing, but we want your handwork to be the star of the show. Posts with questions, sharing resources, and asking for help are all allowed."
+      },
+      {
+        "title": "Be Kind",
+        "description": "Be Kind. Treat others with kindness and respect. No racism, homophobia, transphobia, or other forms of bigotry. No trolling, mean spirited comments, or rudeness."
+      },
+      {
+        "title": "No Bigotry",
+        "description": "No racism, homophobia, transphobia, ableism or other forms of bigotry. No Hate Speech."
+      },
+      {
+        "title": "No Generative AI",
+        "description": "Do not share images created using AI, by yourself or by others. Do not generate text in posts or comments by using AI. Do not post the results of AI searches on this subreddit. If you have questions regarding whether a pattern was generated by AI please refer to this checklist https://www.reddit.com/r/sewing/comments/1bva31x/before_you_buy_that_etsy_sewing_patternheres_a/"
+      },
+      {
+        "title": "No Promotional or Sales Posts",
+        "description": "Do not post promotions or sales in this space. Users can link to blogs or videos they have made as answers to questions in this subreddit, but only when relevant."
+      },
+      {
+        "title": "No NSFW Images",
+        "description": "No NSFW images. Please share handsewn undies and swimwear as a flat lay. At this time the mod team is unable to view and moderate NSFW tagged images during peak posting hours."
+      },
+      {
+        "title": "No Body Talk",
+        "description": "Do not talk about bodies. Keep advice about the fit of garments, and before offering advice, check the tags to see if the poster is open to assistance. Please note, body talk that you may see as positive may not be positive or helpful to the recipient."
+      },
+      {
+        "title": "Do Not Post Images of Children",
+        "description": "Protect children's privacy. Do not post images of children in this community. Post flat lays or post garments on a stuffed animal."
+      },
+      {
+        "title": "Post Your Own Work Only",
+        "description": "Only post work done by you, do not repost from other groups or post work made by other craftspeople."
+      }
+    ]
+  },
+  {
+    "name": "growmybusiness",
+    "source": "https://www.reddit.com/r/growmybusiness/about/",
+    "expected": "allowed_limited",
+    "rules": [
+      {
+        "title": "Post Advice Content in the Monthly Thread!",
+        "description": "Post advice and strategy content in the monthly sticky thread. You may include a signature and links but it needs to have content."
+      },
+      {
+        "title": "Keep Discourse Civil",
+        "description": "Keep discourse civil; be respectful and add value to the dialogue."
+      },
+      {
+        "title": "No Selling or Upselling",
+        "description": "Add value with your comments and posts. No selling or up selling of products or services allowed."
+      },
+      {
+        "title": "No Blog Posts",
+        "description": "This includes asking for feedback on blog posts. It is too often spam, unfortunately."
+      },
+      {
+        "title": "No External Surveys/Feedback Requests",
+        "description": "Too often this is upselling / collecting contact info and results in spammy posts."
+      }
+    ]
+  },
+  {
+    "name": "neovim",
+    "source": "https://www.reddit.com/r/neovim/about/",
+    "expected": "allowed_limited",
+    "rules": [
+      {
+        "title": "The golden rule",
+        "description": "Please be kind and courteous.\nPlease respect other people's opinions.\n\nReference the [Rust Code of Conduct](https://www.rust-lang.org/policies/code-of-conduct) for specific guidelines."
+      },
+      {
+        "title": "No elitism",
+        "description": "Be welcoming to everyone! Our community thrives when we support each other. Treat newcomers with kindness, avoid elitism, and encourage inclusive, positive participation. Whether you're a long time member or just starting out, everyone's contribution is valuable and deserves respect."
+      },
+      {
+        "title": "No low-effort content",
+        "description": "Try `:help` and `:helpgrep` before you post to see if the documentation can answer your question.\n\nPost titles should include useful context.\n\nWhen asking for help, try to give as much context as possible. Describe your issue, and explain what you have already tried to solve it yourself.\nIf an error message prompts you to do something, do that before posting. If it did not resolve your problem, include that in your post."
+      },
+      {
+        "title": "No witch hunting",
+        "description": "Do not encourage or participate in targeted harassment, doxxing, or any attempts to mobilize others to attack or harass individuals or groups."
+      },
+      {
+        "title": "No duplicate content",
+        "description": "Please do not post the same, or similar, content multiple times within a short time frame.\n\nSearch the subreddit before posting. Question that have been answered multiple times already like \"Why Neovim\", and \"Neovim vs X\" are not allowed."
+      },
+      {
+        "title": "No getting started posts",
+        "description": "\"How do I get started\" posts are not allowed. Please read the getting started wiki and only ask specific questions when you get stuck."
+      },
+      {
+        "title": "No soliciting/spamming/selling",
+        "description": "Do not use this subreddit to advertise, promote products or services, or engage in any form of unsolicited messaging or spamming."
+      },
+      {
+        "title": "No plagiarism",
+        "description": "Sharing other people's work, partially or in full, as your own results in an immediate ban.\n\nThis includes GitHub repos that contain significant amount of code taken from other places without proper credit."
+      },
+      {
+        "title": "Use the monthly threads",
+        "description": "- To share your config, please use the monthly dotfile review thread\n- To share memes, please use the monthly meme thread"
+      }
+    ]
+  }
+]
