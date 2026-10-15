@@ -529,7 +529,7 @@ Extract the conditions for promoting the author's own work from the supplied sub
 
 ## Output
 Return JSON with exactly this shape: {"summary": "..."}
-- Write one concise English sentence that states the allowed route and its conditions directly. Preserve meaning before shortening.
+- Write one concise English sentence that states each allowed route and its conditions directly, including exceptions for other activities. Preserve meaning before shortening.
 - Use common words and numerals. Omit the subreddit name, introductions, commentary, and unrelated rules.
 - Return an empty summary when the rules provide no relevant condition.`,
       prompt: JSON.stringify({
@@ -542,8 +542,7 @@ Return JSON with exactly this shape: {"summary": "..."}
           summary: z
             .string()
             .trim()
-            .min(status === "allowed_limited" ? 1 : 0)
-            .max(600),
+            .min(status === "allowed_limited" ? 1 : 0),
         }),
       }),
       reasoning: "none",
