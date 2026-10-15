@@ -239,7 +239,8 @@ export async function GET(request: Request) {
     .select("name,self_promotion,self_promotion_detail,weekly_active_users", {
       count: "exact",
     })
-    .not("self_promotion", "is", null);
+    .not("self_promotion", "is", null)
+    .gte("weekly_active_users", 2_500);
 
   if (selfPromotionFilters.length > 0) {
     query = query.in("self_promotion", selfPromotionFilters);

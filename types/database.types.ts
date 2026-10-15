@@ -208,6 +208,12 @@ export type Database = {
       };
     };
     Functions: {
+      get_subreddits_due_for_refresh: {
+        Args: { p_limit?: number };
+        Returns: {
+          name: string;
+        }[];
+      };
       match_subreddits_by_description: {
         Args: {
           match_count: number;

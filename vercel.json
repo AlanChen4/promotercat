@@ -5,5 +5,11 @@
       "**": false,
       "main": true
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/cron/subreddits",
+      "schedule": "0 8 * * *"
+    }
+  ]
 }
