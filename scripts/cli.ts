@@ -521,8 +521,7 @@ export async function classifyPolicy(
       system: `## Task
 You will be given the different rules belonging to a subreddit. Your task is to summarize, in 1 sentence, the policies regarding self-promotion
 
-## Output
-Return JSON with exactly this shape: {"summary": "..."}
+## Rules
 - Write one concise English sentence that states each allowed route and its conditions directly, including exceptions for other activities. Preserve meaning before shortening.
 - Use common words and numerals. Omit introductions, commentary, and unrelated rules.
 - Do not include r/subreddit references. For example, if the subreddit is r/running, do NOT include r/running in the summary.
