@@ -39,15 +39,6 @@ Sign in and approve the consent screen. Then ask the client to search communitie
 for an indie game. The session-authenticated `/api/oauth/connections` endpoint supports listing and
 revoking grants.
 
-Run integration tests against a running local app and local Supabase instance:
-
-```sh
-doppler run -- node --test tests/agent-access.test.mjs
-```
-
-The suite creates disposable local users/OAuth clients, tests quotas, and temporarily
-changes local database privileges to test failures. It refuses hosted targets.
-
 ## Before production release
 
 1. Apply the agent-access database migration and deploy the application.
