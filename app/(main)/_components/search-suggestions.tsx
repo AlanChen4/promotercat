@@ -20,20 +20,27 @@ export function SearchSuggestions({
   }
 
   return (
-    <div className="w-full">
-      <div className="flex flex-wrap justify-center gap-2">
-        {suggestions.map((suggestion) => (
-          <button
-            key={suggestion.label}
-            type="button"
-            className="flex items-center cursor-pointer gap-2 rounded-full bg-muted px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-muted/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-            onClick={() => onSelect(suggestion.query)}
+    <div className="flex w-full flex-col gap-2">
+      {[suggestions.slice(0, 3), suggestions.slice(3)]
+        .filter((row) => row.length > 0)
+        .map((row) => (
+          <div
+            key={row[0].label}
+            className="flex flex-wrap justify-center gap-2"
           >
-            <span aria-hidden="true">{suggestion.emoji}</span>
-            <span>{suggestion.label}</span>
-          </button>
+            {row.map((suggestion) => (
+              <button
+                key={suggestion.label}
+                type="button"
+                className="flex items-center cursor-pointer gap-2 rounded-full bg-muted px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-muted/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                onClick={() => onSelect(suggestion.query)}
+              >
+                <span aria-hidden="true">{suggestion.emoji}</span>
+                <span>{suggestion.label}</span>
+              </button>
+            ))}
+          </div>
         ))}
-      </div>
     </div>
   );
 }
