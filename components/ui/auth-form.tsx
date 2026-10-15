@@ -6,7 +6,7 @@ import {
   ContinueWithSeedUserButton,
 } from "@/components/buttons";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { env } from "@/lib/env-client";
+import { env } from "@/lib/env";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/providers/auth-provider";
 

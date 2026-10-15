@@ -28,6 +28,7 @@
     "@sentry/nextjs": "^10.27.0",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.86.0",
+    "@t3-oss/env-nextjs": "0.13.11",
     "@vercel/analytics": "^1.6.0",
     "ai": "7.0.139",
     "cheerio": "1.1.2",

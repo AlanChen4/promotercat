@@ -1,5 +1,5 @@
 import { timingSafeEqual } from "node:crypto";
-import { getCronEnv } from "@/lib/env";
+import { env } from "@/lib/env";
 import { subredditUrlSchema } from "@/lib/subreddits";
 import { createAdminClient } from "@/lib/supabase/admin-server";
 import { ingestSubreddits } from "@/scripts/cli";
@@ -7,7 +7,6 @@ import { ingestSubreddits } from "@/scripts/cli";
 export const maxDuration = 800;
 
 export async function GET(request: Request) {
-  const env = getCronEnv();
   const actual = Buffer.from(request.headers.get("authorization") ?? "");
   const expected = Buffer.from(`Bearer ${env.CRON_SECRET}`);
   if (actual.length !== expected.length || !timingSafeEqual(actual, expected)) {

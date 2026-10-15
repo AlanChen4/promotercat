@@ -12,7 +12,6 @@ import {
 import { load } from "cheerio";
 import { z } from "zod";
 import { embedDescription } from "../lib/ai.ts";
-import { ingestionEnvSchema, validateEnv } from "../lib/env.ts";
 import {
   redditPageUrlSchema,
   type SubredditTarget,
@@ -633,7 +632,12 @@ async function main() {
       "Doppler could not load the selected config. Check doppler login and --env.",
     );
   }
-  const env = validateEnv(ingestionEnvSchema, secrets, "CLI");
+  // Load the selected config before importing the validated app environment.
+  Object.assign(process.env, {
+    NODE_ENV: process.env.NODE_ENV ?? "development",
+    ...secrets,
+  });
+  const { env } = await import("../lib/env.ts");
   const results = await ingestSubreddits(targets, env, {
     command: "add",
     report: (result) => {
@@ -648,7 +652,14 @@ async function main() {
 
 const APIFY_MIN_WEEKLY_ACTIVE_USERS = 2_500;
 
-type IngestionEnv = z.infer<typeof ingestionEnvSchema>;
+type IngestionEnv = Pick<
+  typeof import("../lib/env.ts").env,
+  | "NEXT_PUBLIC_SUPABASE_URL"
+  | "SUPABASE_SERVICE_ROLE_KEY"
+  | "TINYFISH_API_KEY"
+  | "APIFY_API_KEYS"
+  | "VERCEL_AI_GATEWAY"
+>;
 type IngestionResult = { status: string; url: string; [key: string]: unknown };
 
 async function forEachConcurrent<T>(

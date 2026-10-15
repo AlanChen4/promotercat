@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { env } from "@/lib/env-client";
+import { env } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
 
 export async function GET(request: Request) {

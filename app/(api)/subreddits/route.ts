@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { ACTIVITY_THRESHOLD_OPTIONS } from "@/constants/subreddit-filters";
 import { embedDescription } from "@/lib/ai";
-import { getServerEnv } from "@/lib/env";
+import { env } from "@/lib/env";
 import {
   RESULTS_PER_PAGE,
   type SelfPromotionStatus,
@@ -99,7 +99,7 @@ export async function GET(request: Request) {
     url.searchParams.get("sort_direction")?.toLowerCase(),
   ).data;
 
-  const supabaseAdmin = createAdminClient(getServerEnv());
+  const supabaseAdmin = createAdminClient(env);
   const pageSize = RESULTS_PER_PAGE;
   const currentPage = requestedPage;
   const rangeStart = (currentPage - 1) * pageSize;
@@ -265,7 +265,7 @@ async function fetchSemanticCandidates({
   const embeddingValues = await embedDescription(
     `subreddit related to ${searchTerm}`,
     "RETRIEVAL_QUERY",
-    getServerEnv().VERCEL_AI_GATEWAY,
+    env.VERCEL_AI_GATEWAY,
   );
 
   const { data, error } = await supabaseAdmin.rpc(

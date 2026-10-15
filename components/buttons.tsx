@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { env } from "@/lib/env-client";
+import { env } from "@/lib/env";
 import { createClient } from "@/lib/supabase/client";
 
 export function ContinueWithSeedUserButton() {
