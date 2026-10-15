@@ -184,6 +184,10 @@ begin
             return;
         end if;
     else
+        -- An activity-only discovery can track growth without inventing policy data.
+        if p_mode = 'activity' then
+            insert into public.subreddits (name) values (target_name) on conflict do nothing;
+        end if;
         -- All timelines serialize on the stable subreddit identity row.
         select id into saved_id from public.subreddits
         where lower(name) = lower(target_name) for update;

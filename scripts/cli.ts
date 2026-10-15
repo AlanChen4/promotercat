@@ -606,7 +606,9 @@ two-second pause before each retry. Retries request fresh data. Cached data is a
 (24-hour preference, not a guarantee). Missing rules or descriptions use one paid Apify batch (256 MB), without posts, comments, or AI analysis.
 APIFY_API_KEYS is a JSON array of keys, tried in order on confirmed quota rejection.
 Once a run starts, polling and results use the same key; other failures do not rotate keys.
-Communities below 2,500 weekly active users are skipped before fetching policy.
+All discovered communities can be added, regardless of weekly activity.
+Apify is used only at 2,500+ weekly active users. Smaller communities use TinyFish;
+if policy or description is unavailable, only activity is saved and existing policy is preserved.
 Incomplete or mismatched rules
 do not replace existing data. Processing time does not guarantee source freshness.
 Confirmed rule-free public communities are saved as unspecified without AI calls.
@@ -758,7 +760,8 @@ async function main() {
     process.exitCode = 1;
 }
 
-export const MIN_WEEKLY_ACTIVE_USERS = 2_500;
+const APIFY_MIN_WEEKLY_ACTIVE_USERS = 2_500;
+
 type IngestionEnv = z.infer<typeof ingestionEnvSchema>;
 type IngestionResult = { status: string; url: string; [key: string]: unknown };
 
@@ -795,6 +798,32 @@ export async function ingestSubreddits(
   const report = (result: IngestionResult) => {
     results.push(result);
     options.report?.(result);
+  };
+  const saveActivity = async (
+    target: SubredditTarget,
+    stats: Activity,
+    reason?: string,
+  ) => {
+    if (!options.dryRun) {
+      const { data, error } = await db.rpc("save_subreddit_snapshot", {
+        p_mode: "activity",
+        p_snapshot: {
+          name: stats.name,
+          weekly_active_users: stats.weekly_active_users,
+        },
+        p_rules: null,
+      });
+      if (error) throw new Error(error.message);
+      if (data.length !== 1)
+        throw new Error("Database returned an unexpected save result.");
+    }
+    report({
+      status: options.dryRun ? "dry_run" : "activity_updated",
+      url: target.url,
+      weekly_active_users: stats.weekly_active_users,
+      policy_updated: false,
+      reason,
+    });
   };
   const prepared: {
     target: SubredditTarget;
@@ -845,34 +874,9 @@ export async function ingestSubreddits(
         });
         continue;
       }
-      if (
-        stats.weekly_active_users < MIN_WEEKLY_ACTIVE_USERS ||
-        options.activityOnly
-      ) {
+      if (options.activityOnly) {
         try {
-          const row = existing.get(target.name);
-          // Keep existing history when a community falls below the inclusion threshold.
-          if (row && !options.dryRun) {
-            const { error } = await db.rpc("save_subreddit_snapshot", {
-              p_mode: "activity",
-              p_snapshot: {
-                name: target.name,
-                weekly_active_users: stats.weekly_active_users,
-              },
-              p_rules: null,
-            });
-            if (error) throw new Error(error.message);
-          }
-          report({
-            status:
-              stats.weekly_active_users < MIN_WEEKLY_ACTIVE_USERS
-                ? "below_threshold"
-                : options.dryRun
-                  ? "dry_run"
-                  : "activity_updated",
-            url: target.url,
-            weekly_active_users: stats.weekly_active_users,
-          });
+          await saveActivity(target, stats);
         } catch (error) {
           report({ status: "failed", url: target.url, error: message(error) });
         }
@@ -899,7 +903,11 @@ export async function ingestSubreddits(
       });
   });
   const fallback = prepared
-    .filter(({ policy }) => policy instanceof Error)
+    .filter(
+      ({ policy, stats }) =>
+        policy instanceof Error &&
+        stats.weekly_active_users >= APIFY_MIN_WEEKLY_ACTIVE_USERS,
+    )
     .map(({ target }) => target);
   let apify: Map<string, ApifyCommunity | Error>;
   try {
@@ -918,6 +926,17 @@ export async function ingestSubreddits(
     5,
     async ({ target, stats, row, policy: fetched }) => {
       try {
+        if (
+          stats.weekly_active_users < APIFY_MIN_WEEKLY_ACTIVE_USERS &&
+          (fetched instanceof Error || stats.description === null)
+        ) {
+          await saveActivity(
+            target,
+            stats,
+            "Policy unavailable from TinyFish; Apify skipped below 2,500 weekly active users.",
+          );
+          return;
+        }
         const policySource = fetched instanceof Error ? "apify" : "tinyfish";
         const community = apify.get(target.name);
         const policy =

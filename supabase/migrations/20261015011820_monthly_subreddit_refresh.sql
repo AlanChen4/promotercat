@@ -10,7 +10,7 @@ as $$
             case when members.weekly_active_users < 2500
                 then greatest(members.created_at, details.created_at)
                 else details.created_at
-            end as refreshed_at
+            end as refreshed_at, members.weekly_active_users
         from public.subreddits subreddit
         left join lateral (
             select created_at, weekly_active_users from public.subreddit_members
@@ -25,13 +25,13 @@ as $$
     )
     select checks.name from checks
     where refreshed_at is null or refreshed_at < now() - interval '1 month'
-    order by refreshed_at asc nulls first, id
+    order by weekly_active_users desc nulls last, refreshed_at asc nulls first, id
     limit least(greatest(p_limit, 1), 350);
 $$;
 revoke all on function public.get_subreddits_due_for_refresh(int) from public, anon, authenticated;
 grant execute on function public.get_subreddits_due_for_refresh(int) to service_role;
 
--- Apply the same inclusion threshold before ranking semantic search results.
+-- Community size controls Apify usage, not visibility in search.
 create or replace function public.match_subreddits_by_description(
     query_embedding extensions.vector(3072), match_threshold float, match_count int
 )
@@ -46,8 +46,7 @@ as $$
     select current.name, current.self_promotion, current.self_promotion_detail,
         current.weekly_active_users
     from public.current_subreddits current
-    where current.weekly_active_users >= 2500
-      and current.description_embedding is not null
+    where current.description_embedding is not null
       and current.description_embedding <#> query_embedding < -match_threshold
     order by current.description_embedding <#> query_embedding asc
     limit least(match_count, 200);
