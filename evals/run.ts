@@ -21,7 +21,8 @@ Examples:
   pnpm evals --help
 
 Output: JSON lines with expected/actual status, confidence, and generated detail,
-followed by totals. Exit 1 on any mismatch or API error.`);
+followed by totals. Checks statuses, omitted subreddit names, and any saved
+summary requirements. Exit 1 on a failed check or API error.`);
     return;
   }
 
@@ -31,6 +32,13 @@ followed by totals. Exit 1 on any mismatch or API error.`);
         name: z.string().min(1),
         source: z.string().min(1),
         expected: selfPromotionSchema,
+        summaryChecks: z
+          .object({
+            required: z.array(z.string()).default([]),
+            forbidden: z.array(z.string()).default([]),
+            maxLength: z.number().int().positive(),
+          })
+          .optional(),
         rules: z.array(
           z.object({ title: z.string(), description: z.string().nullable() }),
         ),
@@ -54,12 +62,32 @@ followed by totals. Exit 1 on any mismatch or API error.`);
         { rules: example.rules },
         env.VERCEL_AI_GATEWAY,
       );
-      const pass = result.self_promotion === example.expected;
+      const detail = result.self_promotion_detail;
+      const failures: string[] = [];
+      if (result.self_promotion !== example.expected)
+        failures.push("classification");
+      const ownName = new RegExp(`\\br/${example.name}\\b`, "i");
+      if (ownName.test(detail)) failures.push("subreddit name in summary");
+      const checks = example.summaryChecks;
+      if (checks) {
+        for (const pattern of checks.required) {
+          if (!new RegExp(pattern, "i").test(detail))
+            failures.push(`missing: ${pattern}`);
+        }
+        for (const pattern of checks.forbidden) {
+          if (new RegExp(pattern, "i").test(detail))
+            failures.push(`forbidden: ${pattern}`);
+        }
+        if (detail.length > checks.maxLength)
+          failures.push(`summary exceeds ${checks.maxLength} characters`);
+      }
+      const pass = failures.length === 0;
       if (pass) passed++;
       console.log(
         JSON.stringify({
           name: example.name,
           pass,
+          failures,
           expected: example.expected,
           actual: result.self_promotion,
           confidence: result.self_promotion_confidence,

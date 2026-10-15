@@ -192,7 +192,19 @@
         "title": "Redirect to megathread",
         "description": "This includes controversial posts, complaints specific to a single game, posts that are too short to generate meaningful discussion, repetitive topics with the same takeaways, and similar low-effort content. We redirect these kinds of comments to the megathread, where these topics can be more easily discussed without overpopulating the general feed with them."
       }
-    ]
+    ],
+    "summaryChecks": {
+      "required": [
+        "weekly showcase",
+        "game|content",
+        "key|account|merchandis|service"
+      ],
+      "maxLength": 260,
+      "forbidden": [
+        "promoting products.{0,40}(?:not allowed|banned|prohibited)",
+        "(?:all|any) promotion.{0,40}(?:not allowed|banned|prohibited)"
+      ]
+    }
   },
   {
     "name": "fountainpens",
@@ -282,7 +294,11 @@
         "title": "No illegal downloads/ripping",
         "description": "We do not allow links or downloads to ripped assets or illegal downloads, when posting you MUST own the rights or license to the asset you are posting, or the assets must be public domain or other license that allows free distribution."
       }
-    ]
+    ],
+    "summaryChecks": {
+      "required": ["free", "download", "registr|sign.?up|email", "licen"],
+      "maxLength": 400
+    }
   },
   {
     "name": "weaving",
@@ -475,5 +491,290 @@
         "description": "- To share your config, please use the monthly dotfile review thread\n- To share memes, please use the monthly meme thread"
       }
     ]
+  },
+  {
+    "name": "boardgames",
+    "source": "https://www.reddit.com/r/boardgames/about/",
+    "expected": "allowed_limited",
+    "rules": [
+      {
+        "title": "Follow Reddiquette and Reddit Content Policies",
+        "description": "All content on the sub **must** follow [Reddiquette](https://www.reddithelp.com/en/categories/reddit-101/reddit-basics/reddiquette) and abide by Reddit's [Content Policy](https://www.redditinc.com/policies/content-policy)."
+      },
+      {
+        "title": "No Discrimination, Harassment, or Malicious Content",
+        "description": "We have zero tolerance for hate speech, doxing, or threats. Any violation of this rule is considered bannable, even on the first offence. Harassment, dog whistles, playing devil’s advocate, sea-lioning, and general pot-stirring is considered malicious and is not permitted."
+      },
+      {
+        "title": "Keep Discussions Civil",
+        "description": "All discussion, even disagreements, is expected to be conducted civilly. Unwelcomed behavior that breaks our [Community Guidelines](/r/boardgames/wiki/community) are subject to removal, regardless of content, and repeated offences can lead to bans."
+      },
+      {
+        "title": "Posts Must be On-Topic",
+        "description": "At their core, posts should be discussion-oriented. External media or content, when shared, must engage the community. Above all, posts must be directly related to the board gaming hobby. Please see our list of [Off-Topic Posts](/r/boardgames/wiki/off-topic) which are subject to removal."
+      },
+      {
+        "title": "Promotion Requires Participation",
+        "description": "This sub is a community, not an audience. Promotion of any kind requires the user to abide by our [Participation & Promotion Guidelines](/r/boardgames/wiki/contribution-guides/#wiki_rule_5).\n\nIf you're attempting to run an AMA, you must do so by scheduling it with the mods via modmail."
+      },
+      {
+        "title": "Follow Posting Guidelines",
+        "description": "Certain topics, such as [Game Recommendations](/r/boardgames/wiki/contribution-guides#wiki_game_recommendations),  [COMC](/r/boardgames/wiki/contribution-guides#wiki_check_out_my_collection_.28comc.29), and [Giveaways](/r/boardgames/wiki/contribution-guides#wiki_contests_.26_giveaways) have recommended or required posting guidelines all users are expected to follow. Check our [Contribution Guides](/r/boardgames/wiki/contribution-guides) for a complete list."
+      },
+      {
+        "title": "Respect Intellectual Property",
+        "description": "Sharing self-created projects are encouraged, but must be done so in a way that respects the intellectual property of publishers/designers. Shared game assets or digital recreations that are not publicly released by the IP holders require written permission by the IP holder. Game re-themes must be shared in such a way as to prevent physical recreation."
+      },
+      {
+        "title": "Hide Spoilers and NSFW Content",
+        "description": "Respect other users of this sub by keeping Spoilers and possibly NSFW content hidden. Posts and comments **must** be appropriately tagged or hidden in accordance with our [Spoilers](/r/boardgames/wiki/contribution-guides#wiki_spoilers) guidelines."
+      },
+      {
+        "title": "Limit Usage of AI",
+        "description": "This sub encourages real discussion of board games. Therefore, content or comments that are largely or completely made by AI are subject to removal. Additionally, certain websites and applications are no longer allowed due to the prevalence of vibe-coding. See our [AI Rules](https://www.reddit.com/r/boardgames/wiki/contribution-guides#wiki_rule_9) for a full list."
+      }
+    ],
+    "summaryChecks": {
+      "required": ["participat", "AMA", "schedul|arrang"],
+      "forbidden": [
+        "[0-9]+\\s*%|[0-9]+\\s*[:/]\\s*[0-9]+",
+        "promotion.{0,45}(?:require|need).{0,35}(?:moderat|mods).{0,20}approv"
+      ],
+      "maxLength": 280
+    }
+  },
+  {
+    "name": "cycling",
+    "source": "https://www.reddit.com/r/cycling/about/",
+    "expected": "allowed_limited",
+    "rules": [
+      {
+        "title": "No Self Promotion",
+        "description": "The community has spoken: If you only submit links to your own content, your links will be removed as spam. We suggest being an active participating member of Reddit and r/cycling before submitting links to your own site.\nAffiliate links are self promotion."
+      },
+      {
+        "title": "No Picture Posts of your Stuff",
+        "description": "r/cycling can be thought of as a discussion-driven forum. Pictures of your stuff will be actively removed, unless there is some kind of necessary discussion involved.\nr/bicycling is an image-driven forum. They are our friends and I like to think we complement eachother."
+      },
+      {
+        "title": "No Memes",
+        "description": "These will be actively removed, but consider posting in r/fffffffuuuuuuuuuuuu, r/AdviceAnimals, or r/memes."
+      },
+      {
+        "title": "No Surveys",
+        "description": "No surveys unless you're an active community member of r/cycling. Surveys from new accounts will be removed.\nr/cycling is not a vein of ore for you to mine."
+      },
+      {
+        "title": "Don't be a jerk. Be kind to each other.",
+        "description": "We're all humans. All trying to make sense of this messed up world.\nDon't attack people. If you can't say it nicely then perhaps don't say it at all.\nIt isn't your job to \"fix\" random people on the internet.\nConsider using \"I\" statements instead of \"you\" statements.\nIf someone insults you then move on or report them. Do not respond in kind.\nVictim blaming is jerk behavior."
+      },
+      {
+        "title": "No Racism/Hate Speech",
+        "description": "There will be zero tolerance for racism, homophobia/transphobia, or sexism/misogyny, engaging in any sort of hate speech will result in the post or comment being removed and the poster being banned. We do not allow hate speech."
+      },
+      {
+        "title": "No bots of any sort. No computer-generated responses. No AI content.",
+        "description": null
+      }
+    ],
+    "summaryChecks": {
+      "required": [
+        "participat|engag|contribut",
+        "only|solely|exclusiv|nothing but|excess|spam",
+        "affiliat"
+      ],
+      "maxLength": 260,
+      "forbidden": ["must.{0,60}active|active.{0,30}required"]
+    }
+  },
+  {
+    "name": "quilting",
+    "source": "https://www.reddit.com/r/quilting/about/",
+    "expected": "allowed_limited",
+    "rules": [
+      {
+        "title": "Reddiquette",
+        "description": "Follow reddiquette and use your upvotes and downvotes accordingly. Report offensive, low-effort, or spammy posts so the moderators can review them.  We expect all users to treat others with respect. Quilters requesting feedback should be treated kindly with useful suggestions and comments to improve their work. Calling a quilt \"ugly\", demeaning a fabric choice, or name calling anyone in our sub is prohibited and will result in a ban at the moderators discretion."
+      },
+      {
+        "title": "Linking Original Sources",
+        "description": "If linking to inspiration you found on a site such a Pinterest, please link to the original source, not a \"pin.\"  Reddit auto deletes all posts and comments with pinterest links.  We require posters to link or reference original sources if known."
+      },
+      {
+        "title": "Social Media and Blog Links Spam/Self Promo",
+        "description": "Self-promotion is frowned upon on Reddit as a whole.\n\nFor Blog/Web links please refer to reddiquette and be respectful to not spam the sub. If your blog post only shows one or two photos upload to Reddit for direct sharing. Users that only post links to their blog or website and do not have a history of participating in other /r/quilting posts will be banned at moderator discretion."
+      },
+      {
+        "title": "Sales/Self-Promotion posts or comments",
+        "description": "Links to websites for direct sales (Etsy shops, Ebay, Personal Websites, IG Shop) should be posted in the bi-weekly \"Steals, Deals and Destash\" thread.  Check the “Featured” flair for the latest post.  Giveaways fall under this rule.\n\nIndirect sales posts or trying to circumvent this rule will result in a ban. New members or Redditors creating sales posts to spam the community will be banned. Use ads.reddit.com to purchase ads on Reddit for advertising."
+      },
+      {
+        "title": "Patterns under copyright",
+        "description": "Sharing or PMing patterns with existing copyright protection is strictly prohibited. - Patterns purchased online or at quilt shops cannot be copied/shared with other users. Users found to be sharing patterns that are copywrite protected will be banned from the sub. Please support your patternmakers by recommending where others can purchase patterns you've enjoyed if asked."
+      },
+      {
+        "title": "Stolen Work and AI Generated Images",
+        "description": "Reposting stolen content or AI Generated Images will result in a permanent ban**. This includes: posting a photo of quilts not your own yet claiming it is yours, posting about a quilt in any form you stole from someone else, or posting stolen patterns or tutorials. \n\nAI: We do not allow AI generated images in our sub and encourage you to use other ways to plot/plan quilts.  AI Slop posts are strictly prohibited and will result in a permanent ban. AI created patterns will be called out as 💩"
+      },
+      {
+        "title": "Posted Projects should be quilting-related, or quilting-inspired",
+        "description": "Stay on topic.\n\nIn order to maintain our content focus on *quilting*, we don't allow crafting content that is NOT related to quilting-related things. If you post relevant non-quilt content (pillows, quilted clothing, quilted items that aren't quilts) please use the \"Quilted Crafts\" flair. If it doesn't involve quilting... it might belong on another subreddit."
+      },
+      {
+        "title": "Polls",
+        "description": "Poll feature may be used for VOTING ON DESIGN OPTIONS ONLY.  Low effort/karma farming discussion polls will be removed.  \nAcceptable: which layout do you like? Please vote ABCD.  Low effort: are you a pre-washer/starcher/machine vs hand quilter. Etc."
+      },
+      {
+        "title": "Homemade Apps/ Market Research/School Projects",
+        "description": "Due to the number of requests we get from developers, researchers, product and software engineers we request you not use our sub for free market research and data collection.  School projects/data collection for your college assignment are not permitted in our sub.\n\nIf you’ve made an app for yourself, or quilter mom or grandma and it requires a login for us to use the post will be removed due to security concerns. Paid apps or software for quilters can go into our steals/deals biweekly thread."
+      },
+      {
+        "title": "Troll Posts or Comments, Baiting Arguments",
+        "description": "Posts or comments trolling our community or its members will be removed at moderator discretion. This includes Redditors with no community karma or negative community karma, meaning you are not a positive participant in our community. \n\nComments or posts baiting our community members into arguments will be removed. Abusers of this rule will be banned."
+      },
+      {
+        "title": "Gift Idea Megathread",
+        "description": "This season we are asking all gift idea/request posts to go in our Megathread - please repost your request there. \nhttps://www.reddit.com/r/quilting/comments/1omfc0e/holiday_gift_ideas_megathread/"
+      },
+      {
+        "title": "Appraisal requests",
+        "description": "Questions regarding potential quilt value are not permitted here. We suggest reaching out to your local quilt appraiser to pay for an appraisal that can be used for insurance purposes. If you are a flipper looking to make $$ on your thrifted quilt/fabric or estate sale find we wish you the best of luck. Check sold listings on eBay for pricing information. \n\nhttps://paaqt.com/find-a-quilt-appraiser/"
+      }
+    ],
+    "summaryChecks": {
+      "required": [
+        "Steals.{0,12}Deals.{0,12}Destash",
+        "bi.?weekly|every 2 weeks|fortnight",
+        "participat|engag|contribut|history"
+      ],
+      "maxLength": 400,
+      "forbidden": ["sales, giveaways.{0,35}banned"]
+    }
+  },
+  {
+    "name": "INAT",
+    "source": "https://www.reddit.com/r/INAT/about/",
+    "expected": "allowed_limited",
+    "rules": [
+      {
+        "title": "Clarity & Word Requirement",
+        "description": "Posts must provide enough information to fully understand your offer/requests.\nUsers should aim for at least 150 words in their post."
+      },
+      {
+        "title": "[TAG] Required",
+        "description": "All post titles must include one of the following: [Hobby], [RevShare], [ForHire], [Paid], or [Meta]. Use only one where possible.\n* Meta: For topics about the subreddit or the process of finding a team.\n* Paid: You're recruiting for a paid role.\n* ForHire: You're seeking paid work.\n* Revshare: Recruiting for, or are open to, projects that will split the revenue or company equity.\n* Hobby: For non-commercial, hobby, and volunteer opportunities."
+      },
+      {
+        "title": "Portfolio & Progress Requirements",
+        "description": "Show your prior work, such as game demos, name in credits, GitHub projects, Artstation, LinkedIn profiles, or other relevant experience.\nIf you're recruiting for a team, include some examples of what has been created for the project or examples of your previously completed titles.\nIf you are new to the industry and have never created anything in your field, write \"PORTFOLIO: this is my first project and do not have a portfolio of any kind\" in your post to comply with this rule."
+      },
+      {
+        "title": "Remain Respectful",
+        "description": "Prohibited:\n* Personal insults or name-calling\n* Slurs or discriminatory language\n* Threats or harassment\n* Bad faith trolling\nStrong disagreement and criticism are welcome when focused on arguments, not individuals. Disagree with what's said, not who said it."
+      },
+      {
+        "title": "Wait seven days before [re]posting about the same project or offer",
+        "description": "Wait seven days before re-posting about the same project or offer.\nDo not delete older posts. It does not reset the 7-day counter."
+      },
+      {
+        "title": "Account Age Requirement",
+        "description": "Due to spam, new Reddit accounts must wait 1 week before posting here. To avoid general Reddit bans, we strongly suggest you use this time to build up your karma."
+      },
+      {
+        "title": "No Reddit-wide banned URLs",
+        "description": "This includes sites.google. We have no control over this, and can get your account shadowbanned."
+      },
+      {
+        "title": "Do not hijack other people's posts",
+        "description": "Do not promote your services/needs in another user's thread unless it's relevant to their post."
+      },
+      {
+        "title": "Posts must be relevant to finding a team",
+        "description": "INAT stands for \"I Need A Team\".\nWe occasionally allow posts for events or tools that may help the community of r/INAT, but it's a case-by-case basis; contact the mod team first.\nr/INAT is not the place to buy/sell assets, recruit for your Discord/community, or advertise your AI platform."
+      }
+    ],
+    "summaryChecks": {
+      "required": [
+        "re.?post|repeat|per (?:project|offer)|same (?:project|offer)",
+        "7|seven|week",
+        "portfolio|prior work|previous work",
+        "tag|flair|title",
+        "moderat|modmail|\\bmod\\b"
+      ],
+      "maxLength": 450,
+      "forbidden": [
+        "AI platform.{0,50}(approval|contact)|no.{0,120}AI platform.{0,50}unless"
+      ]
+    }
+  },
+  {
+    "name": "tabletop",
+    "source": "https://www.reddit.com/r/tabletop/about/",
+    "expected": "allowed_limited",
+    "rules": [
+      {
+        "title": "Be civil",
+        "description": "No personal attacks or inflammatory language. If what you say is going to unreasonably upset or provoke another redditor it contravenes this rule.\n\nNo racism, sexism, bigotry, homophobic or transphobic slurs, or other hateful language.\n\nNo advocating violence against real people."
+      },
+      {
+        "title": "English only",
+        "description": "All content must be in English."
+      },
+      {
+        "title": "No self-promo spam",
+        "description": "No self-promotion spam - For every ONE promotional post you must have FIVE posts/comments on /r/tabletop."
+      },
+      {
+        "title": "No off-topic",
+        "description": "Certain topics, e.g., digital games, are off-topic for /r/tabletop."
+      }
+    ],
+    "summaryChecks": {
+      "required": ["5|five", "post|comment|contribution", "promo"],
+      "maxLength": 140
+    }
+  },
+  {
+    "name": "IndieGaming",
+    "source": "https://www.reddit.com/r/IndieGaming/about/",
+    "expected": "allowed_limited",
+    "rules": [
+      {
+        "title": "Submission requirements",
+        "description": "Your account must be at least 1 week old and have an actual posting history. Until that time, you may comment, just not submit anything.\n**Users may only make 1 submission every 2 weeks**."
+      },
+      {
+        "title": "What to submit",
+        "description": "* Articles, reviews, videos, and trailers from their original source. Aim for high-quality content relevant to indie gaming.\n* Original content. Devlogs, gifs, screenshots, etc.\n* Discussion oriented text posts\n\nAdditional information and guidelines can be found [on our wiki](https://www.reddit.com/r/IndieGaming/wiki/submit)."
+      },
+      {
+        "title": "Self-promotion",
+        "description": "Please abide by [Reddit's spam guidelines](https://support.reddithelp.com/hc/en-us/articles/360043504051-Spam). \n\nWhen promoting a game or sharing development progress, please make only **one submission every two weeks**. Do not post the same content repeatedly. \n\nPlease do not submit the following content:\n\n\n* Let's Plays or Streams"
+      },
+      {
+        "title": "Bad types of content",
+        "description": "Please do not submit the following types of content:\n\n* Store pages with no/little context.\n* Memes, macros, \"funny\" screenshots and so on. \n* Articles that just quote news from bigger sites without adding content or discussion.\n* Video articles. That's an article with a video and no article at all. Submit the video instead.\n* Non-English posts. If you link to an article or video that isn't in English you must provide an English translation.\n* Mobile links/link shorteners/Direct Downloads"
+      },
+      {
+        "title": "Asset flipping",
+        "description": "If you are trying to flip a game quickly to make easy money, this rule is for you. We don't want any games that are obvious asset flips plaguing the subreddit. If you put in actual work into your game, you have nothing to worry about. We just don't want this sub to be filled with Digital Homicide quality games."
+      },
+      {
+        "title": "Generative AI",
+        "description": "If your game heavily utilizes or relies on GenAI, please do not post it here. **If GenAI was involved in any aspect of your game's development or promotion, you MUST declare its usage and what it was used for in your submission.**"
+      },
+      {
+        "title": "Piracy and leaks",
+        "description": "Posting or discussing pirated or leaked content is grounds for an immediate permaban."
+      },
+      {
+        "title": "No adult content",
+        "description": "**Pornographic and/or sexually explicit content is not allowed.**"
+      }
+    ],
+    "summaryChecks": {
+      "required": ["2 weeks|two weeks|fortnight"],
+      "maxLength": 200
+    }
   }
 ]
