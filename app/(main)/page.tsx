@@ -60,6 +60,16 @@ const SEARCH_SUGGESTIONS = [
     emoji: "🚀",
     query: "startups, founders, entrepreneurship",
   },
+  {
+    label: "Fitness",
+    emoji: "💪",
+    query: "fitness, exercise, strength training, workouts",
+  },
+  {
+    label: "Marketing",
+    emoji: "📣",
+    query: "marketing, digital marketing, advertising, content marketing",
+  },
 ];
 
 export default function HomePage() {
