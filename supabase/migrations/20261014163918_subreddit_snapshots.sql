@@ -68,6 +68,7 @@ alter table public.subreddits
     drop column description_embedding,
     drop column self_promotion,
     drop column self_promotion_detail;
+drop index public.subreddits_name_key;
 create unique index subreddits_name_lower_key on public.subreddits (lower(name));
 revoke all on public.subreddits from public, anon, authenticated, service_role;
 -- UPDATE permits the row lock that serializes snapshot writes.
@@ -77,7 +78,7 @@ create view public.current_subreddits with (security_invoker = true) as
 select subreddit.id, subreddit.name,
     descriptions.description, descriptions.description_embedding,
     details.self_promotion, details.self_promotion_detail, details.self_promotion_confidence,
-    members.weekly_active_users, details.created_at as last_scraped_at
+    members.weekly_active_users
 from public.subreddits subreddit
 left join lateral (
     select description, description_embedding from public.subreddit_descriptions
@@ -222,3 +223,8 @@ $$;
 revoke all on function public.save_subreddit_snapshot(text, jsonb, jsonb)
     from public, anon, authenticated;
 grant execute on function public.save_subreddit_snapshot(text, jsonb, jsonb) to service_role;
+
+-- Supabase Auth owns user accounts; the old billing profile is unused.
+drop trigger on_auth_user_created on auth.users;
+drop function public.handle_new_user();
+drop table public.users;

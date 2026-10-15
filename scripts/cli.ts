@@ -3,18 +3,27 @@ import { readFile } from "node:fs/promises";
 import { setTimeout as delay } from "node:timers/promises";
 import { pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
-import { createClient } from "@supabase/supabase-js";
-import { experimental_decide as decide, generateText, Output } from "ai";
+import {
+  createGateway,
+  experimental_decide as decide,
+  generateText,
+  Output,
+} from "ai";
 import { load } from "cheerio";
 import { z } from "zod";
-import { ingestionEnvSchema } from "../env-ingestion.ts";
-import { createAiGateway, embedDescription } from "../lib/ai.ts";
-import type { Database, Json, Tables } from "../types/database.types.ts";
+import { embedDescription } from "../lib/ai.ts";
+import { ingestionEnvSchema, validateEnv } from "../lib/env.ts";
+import {
+  redditPageUrlSchema,
+  type SubredditTarget,
+  subredditUrlSchema,
+} from "../lib/subreddits.ts";
+import { createAdminClient } from "../lib/supabase/admin-server.ts";
+import type { Json, Tables } from "../types/database.types.ts";
 
-type SubredditTarget = { name: string; url: string };
 type ExistingSubreddit = Pick<
   Tables<"current_subreddits">,
-  "id" | "description" | "description_embedding"
+  "id" | "name" | "description" | "description_embedding"
 >;
 type Activity = {
   name: string;
@@ -22,35 +31,8 @@ type Activity = {
   weekly_active_users: number;
 };
 type Rule = { title: string; description: string | null };
-type Policy = { markdown: string; rules: Rule[] };
+type Policy = { rules: Rule[] };
 type ApifyCommunity = { policy: Policy; description: string | null };
-
-class IncompletePolicyError extends Error {
-  constructor() {
-    super("Rule descriptions are unloaded or missing.");
-  }
-}
-
-const redditHosts = new Set(["reddit.com", "www.reddit.com", "old.reddit.com"]);
-
-function normalizeSubredditUrl(raw: string): SubredditTarget {
-  const url = new URL(raw);
-  const match = url.pathname.match(/^\/r\/([A-Za-z0-9_]{2,21})\/?$/);
-  if (
-    url.protocol !== "https:" ||
-    !redditHosts.has(url.hostname) ||
-    url.port ||
-    url.username ||
-    url.password ||
-    !match
-  ) {
-    throw new Error(
-      "Use a subreddit URL such as https://www.reddit.com/r/apple/.",
-    );
-  }
-  const name = match[1].toLowerCase();
-  return { name, url: `https://www.reddit.com/r/${name}/` };
-}
 
 function parseActivity(html: string, target: SubredditTarget): Activity {
   const $ = load(html);
@@ -86,7 +68,6 @@ function parsePolicy(markdown: string, target: SubredditTarget): Policy {
       "The about page did not return the subreddit rules section.",
     );
   const rules: Rule[] = [];
-  const policyLines: string[] = [];
   let current: Rule | undefined;
   let previousNonemptyLine = "";
   for (const line of lines.slice(start + 1)) {
@@ -105,7 +86,6 @@ function parsePolicy(markdown: string, target: SubredditTarget): Policy {
       !numberedRule
     )
       break;
-    policyLines.push(line);
     if (heading) {
       current = { title: heading[1].trim(), description: null };
       rules.push(current);
@@ -122,12 +102,9 @@ function parsePolicy(markdown: string, target: SubredditTarget): Policy {
     if (line) previousNonemptyLine = line;
   }
   if (!rules.length || !rules.some((rule) => rule.description)) {
-    throw new IncompletePolicyError();
+    throw new Error("Rule descriptions are unloaded or missing.");
   }
-  const text = policyLines.join("\n").trim();
-  if (text.length > 80_000)
-    throw new Error("Rules exceed the classifier input budget.");
-  return { markdown: text, rules };
+  return { rules };
 }
 
 const fetchResponse = z.object({
@@ -228,14 +205,9 @@ async function fetchSubredditBatch<T>(
       signal,
     ).catch((error: unknown) => {
       for (const target of pending) {
-        const previous = values.get(target.name);
         values.set(
           target.name,
-          previous instanceof IncompletePolicyError
-            ? previous
-            : error instanceof Error
-              ? error
-              : new Error(String(error)),
+          error instanceof Error ? error : new Error(String(error)),
         );
       }
       return null;
@@ -251,16 +223,11 @@ async function fetchSubredditBatch<T>(
             response.errors.find((item) => item.url === urls[index])?.error ??
               "Missing Fetch result.",
           );
-        const final = new URL(result.final_url ?? result.url);
+        const final = redditPageUrlSchema.parse(result.final_url ?? result.url);
         const expected = new URL(urls[index]);
         if (
-          final.protocol !== "https:" ||
-          final.port ||
-          final.username ||
-          final.password ||
-          !redditHosts.has(final.hostname) ||
           final.pathname.toLowerCase().replace(/\/$/, "") !==
-            expected.pathname.toLowerCase().replace(/\/$/, "")
+          expected.pathname.toLowerCase().replace(/\/$/, "")
         ) {
           throw new Error(
             "Fetch redirected away from the requested subreddit page.",
@@ -268,15 +235,9 @@ async function fetchSubredditBatch<T>(
         }
         values.set(target.name, parse(result.text, target));
       } catch (error) {
-        const previous = values.get(target.name);
-        const failure =
-          error instanceof Error ? error : new Error(String(error));
         values.set(
           target.name,
-          previous instanceof IncompletePolicyError &&
-            !(failure instanceof IncompletePolicyError)
-            ? previous
-            : failure,
+          error instanceof Error ? error : new Error(String(error)),
         );
         retry.push(target);
       }
@@ -296,7 +257,7 @@ const apifyRunSchema = z.object({
 const apifyCommunitySchema = z.object({
   dataType: z.literal("community"),
   name: z.string(),
-  url: z.string(),
+  url: subredditUrlSchema,
   subredditType: z.literal("public"),
   publicDescription: z.string().nullish(),
   rules: z
@@ -307,7 +268,20 @@ const apifyCommunitySchema = z.object({
         priority: z.number().int().nonnegative(),
       }),
     )
-    .max(100),
+    .max(100)
+    .refine(
+      (rules) =>
+        new Set(rules.map((rule) => rule.priority)).size === rules.length,
+      "Apify returned duplicate rule positions.",
+    )
+    .transform((rules) =>
+      rules
+        .sort((a, b) => a.priority - b.priority)
+        .map((rule) => ({
+          title: rule.shortName,
+          description: rule.description?.trim() || null,
+        })),
+    ),
 });
 
 class ApifyUsageExhaustedError extends Error {
@@ -447,25 +421,11 @@ async function fetchApifyCommunities(
       if (matches.length !== 1)
         throw new Error("Apify did not return exactly one community record.");
       const community = apifyCommunitySchema.parse(matches[0]);
-      if (normalizeSubredditUrl(community.url).name !== target.name)
+      if (community.url.name !== target.name)
         throw new Error("Apify returned a mismatched community URL.");
-      const priorities = new Set(community.rules.map((rule) => rule.priority));
-      if (priorities.size !== community.rules.length)
-        throw new Error("Apify returned duplicate rule positions.");
-      const rules = community.rules
-        .sort((a, b) => a.priority - b.priority)
-        .map((rule) => ({
-          title: rule.shortName,
-          description: rule.description?.trim() || null,
-        }));
       // A public community record with rules: [] confirms a rule-free community.
-      const markdown = rules
-        .map((rule) => `## ${rule.title}\n\n${rule.description ?? ""}`)
-        .join("\n\n");
-      if (markdown.length > 80_000)
-        throw new Error("Rules exceed the classifier input budget.");
       communities.set(target.name, {
-        policy: { rules, markdown },
+        policy: { rules: community.rules },
         description: community.publicDescription ?? null,
       });
     } catch (error) {
@@ -491,8 +451,13 @@ async function classifyPolicy(
       self_promotion_detail: "",
       self_promotion_confidence: 1,
     };
-  const gateway = createAiGateway(apiKey);
-  const state = { name, rules: policy.markdown };
+  const rules = policy.rules
+    .map((rule) => `## ${rule.title}\n\n${rule.description ?? ""}`)
+    .join("\n\n");
+  if (rules.length > 80_000)
+    throw new Error("Rules exceed the classifier input budget.");
+  const gateway = createGateway({ apiKey });
+  const state = { name, rules };
   const result = await decide({
     model: gateway.decisionModel("typesafe-ai/jev"),
     state,
@@ -545,7 +510,7 @@ async function classifyPolicy(
       maxOutputTokens: 300,
       abortSignal: requestSignal(60_000, signal),
     });
-    detail = summary.output.summary.trim();
+    detail = summary.output.summary;
   }
   return {
     self_promotion: status,
@@ -639,7 +604,7 @@ async function main() {
     );
   const seen = new Set<string>();
   for (const raw of inputs) {
-    const target = normalizeSubredditUrl(raw);
+    const target = subredditUrlSchema.parse(raw);
     if (!seen.has(target.name)) {
       seen.add(target.name);
       targets.push(target);
@@ -668,12 +633,7 @@ async function main() {
       "Doppler could not load the selected config. Check doppler login and --env.",
     );
   }
-  const parsedEnv = ingestionEnvSchema.safeParse(secrets);
-  if (!parsedEnv.success)
-    throw new Error(
-      `Invalid CLI environment variables:\n${z.prettifyError(parsedEnv.error)}`,
-    );
-  const env = parsedEnv.data;
+  const env = validateEnv(ingestionEnvSchema, secrets, "CLI");
   const results = await ingestSubreddits(targets, env, {
     command: "add",
     report: (result) => {
@@ -713,11 +673,7 @@ export async function ingestSubreddits(
     signal?: AbortSignal;
   },
 ) {
-  const db = createClient<Database>(
-    env.NEXT_PUBLIC_SUPABASE_URL,
-    env.SUPABASE_SERVICE_ROLE_KEY,
-    { auth: { persistSession: false, autoRefreshToken: false } },
-  );
+  const db = createAdminClient(env);
   const results: IngestionResult[] = [];
   const report = (result: IngestionResult) => {
     results.push(result);
@@ -757,16 +713,25 @@ export async function ingestSubreddits(
   for (let offset = 0; offset < targets.length; offset += 10)
     batches.push(targets.slice(offset, offset + 10));
   await forEachConcurrent(batches, 8, async (batch) => {
-    const existing = new Map<string, ExistingSubreddit | null>();
+    const { data: rows, error } = await db
+      .from("current_subreddits")
+      .select("id,name,description,description_embedding")
+      .or(
+        batch
+          .map(({ name }) => `name.ilike.${name.replaceAll("_", "\\_")}`)
+          .join(","),
+      );
+    if (error) throw new Error(error.message);
+    const existing = new Map<string, ExistingSubreddit>(
+      (rows ?? []).map((row) => {
+        if (!row.name)
+          throw new Error("Database returned a subreddit without a name.");
+        return [row.name.toLowerCase(), row];
+      }),
+    );
     const pending: SubredditTarget[] = [];
     for (const target of batch) {
-      const { data, error } = await db
-        .from("current_subreddits")
-        .select("id,description,description_embedding")
-        .ilike("name", target.name.replaceAll("_", "\\_"))
-        .maybeSingle();
-      if (error) throw new Error(error.message);
-      existing.set(target.name, data);
+      const data = existing.get(target.name);
       if (options.command === "add" && data)
         report({ status: "already_exists", id: data.id, url: target.url });
       else if (options.command === "update" && !data)
@@ -785,7 +750,7 @@ export async function ingestSubreddits(
       parseActivity,
       options.signal,
     );
-    const qualified: SubredditTarget[] = [];
+    const qualified: { target: SubredditTarget; stats: Activity }[] = [];
     for (const target of pending) {
       const stats = activity.get(target.name);
       if (!stats || stats instanceof Error) {
@@ -796,23 +761,22 @@ export async function ingestSubreddits(
         });
         continue;
       }
-      qualified.push(target);
+      qualified.push({ target, stats });
     }
     if (!qualified.length) return;
     const policies = await fetchSubredditBatch(
-      qualified.filter(
-        (target) =>
-          (activity.get(target.name) as Activity).description !== null,
-      ),
+      qualified
+        .filter(({ stats }) => stats.description !== null)
+        .map(({ target }) => target),
       "policy",
       env.TINYFISH_API_KEY,
       parsePolicy,
       options.signal,
     );
-    for (const target of qualified)
+    for (const { target, stats } of qualified)
       prepared.push({
         target,
-        stats: activity.get(target.name) as Activity,
+        stats,
         row: existing.get(target.name) ?? null,
         policy:
           policies.get(target.name) ?? new Error("Missing policy result."),

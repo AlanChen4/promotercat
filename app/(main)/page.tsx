@@ -2,27 +2,20 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { ACTIVITY_THRESHOLD_OPTIONS } from "@/constants/subreddit-filters";
+import {
+  RESULTS_PER_PAGE,
+  type SelfPromotionStatus,
+  type SortField,
+  type SortState,
+  type SubredditResponse,
+  type SubredditResult,
+} from "@/lib/subreddits";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/providers/auth-provider";
-import type { Enums } from "@/types/database.types";
 import { Filters } from "./_components/filters";
 import { SubredditsPagination } from "./_components/pagination";
-import type {
-  SortField,
-  SortState,
-  SubredditResult,
-} from "./_components/results-table";
 import { ResultsTable } from "./_components/results-table";
 import { SearchSuggestions } from "./_components/search-suggestions";
-
-type SelfPromotionStatus = Enums<"self_promotion_status">;
-
-type SubredditResponse = {
-  subreddits: SubredditResult[];
-  totalCount: number;
-  page: number;
-  pageSize: number;
-};
 
 const SELF_PROMOTION_OPTIONS: {
   label: string;
@@ -53,7 +46,6 @@ const ACTIVITY_FILTER_ANY_VALUE = "any";
 const DEFAULT_SORT_STATE: SortState = null;
 
 const SEARCH_DEBOUNCE_MS = 300;
-const ROWS_PER_PAGE = 10;
 const SEARCH_SUGGESTIONS = [
   {
     label: "Game Development",
@@ -194,7 +186,7 @@ export default function HomePage() {
   ]);
 
   const totalPages = useMemo(() => {
-    return Math.max(1, Math.ceil(totalCount / ROWS_PER_PAGE));
+    return Math.max(1, Math.ceil(totalCount / RESULTS_PER_PAGE));
   }, [totalCount]);
 
   const isMinimumOpenEnded = useMemo(() => {
@@ -365,8 +357,8 @@ export default function HomePage() {
         lockedRowCount={
           isLockedPage
             ? Math.min(
-                ROWS_PER_PAGE,
-                Math.max(0, totalCount - (page - 1) * ROWS_PER_PAGE),
+                RESULTS_PER_PAGE,
+                Math.max(0, totalCount - (page - 1) * RESULTS_PER_PAGE),
               )
             : 0
         }

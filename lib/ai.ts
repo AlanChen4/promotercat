@@ -1,9 +1,5 @@
 import { createGateway, embed } from "ai";
 
-export function createAiGateway(apiKey: string) {
-  return createGateway({ apiKey });
-}
-
 export async function embedDescription(
   text: string,
   taskType: "RETRIEVAL_DOCUMENT" | "RETRIEVAL_QUERY",
@@ -12,7 +8,7 @@ export async function embedDescription(
 ) {
   signal?.throwIfAborted();
   const { embedding } = await embed({
-    model: createAiGateway(apiKey).embeddingModel(
+    model: createGateway({ apiKey }).embeddingModel(
       "google/gemini-embedding-001",
     ),
     value: text,

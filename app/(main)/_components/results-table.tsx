@@ -13,20 +13,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { Enums } from "@/types/database.types";
-
-type SelfPromotionStatus = Enums<"self_promotion_status">;
-
-export type SubredditResult = {
-  name: string;
-  self_promotion: SelfPromotionStatus;
-  self_promotion_detail: string;
-  weekly_active_users: number | null;
-};
-
-export type SortField = "name" | "weekly_active";
-export type SortDirection = "asc" | "desc";
-export type SortState = { field: SortField; direction: SortDirection } | null;
+import type {
+  SelfPromotionStatus,
+  SortField,
+  SortState,
+  SubredditResult,
+} from "@/lib/subreddits";
 
 type ResultsTableProps = {
   isLoading: boolean;

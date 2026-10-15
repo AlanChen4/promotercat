@@ -1,32 +1,21 @@
 import { NextResponse } from "next/server";
 import { ACTIVITY_THRESHOLD_OPTIONS } from "@/constants/subreddit-filters";
-import { serverEnv } from "@/env";
 import { embedDescription } from "@/lib/ai";
+import { getServerEnv } from "@/lib/env";
+import {
+  RESULTS_PER_PAGE,
+  type SelfPromotionStatus,
+  type SubredditResult as SubredditRow,
+  selfPromotionSchema,
+  sortDirectionSchema,
+  sortFieldSchema,
+} from "@/lib/subreddits";
 import { createAdminClient } from "@/lib/supabase/admin-server";
 import { createClient } from "@/lib/supabase/server";
-import type { Enums } from "@/types/database.types";
 
-type SelfPromotionStatus = Enums<"self_promotion_status">;
-type SubredditRow = {
-  name: string;
-  self_promotion: SelfPromotionStatus;
-  self_promotion_detail: string;
-  weekly_active_users: number | null;
-};
-type SortField = "name" | "weekly_active";
-type SortDirection = "asc" | "desc";
-
-const RESULTS_PER_PAGE = 10;
 const SEMANTIC_MATCH_THRESHOLD = 0.69;
-const SEMANTIC_MATCH_COUNT = 300;
+const SEMANTIC_MATCH_COUNT = 200;
 const RESPONSE_HEADERS = { "Cache-Control": "private, no-store" };
-
-const VALID_SELF_PROMOTION = new Set<SelfPromotionStatus>([
-  "not_allowed",
-  "unspecified",
-  "allowed_full",
-  "allowed_limited",
-]);
 
 const ACTIVITY_THRESHOLDS = ACTIVITY_THRESHOLD_OPTIONS.map(
   (option) => option.value,
@@ -47,10 +36,10 @@ function extractSelfPromotionFilters(
     return [];
   }
 
-  return rawFilter
-    .split(",")
-    .map((value) => value.trim().toLowerCase() as SelfPromotionStatus)
-    .filter((value) => VALID_SELF_PROMOTION.has(value));
+  return rawFilter.split(",").flatMap((value) => {
+    const result = selfPromotionSchema.safeParse(value.trim().toLowerCase());
+    return result.success ? [result.data] : [];
+  });
 }
 
 function parseActivityBoundary(rawValue: string | null): number | null {
@@ -62,28 +51,6 @@ function parseActivityBoundary(rawValue: string | null): number | null {
     return null;
   }
   return parsed;
-}
-
-function parseSortField(rawValue: string | null): SortField | null {
-  if (!rawValue) {
-    return null;
-  }
-  const lowered = rawValue.toLowerCase();
-  if (lowered === "name" || lowered === "weekly_active") {
-    return lowered as SortField;
-  }
-  return null;
-}
-
-function parseSortDirection(rawValue: string | null): SortDirection | null {
-  if (!rawValue) {
-    return null;
-  }
-  const lowered = rawValue.toLowerCase();
-  if (lowered === "asc" || lowered === "desc") {
-    return lowered as SortDirection;
-  }
-  return null;
 }
 
 export async function GET(request: Request) {
@@ -125,12 +92,14 @@ export async function GET(request: Request) {
   const maxActivity = parseActivityBoundary(
     url.searchParams.get("max_weekly_active"),
   );
-  const requestedSortField = parseSortField(url.searchParams.get("sort"));
-  const requestedSortDirection = parseSortDirection(
-    url.searchParams.get("sort_direction"),
-  );
+  const requestedSortField = sortFieldSchema.safeParse(
+    url.searchParams.get("sort")?.toLowerCase(),
+  ).data;
+  const requestedSortDirection = sortDirectionSchema.safeParse(
+    url.searchParams.get("sort_direction")?.toLowerCase(),
+  ).data;
 
-  const supabaseAdmin = await createAdminClient();
+  const supabaseAdmin = createAdminClient(getServerEnv());
   const pageSize = RESULTS_PER_PAGE;
   const currentPage = requestedPage;
   const rangeStart = (currentPage - 1) * pageSize;
@@ -286,7 +255,7 @@ export async function GET(request: Request) {
 
 type SemanticCandidateArgs = {
   searchTerm: string;
-  supabaseAdmin: Awaited<ReturnType<typeof createAdminClient>>;
+  supabaseAdmin: ReturnType<typeof createAdminClient>;
 };
 
 async function fetchSemanticCandidates({
@@ -296,7 +265,7 @@ async function fetchSemanticCandidates({
   const embeddingValues = await embedDescription(
     `subreddit related to ${searchTerm}`,
     "RETRIEVAL_QUERY",
-    serverEnv.VERCEL_AI_GATEWAY,
+    getServerEnv().VERCEL_AI_GATEWAY,
   );
 
   const { data, error } = await supabaseAdmin.rpc(
@@ -310,12 +279,5 @@ async function fetchSemanticCandidates({
 
   if (error) throw new Error("Failed to fetch semantic matches.");
 
-  return (data ?? []).map(
-    ({ name, self_promotion, self_promotion_detail, weekly_active_users }) => ({
-      name,
-      self_promotion,
-      self_promotion_detail,
-      weekly_active_users,
-    }),
-  );
+  return data ?? [];
 }

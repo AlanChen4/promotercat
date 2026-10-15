@@ -30,24 +30,3 @@ as $$
 $$;
 revoke all on function public.get_subreddits_due_for_refresh(int) from public, anon, authenticated;
 grant execute on function public.get_subreddits_due_for_refresh(int) to service_role;
-
--- Community size controls Apify usage, not visibility in search.
-create or replace function public.match_subreddits_by_description(
-    query_embedding extensions.vector(3072), match_threshold float, match_count int
-)
-returns table (
-    name text, self_promotion public.self_promotion_status,
-    self_promotion_detail text, weekly_active_users bigint
-)
-language sql
-security invoker
-set search_path = public, extensions, pg_temp
-as $$
-    select current.name, current.self_promotion, current.self_promotion_detail,
-        current.weekly_active_users
-    from public.current_subreddits current
-    where current.description_embedding is not null
-      and current.description_embedding <#> query_embedding < -match_threshold
-    order by current.description_embedding <#> query_embedding asc
-    limit least(match_count, 200);
-$$;

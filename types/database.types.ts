@@ -164,30 +164,6 @@ export type Database = {
         };
         Relationships: [];
       };
-      users: {
-        Row: {
-          created_at: string | null;
-          email: string;
-          id: string;
-          is_premium: boolean | null;
-          stripe_customer_id: string | null;
-        };
-        Insert: {
-          created_at?: string | null;
-          email: string;
-          id?: string;
-          is_premium?: boolean | null;
-          stripe_customer_id?: string | null;
-        };
-        Update: {
-          created_at?: string | null;
-          email?: string;
-          id?: string;
-          is_premium?: boolean | null;
-          stripe_customer_id?: string | null;
-        };
-        Relationships: [];
-      };
     };
     Views: {
       current_subreddits: {
@@ -195,7 +171,6 @@ export type Database = {
           description: string | null;
           description_embedding: string | null;
           id: string | null;
-          last_scraped_at: string | null;
           name: string | null;
           self_promotion:
             | Database["public"]["Enums"]["self_promotion_status"]

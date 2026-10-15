@@ -1,6 +1,6 @@
 import { withSentryConfig } from "@sentry/nextjs";
 import type { NextConfig } from "next";
-import { serverEnv } from "./env";
+import { getServerEnv } from "./lib/env";
 
 const nextConfig: NextConfig = {
   /* config options here */
@@ -29,7 +29,7 @@ export default withSentryConfig(nextConfig, {
   project: "web",
 
   // Only print logs for uploading source maps in CI
-  silent: !serverEnv.CI,
+  silent: !getServerEnv().CI,
 
   // For all available options, see:
   // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
