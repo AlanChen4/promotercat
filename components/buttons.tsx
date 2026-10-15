@@ -61,7 +61,7 @@ export function ContinueWithGoogleButton() {
       className="w-full"
       onClick={async () => {
         const supabase = createClient();
-        const redirectTo = `${window.location.origin}/auth/callback?next=/post-login`;
+        const redirectTo = `${window.location.origin}/auth/callback`;
         await supabase.auth.signInWithOAuth({
           provider: "google",
           options: { redirectTo },

@@ -1,6 +1,7 @@
 "use client";
 
 import type { User } from "@supabase/supabase-js";
+import posthog from "posthog-js";
 import {
   createContext,
   type ReactNode,
@@ -21,6 +22,12 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticatedLoading, setIsAuthenticatedLoading] = useState(true);
+
+  useEffect(() => {
+    if (user && !user.is_anonymous) {
+      posthog.identify(user.id, { email: user.email });
+    }
+  }, [user]);
 
   useEffect(() => {
     const supabase = createClient();
