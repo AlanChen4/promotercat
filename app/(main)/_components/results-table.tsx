@@ -11,6 +11,7 @@ import { GripVertical } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { type ReactNode, useEffect, useRef, useState } from "react";
+import { GitHubStars } from "@/components/github-stars";
 import { Button } from "@/components/ui/button";
 import {
   Empty,
@@ -427,8 +428,9 @@ export function ResultsTable({
           ) : null}
         </div>
       )}
-      <div className="flex h-11 items-center rounded-b-xl border-t bg-muted/30 px-4">
-        {pagination}
+      <div className="flex h-11 items-center gap-2 rounded-b-xl border-t bg-muted/30 px-2 sm:px-4">
+        <div className="min-w-0 flex-1 overflow-x-auto">{pagination}</div>
+        <GitHubStars />
       </div>
     </div>
   );
