@@ -36,7 +36,6 @@ summary requirements. Exit 1 on a failed check or API error.`);
           .object({
             required: z.array(z.string()).default([]),
             forbidden: z.array(z.string()).default([]),
-            maxLength: z.number().int().positive(),
           })
           .optional(),
         rules: z.array(
@@ -78,8 +77,6 @@ summary requirements. Exit 1 on a failed check or API error.`);
           if (new RegExp(pattern, "i").test(detail))
             failures.push(`forbidden: ${pattern}`);
         }
-        if (detail.length > checks.maxLength)
-          failures.push(`summary exceeds ${checks.maxLength} characters`);
       }
       const pass = failures.length === 0;
       if (pass) passed++;

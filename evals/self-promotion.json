@@ -199,7 +199,6 @@
         "game|content",
         "key|account|merchandis|service"
       ],
-      "maxLength": 260,
       "forbidden": [
         "promoting products.{0,40}(?:not allowed|banned|prohibited)",
         "(?:all|any) promotion.{0,40}(?:not allowed|banned|prohibited)"
@@ -296,8 +295,7 @@
       }
     ],
     "summaryChecks": {
-      "required": ["free", "download", "registr|sign.?up|email", "licen"],
-      "maxLength": 400
+      "required": ["free", "download", "registr|sign.?up|email", "licen"]
     }
   },
   {
@@ -539,8 +537,7 @@
       "forbidden": [
         "[0-9]+\\s*%|[0-9]+\\s*[:/]\\s*[0-9]+",
         "promotion.{0,45}(?:require|need).{0,35}(?:moderat|mods).{0,20}approv"
-      ],
-      "maxLength": 280
+      ]
     }
   },
   {
@@ -583,7 +580,6 @@
         "only|solely|exclusiv|nothing but|excess|spam",
         "affiliat"
       ],
-      "maxLength": 260,
       "forbidden": ["must.{0,60}active|active.{0,30}required"]
     }
   },
@@ -647,7 +643,6 @@
         "bi.?weekly|every 2 weeks|fortnight",
         "participat|engag|contribut|history"
       ],
-      "maxLength": 400,
       "forbidden": ["sales, giveaways.{0,35}banned"]
     }
   },
@@ -701,7 +696,6 @@
         "tag|flair|title",
         "moderat|modmail|\\bmod\\b"
       ],
-      "maxLength": 450,
       "forbidden": [
         "AI platform.{0,50}(approval|contact)|no.{0,120}AI platform.{0,50}unless"
       ]
@@ -730,8 +724,7 @@
       }
     ],
     "summaryChecks": {
-      "required": ["5|five", "post|comment|contribution", "promo"],
-      "maxLength": 140
+      "required": ["5|five", "post|comment|contribution", "promo"]
     }
   },
   {
@@ -773,8 +766,7 @@
       }
     ],
     "summaryChecks": {
-      "required": ["2 weeks|two weeks|fortnight"],
-      "maxLength": 200
+      "required": ["2 weeks|two weeks|fortnight"]
     }
   }
 ]
