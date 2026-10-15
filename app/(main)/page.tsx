@@ -249,7 +249,7 @@ function SearchPage() {
     if (count === null) return "Unknown";
     if (count >= 1_000_000) {
       const millions = count / 1_000_000;
-      return `${millions.toFixed(0)}M`;
+      return `${millions.toFixed(1)}M`;
     }
     if (count >= 1_000) {
       const thousands = count / 1_000;
