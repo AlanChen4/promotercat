@@ -554,66 +554,33 @@ async function classifyPolicy(
   };
 }
 
-type Command = "add" | "update" | "list";
-// Operational commands validate only their selected Doppler config, not the web app.
+function help() {
+  return `Usage: pnpm --silent subreddits add --env dev|prod [options]
 
-const commands = new Set(["add", "update", "list"]);
-function helpFor(command?: Command) {
-  if (!command)
-    return `Usage: pnpm --silent subreddits <add|update|list> [options]
-
-add     Insert a subreddit; existing names are a successful no-op.
-update  Refresh an existing subreddit.
-list    List never-refreshed entries first, then oldest full refreshes.
-
-Examples:
-  pnpm --silent subreddits add --help
-  pnpm --silent subreddits update --help
-  pnpm --silent subreddits list --help
-`;
-  const options =
-    command === "list"
-      ? "  --limit N          Maximum entries (default 20, maximum 10000)."
-      : `  --url URL          Subreddit URL. Repeat for several communities.
-  --input FILE|-     One URL per line from a file or stdin.
-  --dry-run          Fetch and classify, but do not write.${command === "update" ? "\n  --activity-only    Save weekly activity without policy or AI calls." : ""}`;
-  const examples =
-    command === "list"
-      ? `  pnpm --silent subreddits list --env dev --limit 20
-  pnpm --silent subreddits list --env prod --limit 10000 | jq -r '.url' > /tmp/subreddits.txt`
-      : `  pnpm --silent subreddits ${command} --env dev --url https://www.reddit.com/r/apple/
-  pnpm --silent subreddits ${command} --env prod --input /tmp/subreddits.txt
-  cat /tmp/subreddits.txt | pnpm --silent subreddits ${command} --env dev --input -${command === "update" ? "\n  pnpm --silent subreddits update --env prod --activity-only --input /tmp/subreddits.txt" : ""}`;
-  return `Usage: pnpm --silent subreddits ${command} --env dev|prod [options]
+Insert subreddits. Existing names are a successful no-op.
 
 Options:
-  --env dev|prod      Required. Doppler web/dev or web/prd.
-${options}
-  --help             Show help without credentials.
+  --env dev|prod    Required. Doppler web/dev or web/prd.
+  --url URL         Subreddit URL. Repeat for several communities.
+  --input FILE|-    One URL per line from a file or stdin.
+  --help, -h        Show help without credentials.
 
 Examples:
-${examples}
+  pnpm --silent subreddits add --env dev --url https://www.reddit.com/r/apple/
+  pnpm --silent subreddits add --env prod --input /tmp/subreddits.txt
+  cat /tmp/subreddits.txt | pnpm --silent subreddits add --env dev --input -
 
 Output: one JSON object per result on stdout; errors on stderr. Exit 1 if any
 entry fails; duplicate adds exit 0. Requires Node.js 24+ and Doppler login.
-${
-  command === "list"
-    ? "Lists last_scraped_at, the latest saved promotion snapshot time (including baselines).\n"
-    : `TinyFish batches contain up to 10 URLs. Full refresh uses two regular pages;
-activity-only uses one. Failed URLs are retried once; activity timeouts get one
-extra retry (three attempts total). Fetches allow 60 seconds per URL, with a
-two-second pause before each retry. Retries request fresh data. Cached data is allowed
-(24-hour preference, not a guarantee). Missing rules or descriptions use one paid Apify batch (256 MB), without posts, comments, or AI analysis.
-APIFY_API_KEYS is a JSON array of keys, tried in order on confirmed quota rejection.
-Once a run starts, polling and results use the same key; other failures do not rotate keys.
-All discovered communities can be added, regardless of weekly activity.
-Apify is used only at 2,500+ weekly active users. Smaller communities use TinyFish;
-if policy or description is unavailable, only activity is saved and existing policy is preserved.
-Incomplete or mismatched rules
-do not replace existing data. Processing time does not guarantee source freshness.
-Confirmed rule-free public communities are saved as unspecified without AI calls.
-`
-}`;
+TinyFish batches contain up to 10 URLs and allow 60 seconds per URL. Failed URLs
+are retried once; activity timeouts get one extra attempt, with two-second pauses.
+Missing rules or descriptions use one Apify batch (256 MB) for communities with
+2,500+ weekly active users. APIFY_API_KEYS is an ordered JSON array; confirmed
+quota rejections advance to the next key. Started runs keep their selected key.
+Smaller communities use TinyFish only; unavailable policies save activity alone.
+Incomplete source data never replaces existing policy. Cached pages are allowed;
+processing time does not guarantee source freshness.
+`;
 }
 
 function output(value: unknown) {
@@ -631,68 +598,51 @@ async function main() {
       env: { type: "string" },
       url: { type: "string", multiple: true },
       input: { type: "string" },
-      limit: { type: "string" },
-      "activity-only": { type: "boolean" },
-      "dry-run": { type: "boolean" },
       help: { type: "boolean", short: "h" },
     },
   });
-  if (values.help || !positionals.length) {
-    process.stdout.write(
-      helpFor(
-        commands.has(positionals[0]) ? (positionals[0] as Command) : undefined,
-      ),
-    );
+  if (positionals.length > 1 || (positionals[0] && positionals[0] !== "add"))
+    throw new Error(`Only add is supported.\n${help()}`);
+  if (values.help || process.argv.length === 2) {
+    process.stdout.write(help());
     return;
   }
-  const command = positionals[0] as Command;
-  if (!commands.has(command) || positionals.length !== 1)
-    throw new Error(`Unknown command.\n${helpFor()}`);
+  if (positionals[0] !== "add")
+    throw new Error(`Supply the add command.\n${help()}`);
   if (values.env !== "dev" && values.env !== "prod")
     throw new Error(
-      "Set --env dev or --env prod. Example: pnpm --silent subreddits list --env dev",
+      "Set --env dev or --env prod. Example: pnpm --silent subreddits add --env dev --url https://www.reddit.com/r/apple/",
     );
-  if (command !== "list" && values.limit)
-    throw new Error("--limit is only supported by list.");
-  if (command !== "update" && values["activity-only"])
-    throw new Error("--activity-only is only supported by update.");
-  if (command === "list" && (values.url || values.input || values["dry-run"]))
-    throw new Error("list accepts only --env and --limit.");
-  const limit = values.limit === undefined ? 20 : Number(values.limit);
-  if (!Number.isSafeInteger(limit) || limit < 1 || limit > 10_000)
-    throw new Error("--limit must be an integer from 1 to 10000.");
   const targets: SubredditTarget[] = [];
-  if (command !== "list") {
-    const inputs = [...(values.url ?? [])];
-    if (values.input) {
-      let text = "";
-      if (values.input === "-") {
-        if (process.stdin.isTTY)
-          throw new Error(
-            "Pipe newline-separated URLs to --input -. Interactive input is not supported.",
-          );
-        for await (const chunk of process.stdin) text += chunk;
-      } else {
-        text = await readFile(values.input, "utf8");
-      }
-      inputs.push(
-        ...text
-          .split(/\r?\n/)
-          .map((line) => line.trim())
-          .filter(Boolean),
-      );
+  const inputs = [...(values.url ?? [])];
+  if (values.input) {
+    let text = "";
+    if (values.input === "-") {
+      if (process.stdin.isTTY)
+        throw new Error(
+          "Pipe newline-separated URLs to --input -. Interactive input is not supported.",
+        );
+      for await (const chunk of process.stdin) text += chunk;
+    } else {
+      text = await readFile(values.input, "utf8");
     }
-    if (!inputs.length)
-      throw new Error(
-        `Supply --url or --input. Example: pnpm --silent subreddits ${command} --env dev --url https://www.reddit.com/r/apple/`,
-      );
-    const seen = new Set<string>();
-    for (const raw of inputs) {
-      const target = normalizeSubredditUrl(raw);
-      if (!seen.has(target.name)) {
-        seen.add(target.name);
-        targets.push(target);
-      }
+    inputs.push(
+      ...text
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter(Boolean),
+    );
+  }
+  if (!inputs.length)
+    throw new Error(
+      `Supply --url or --input. Example: pnpm --silent subreddits add --env dev --url https://www.reddit.com/r/apple/`,
+    );
+  const seen = new Set<string>();
+  for (const raw of inputs) {
+    const target = normalizeSubredditUrl(raw);
+    if (!seen.has(target.name)) {
+      seen.add(target.name);
+      targets.push(target);
     }
   }
   let secrets: Record<string, string>;
@@ -724,32 +674,8 @@ async function main() {
       `Invalid CLI environment variables:\n${z.prettifyError(parsedEnv.error)}`,
     );
   const env = parsedEnv.data;
-  if (command === "list") {
-    const db = createClient<Database>(
-      env.NEXT_PUBLIC_SUPABASE_URL,
-      env.SUPABASE_SERVICE_ROLE_KEY,
-      { auth: { persistSession: false, autoRefreshToken: false } },
-    );
-    // PostgREST caps each response; page explicitly so backfills get every row.
-    for (let offset = 0; offset < limit; offset += 1000) {
-      const take = Math.min(1000, limit - offset);
-      const { data, error } = await db
-        .from("current_subreddits")
-        .select("id,name,last_scraped_at,weekly_active_users")
-        .order("last_scraped_at", { ascending: true, nullsFirst: true })
-        .order("id")
-        .range(offset, offset + take - 1);
-      if (error) throw new Error(error.message);
-      for (const row of data)
-        output({ ...row, url: `https://www.reddit.com/r/${row.name}/` });
-      if (data.length < take) break;
-    }
-    return;
-  }
   const results = await ingestSubreddits(targets, env, {
-    command,
-    dryRun: values["dry-run"] ?? false,
-    activityOnly: values["activity-only"] ?? false,
+    command: "add",
     report: (result) => {
       if (result.status === "failed")
         process.stderr.write(`${JSON.stringify(result)}\n`);
@@ -783,8 +709,6 @@ export async function ingestSubreddits(
   env: IngestionEnv,
   options: {
     command: "add" | "update";
-    dryRun?: boolean;
-    activityOnly?: boolean;
     report?: (result: IngestionResult) => void;
     signal?: AbortSignal;
   },
@@ -804,21 +728,19 @@ export async function ingestSubreddits(
     stats: Activity,
     reason?: string,
   ) => {
-    if (!options.dryRun) {
-      const { data, error } = await db.rpc("save_subreddit_snapshot", {
-        p_mode: "activity",
-        p_snapshot: {
-          name: stats.name,
-          weekly_active_users: stats.weekly_active_users,
-        },
-        p_rules: null,
-      });
-      if (error) throw new Error(error.message);
-      if (data.length !== 1)
-        throw new Error("Database returned an unexpected save result.");
-    }
+    const { data, error } = await db.rpc("save_subreddit_snapshot", {
+      p_mode: "activity",
+      p_snapshot: {
+        name: stats.name,
+        weekly_active_users: stats.weekly_active_users,
+      },
+      p_rules: null,
+    });
+    if (error) throw new Error(error.message);
+    if (data.length !== 1)
+      throw new Error("Database returned an unexpected save result.");
     report({
-      status: options.dryRun ? "dry_run" : "activity_updated",
+      status: "activity_updated",
       url: target.url,
       weekly_active_users: stats.weekly_active_users,
       policy_updated: false,
@@ -874,13 +796,7 @@ export async function ingestSubreddits(
         });
         continue;
       }
-      if (options.activityOnly) {
-        try {
-          await saveActivity(target, stats);
-        } catch (error) {
-          report({ status: "failed", url: target.url, error: message(error) });
-        }
-      } else qualified.push(target);
+      qualified.push(target);
     }
     if (!qualified.length) return;
     const policies = await fetchSubredditBatch(
@@ -960,17 +876,6 @@ export async function ingestSubreddits(
           env.VERCEL_AI_GATEWAY,
           options.signal,
         );
-        if (options.dryRun) {
-          report({
-            status: "dry_run",
-            url: target.url,
-            weekly_active_users: stats.weekly_active_users,
-            ...classification,
-            rules_count: policy.rules.length,
-            policy_source: policySource,
-          });
-          return;
-        }
         const embedding =
           row?.description === description && row.description_embedding
             ? row.description_embedding
