@@ -11,7 +11,13 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { GripVertical } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import {
+  type CSSProperties,
+  type ReactNode,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { AccountMenu } from "@/components/account-menu";
 import { SignInOptions } from "@/components/buttons";
 import { GitHubStars } from "@/components/github-stars";
@@ -49,46 +55,40 @@ function PromotionText({
   status: string;
   detail: string | null;
 }) {
-  const previewRef = useRef<HTMLDivElement>(null);
-  const [isTruncated, setIsTruncated] = useState(false);
+  const textRef = useRef<HTMLDivElement>(null);
+  const [fullHeight, setFullHeight] = useState(20);
 
   useEffect(() => {
-    const preview = previewRef.current;
-    if (!preview || !(status || detail)) return;
+    const text = textRef.current;
+    if (!text) return;
     const measure = () => {
-      setIsTruncated(preview.scrollWidth > preview.clientWidth);
+      setFullHeight(Math.ceil(text.getBoundingClientRect().height));
     };
     measure();
     const observer = new ResizeObserver(measure);
-    observer.observe(preview);
+    observer.observe(text);
     return () => observer.disconnect();
-  }, [status, detail]);
-
-  const content = (
-    <>
-      {status}
-      {detail ? (
-        <span className="ml-2 text-muted-foreground">{detail}</span>
-      ) : null}
-    </>
-  );
+  }, []);
 
   return (
-    <div className="relative min-h-5">
-      <div
-        ref={previewRef}
-        aria-hidden="true"
-        className={`absolute inset-x-0 top-0 truncate transition-opacity duration-400 ease-[cubic-bezier(0.4,0,0.2,1)] motion-reduce:transition-none ${isTruncated ? "group-hover:opacity-0 group-focus-within:opacity-0" : ""}`}
-      >
-        {content}
+    <div
+      className="relative h-5 overflow-hidden leading-5 transition-[height] duration-400 ease-[cubic-bezier(0.4,0,0.2,1)] group-hover:h-[var(--promotion-height)] group-focus-within:h-[var(--promotion-height)] motion-reduce:transition-none"
+      style={{ "--promotion-height": `${fullHeight}px` } as CSSProperties}
+    >
+      <div ref={textRef} className="whitespace-normal break-words">
+        {status}
+        {detail ? (
+          <span className="ml-2 text-muted-foreground">{detail}</span>
+        ) : null}
       </div>
-      <div
-        className={`grid grid-rows-[0fr] opacity-0 transition-[grid-template-rows,opacity] duration-400 ease-[cubic-bezier(0.4,0,0.2,1)] motion-reduce:transition-none ${isTruncated ? "group-hover:grid-rows-[1fr] group-hover:opacity-100 group-focus-within:grid-rows-[1fr] group-focus-within:opacity-100" : ""}`}
-      >
-        <div className="min-h-0 overflow-hidden whitespace-normal break-words">
-          {content}
-        </div>
-      </div>
+      {fullHeight > 20 ? (
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute right-0 top-0 w-5 bg-linear-to-r from-transparent to-card to-40% text-right text-muted-foreground group-hover:invisible group-focus-within:invisible"
+        >
+          …
+        </span>
+      ) : null}
     </div>
   );
 }
