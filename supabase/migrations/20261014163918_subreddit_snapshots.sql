@@ -100,7 +100,8 @@ revoke all on public.current_subreddits from public, anon, authenticated, servic
 grant select on public.current_subreddits to service_role;
 
 create function public.match_subreddits_by_description(
-    query_embedding extensions.vector(4096), match_threshold float, match_count int
+    query_embedding extensions.vector(4096), match_threshold float, match_count int,
+    name_terms text[] default '{}'
 )
 returns table (
     name text, self_promotion public.self_promotion_status,
@@ -113,14 +114,22 @@ as $$
     select current.name, current.self_promotion, current.self_promotion_detail,
         current.weekly_active_users
     from public.current_subreddits current
-    where current.description_embedding is not null
-      and current.description_embedding <#> query_embedding < -match_threshold
-    order by current.description_embedding <#> query_embedding asc
+    cross join lateral (
+        select exists (
+            select 1 from unnest(name_terms) term
+            where term <> '' and strpos(lower(current.name), term) > 0
+        ) as matches_name
+    ) name_match
+    where current.self_promotion is not null
+      and (name_match.matches_name
+        or current.description_embedding <#> query_embedding < -match_threshold)
+    order by name_match.matches_name desc,
+        current.description_embedding <#> query_embedding asc nulls last, current.name
     limit least(match_count, 200);
 $$;
-revoke all on function public.match_subreddits_by_description(extensions.vector, double precision, integer)
+revoke all on function public.match_subreddits_by_description(extensions.vector, double precision, integer, text[])
     from public, anon, authenticated;
-grant execute on function public.match_subreddits_by_description(extensions.vector, double precision, integer)
+grant execute on function public.match_subreddits_by_description(extensions.vector, double precision, integer, text[])
     to service_role;
 
 create function public.save_subreddit_snapshot(p_mode text, p_snapshot jsonb, p_rules jsonb)

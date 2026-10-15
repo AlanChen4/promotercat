@@ -223,6 +223,9 @@ async function fetchSemanticCandidates({
       query_embedding: JSON.stringify(embeddingValues),
       match_threshold: SEMANTIC_MATCH_THRESHOLD,
       match_count: SEMANTIC_MATCH_COUNT,
+      name_terms: [
+        ...new Set(searchTerm.toLowerCase().match(/[a-z0-9_]+/g) ?? []),
+      ],
     },
   );
 

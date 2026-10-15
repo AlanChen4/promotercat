@@ -193,6 +193,7 @@ export type Database = {
         Args: {
           match_count: number;
           match_threshold: number;
+          name_terms?: string[];
           query_embedding: string;
         };
         Returns: {
