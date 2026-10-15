@@ -1,5 +1,0 @@
----
-alwaysApply: true
----
-Always use the shadcn/ui components when possible.
-Avoid using shadows in your components.

@@ -42,3 +42,11 @@ next-env.d.ts
 
 # Sentry Config File
 .env.sentry-build-plugin
+
+# Local editor and agent configuration
+.cursor/
+.claude/
+.agents/
+.vscode/
+CLAUDE.md
+skills-lock.json

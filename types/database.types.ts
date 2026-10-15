@@ -7,35 +7,141 @@ export type Json =
   | Json[];
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "13.0.5";
-  };
   public: {
     Tables: {
-      rules: {
+      subreddit_descriptions: {
         Row: {
+          created_at: string;
           description: string | null;
-          id: string;
+          description_embedding: string | null;
+          subreddit_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          description?: string | null;
+          description_embedding?: string | null;
+          subreddit_id: string;
+        };
+        Update: {
+          created_at?: string;
+          description?: string | null;
+          description_embedding?: string | null;
+          subreddit_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "subreddit_descriptions_subreddit_id_fkey";
+            columns: ["subreddit_id"];
+            isOneToOne: false;
+            referencedRelation: "current_subreddits";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "subreddit_descriptions_subreddit_id_fkey";
+            columns: ["subreddit_id"];
+            isOneToOne: false;
+            referencedRelation: "subreddits";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      subreddit_members: {
+        Row: {
+          created_at: string;
+          subreddit_id: string;
+          weekly_active_users: number | null;
+        };
+        Insert: {
+          created_at?: string;
+          subreddit_id: string;
+          weekly_active_users?: number | null;
+        };
+        Update: {
+          created_at?: string;
+          subreddit_id?: string;
+          weekly_active_users?: number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "subreddit_members_subreddit_id_fkey";
+            columns: ["subreddit_id"];
+            isOneToOne: false;
+            referencedRelation: "current_subreddits";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "subreddit_members_subreddit_id_fkey";
+            columns: ["subreddit_id"];
+            isOneToOne: false;
+            referencedRelation: "subreddits";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      subreddit_rules: {
+        Row: {
+          created_at: string;
+          description: string | null;
+          position: number;
           subreddit_id: string;
           title: string;
         };
         Insert: {
+          created_at: string;
           description?: string | null;
-          id?: string;
+          position: number;
           subreddit_id: string;
           title: string;
         };
         Update: {
+          created_at?: string;
           description?: string | null;
-          id?: string;
+          position?: number;
           subreddit_id?: string;
           title?: string;
         };
         Relationships: [
           {
-            foreignKeyName: "rules_subreddit_id_fkey";
+            foreignKeyName: "subreddit_rules_subreddit_id_created_at_fkey";
+            columns: ["subreddit_id", "created_at"];
+            isOneToOne: false;
+            referencedRelation: "subreddit_self_promotion_details";
+            referencedColumns: ["subreddit_id", "created_at"];
+          },
+        ];
+      };
+      subreddit_self_promotion_details: {
+        Row: {
+          created_at: string;
+          self_promotion: Database["public"]["Enums"]["self_promotion_status"];
+          self_promotion_confidence: number | null;
+          self_promotion_detail: string;
+          subreddit_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          self_promotion: Database["public"]["Enums"]["self_promotion_status"];
+          self_promotion_confidence?: number | null;
+          self_promotion_detail: string;
+          subreddit_id: string;
+        };
+        Update: {
+          created_at?: string;
+          self_promotion?: Database["public"]["Enums"]["self_promotion_status"];
+          self_promotion_confidence?: number | null;
+          self_promotion_detail?: string;
+          subreddit_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "subreddit_self_promotion_details_subreddit_id_fkey";
+            columns: ["subreddit_id"];
+            isOneToOne: false;
+            referencedRelation: "current_subreddits";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "subreddit_self_promotion_details_subreddit_id_fkey";
             columns: ["subreddit_id"];
             isOneToOne: false;
             referencedRelation: "subreddits";
@@ -45,88 +151,64 @@ export type Database = {
       };
       subreddits: {
         Row: {
-          description: string | null;
-          description_embedding: string | null;
           id: string;
-          last_scraped_at: string | null;
-          members_count: number;
           name: string;
-          self_promotion: Database["public"]["Enums"]["self_promotion_status"];
-          self_promotion_detail: string;
         };
         Insert: {
-          description?: string | null;
-          description_embedding?: string | null;
           id?: string;
-          last_scraped_at?: string | null;
-          members_count: number;
           name: string;
-          self_promotion: Database["public"]["Enums"]["self_promotion_status"];
-          self_promotion_detail: string;
         };
         Update: {
-          description?: string | null;
-          description_embedding?: string | null;
           id?: string;
-          last_scraped_at?: string | null;
-          members_count?: number;
           name?: string;
-          self_promotion?: Database["public"]["Enums"]["self_promotion_status"];
-          self_promotion_detail?: string;
-        };
-        Relationships: [];
-      };
-      users: {
-        Row: {
-          created_at: string | null;
-          email: string;
-          id: string;
-          is_premium: boolean | null;
-          stripe_customer_id: string | null;
-        };
-        Insert: {
-          created_at?: string | null;
-          email: string;
-          id?: string;
-          is_premium?: boolean | null;
-          stripe_customer_id?: string | null;
-        };
-        Update: {
-          created_at?: string | null;
-          email?: string;
-          id?: string;
-          is_premium?: boolean | null;
-          stripe_customer_id?: string | null;
         };
         Relationships: [];
       };
     };
     Views: {
-      [_ in never]: never;
+      current_subreddits: {
+        Row: {
+          description: string | null;
+          description_embedding: string | null;
+          id: string | null;
+          name: string | null;
+          self_promotion:
+            | Database["public"]["Enums"]["self_promotion_status"]
+            | null;
+          self_promotion_confidence: number | null;
+          self_promotion_detail: string | null;
+          weekly_active_users: number | null;
+        };
+        Relationships: [];
+      };
     };
     Functions: {
+      get_subreddits_due_for_refresh: {
+        Args: { p_limit?: number };
+        Returns: {
+          name: string;
+        }[];
+      };
       match_subreddits_by_description: {
         Args: {
           match_count: number;
           match_threshold: number;
+          name_terms?: string[];
           query_embedding: string;
         };
         Returns: {
-          description: string | null;
-          description_embedding: string | null;
-          id: string;
-          last_scraped_at: string | null;
-          members_count: number;
           name: string;
           self_promotion: Database["public"]["Enums"]["self_promotion_status"];
           self_promotion_detail: string;
+          weekly_active_users: number;
         }[];
-        SetofOptions: {
-          from: "*";
-          to: "subreddits";
-          isOneToOne: false;
-          isSetofReturn: true;
-        };
+      };
+      save_subreddit_snapshot: {
+        Args: { p_mode: string; p_rules: Json; p_snapshot: Json };
+        Returns: {
+          outcome: string;
+          subreddit_id: string;
+        }[];
       };
     };
     Enums: {

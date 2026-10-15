@@ -1,14 +1,13 @@
-import { Footer } from "@/components/footer";
-import { NavigationBar } from "@/components/nav-bar";
-
 export default function MainLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <div className="flex min-h-screen flex-col">
-      <NavigationBar />
-      <main className="flex-1">{children}</main>
-      <Footer />
-    </div>
+    <main className="relative isolate min-h-screen px-4 py-6 sm:px-6 sm:py-10">
+      <div
+        aria-hidden="true"
+        className="fixed inset-0 -z-10 bg-[url('/japan.jpg')] bg-cover bg-center bg-no-repeat"
+      />
+      {children}
+    </main>
   );
 }

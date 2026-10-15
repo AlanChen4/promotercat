@@ -1,32 +1,26 @@
 import { NextResponse } from "next/server";
-import { createGeminiClient } from "@/lib/gemini";
+import { embedDescription } from "@/lib/ai";
+import { env } from "@/lib/env";
+import {
+  RESULTS_PER_PAGE,
+  type SelfPromotionStatus,
+  type SubredditResult as SubredditRow,
+  selfPromotionSchema,
+  sortDirectionSchema,
+  sortFieldSchema,
+} from "@/lib/subreddits";
 import { createAdminClient } from "@/lib/supabase/admin-server";
 import { createClient } from "@/lib/supabase/server";
-import type { Enums, Tables } from "@/types/database.types";
 
-type SelfPromotionStatus = Enums<"self_promotion_status">;
-type SubredditRow = Pick<
-  Tables<"subreddits">,
-  "name" | "self_promotion" | "self_promotion_detail" | "members_count"
->;
-type SortField = "name" | "members";
-type SortDirection = "asc" | "desc";
-
-const RESULTS_PER_PAGE = 10;
-const FREE_RESULT_LIMIT = 3;
-const SEMANTIC_MATCH_THRESHOLD = 0.69;
-const SEMANTIC_MATCH_COUNT = 300;
-
-const VALID_SELF_PROMOTION = new Set<SelfPromotionStatus>([
-  "not_allowed",
-  "unspecified",
-  "allowed_full",
-  "allowed_limited",
-]);
-
-const MEMBER_THRESHOLDS = [
-  50_000, 100_000, 250_000, 500_000, 1_000_000, 5_000_000, 10_000_000,
-];
+const SEMANTIC_MATCH_THRESHOLD = 0.5;
+const SEMANTIC_MATCH_COUNT = 200;
+// These words help the semantic query, but should not independently match names.
+const NAME_STOP_WORDS = new Set(
+  "a an and are as at be by for from i in is it my of on or our that the this to we with you your".split(
+    " ",
+  ),
+);
+const RESPONSE_HEADERS = { "Cache-Control": "private, no-store" };
 
 function parsePage(requestedPage: string | null): number {
   const parsed = Number(requestedPage);
@@ -43,43 +37,10 @@ function extractSelfPromotionFilters(
     return [];
   }
 
-  return rawFilter
-    .split(",")
-    .map((value) => value.trim().toLowerCase() as SelfPromotionStatus)
-    .filter((value) => VALID_SELF_PROMOTION.has(value));
-}
-
-function parseMemberBoundary(rawValue: string | null): number | null {
-  if (!rawValue) {
-    return null;
-  }
-  const parsed = Number(rawValue);
-  if (!Number.isFinite(parsed) || !MEMBER_THRESHOLDS.includes(parsed)) {
-    return null;
-  }
-  return parsed;
-}
-
-function parseSortField(rawValue: string | null): SortField | null {
-  if (!rawValue) {
-    return null;
-  }
-  const lowered = rawValue.toLowerCase();
-  if (lowered === "name" || lowered === "members") {
-    return lowered as SortField;
-  }
-  return null;
-}
-
-function parseSortDirection(rawValue: string | null): SortDirection | null {
-  if (!rawValue) {
-    return null;
-  }
-  const lowered = rawValue.toLowerCase();
-  if (lowered === "asc" || lowered === "desc") {
-    return lowered as SortDirection;
-  }
-  return null;
+  return rawFilter.split(",").flatMap((value) => {
+    const result = selfPromotionSchema.safeParse(value.trim().toLowerCase());
+    return result.success ? [result.data] : [];
+  });
 }
 
 export async function GET(request: Request) {
@@ -89,59 +50,72 @@ export async function GET(request: Request) {
     url.searchParams.get("self_promotion"),
   );
   const requestedPage = parsePage(url.searchParams.get("page"));
-  const minMembers = parseMemberBoundary(url.searchParams.get("min_members"));
-  const maxMembers = parseMemberBoundary(url.searchParams.get("max_members"));
-  const requestedSortField = parseSortField(url.searchParams.get("sort_by"));
-  const requestedSortDirection = parseSortDirection(
-    url.searchParams.get("sort_direction"),
-  );
+  if (requestedPage > 1) {
+    const supabase = await createClient();
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
 
-  const supabase = await createClient();
-  const supabaseAdmin = await createAdminClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const userId = user?.id ?? null;
-  const isAuthenticated = Boolean(userId);
-  let isPremium: boolean = false;
-  if (userId) {
-    const { data: userRecord } = await supabase
-      .from("users")
-      .select("is_premium")
-      .eq("id", userId)
-      .single();
-    if (!userRecord) {
-      return NextResponse.json({ message: "User not found." }, { status: 404 });
+    if (
+      error &&
+      (error.status === undefined ||
+        error.status === 0 ||
+        error.status === 429 ||
+        error.status >= 500)
+    ) {
+      return NextResponse.json(
+        { message: "Unable to verify your session. Please try again." },
+        { status: 503, headers: RESPONSE_HEADERS },
+      );
     }
-    isPremium = userRecord.is_premium ?? false;
+    if (error || !user || user.is_anonymous) {
+      return NextResponse.json(
+        { message: "Sign up or log in to view more results." },
+        { status: 401, headers: RESPONSE_HEADERS },
+      );
+    }
   }
+  const requestedSortField = sortFieldSchema.safeParse(
+    url.searchParams.get("sort")?.toLowerCase(),
+  ).data;
+  const requestedSortDirection = sortDirectionSchema.safeParse(
+    url.searchParams.get("sort_direction")?.toLowerCase(),
+  ).data;
 
-  const pageSize =
-    isPremium || isAuthenticated ? RESULTS_PER_PAGE : FREE_RESULT_LIMIT;
-  const currentPage = isPremium ? requestedPage : 1;
-  const rangeStart = isPremium ? (currentPage - 1) * RESULTS_PER_PAGE : 0;
+  const supabaseAdmin = createAdminClient(env);
+  const pageSize = RESULTS_PER_PAGE;
+  const currentPage = requestedPage;
+  const rangeStart = (currentPage - 1) * pageSize;
   const rangeEnd = rangeStart + pageSize - 1;
-  const canUseSorting = Boolean(userId);
-  const sortField: SortField | null =
-    canUseSorting && requestedSortField ? requestedSortField : null;
-  const sortDirection: SortDirection =
-    canUseSorting && requestedSortDirection ? requestedSortDirection : "asc";
+  const sortField = requestedSortField;
+  const sortDirection = requestedSortDirection ?? "asc";
 
   const shouldUseSemanticSearch = searchTerm.length > 0;
   if (shouldUseSemanticSearch) {
-    const semanticCandidates = await fetchSemanticCandidates({
-      searchTerm,
-      supabaseAdmin,
-    });
+    let semanticCandidates: SubredditRow[];
+    try {
+      semanticCandidates = await fetchSemanticCandidates({
+        searchTerm,
+        supabaseAdmin,
+      });
+    } catch {
+      return NextResponse.json(
+        { message: "Failed to load subreddits." },
+        { status: 500, headers: RESPONSE_HEADERS },
+      );
+    }
 
     if (semanticCandidates.length === 0) {
-      return NextResponse.json({
-        subreddits: [],
-        totalCount: 0,
-        page: currentPage,
-        pageSize,
-      });
+      return NextResponse.json(
+        {
+          subreddits: [],
+          totalCount: 0,
+          page: currentPage,
+          pageSize,
+        },
+        { headers: RESPONSE_HEADERS },
+      );
     }
 
     let filteredCandidates = semanticCandidates;
@@ -155,32 +129,22 @@ export async function GET(request: Request) {
       );
     }
 
-    if (minMembers !== null) {
-      filteredCandidates = filteredCandidates.filter(
-        (candidate) => (candidate.members_count ?? 0) >= minMembers,
-      );
-    }
-
-    if (
-      maxMembers !== null &&
-      (minMembers === null || maxMembers >= minMembers)
-    ) {
-      filteredCandidates = filteredCandidates.filter(
-        (candidate) => (candidate.members_count ?? 0) <= maxMembers,
-      );
-    }
-
     let orderedCandidates = filteredCandidates;
     if (sortField) {
       const directionMultiplier = sortDirection === "asc" ? 1 : -1;
       orderedCandidates = [...filteredCandidates].sort((a, b) => {
-        if (sortField === "members") {
-          const aMembers = a.members_count ?? 0;
-          const bMembers = b.members_count ?? 0;
-          if (aMembers === bMembers) {
+        if (sortField === "weekly_active") {
+          if (a.weekly_active_users === null)
+            return b.weekly_active_users === null
+              ? a.name.localeCompare(b.name)
+              : 1;
+          if (b.weekly_active_users === null) return -1;
+          const aActivity = a.weekly_active_users;
+          const bActivity = b.weekly_active_users;
+          if (aActivity === bActivity) {
             return a.name.localeCompare(b.name) * directionMultiplier;
           }
-          return aMembers > bMembers
+          return aActivity > bActivity
             ? directionMultiplier
             : -directionMultiplier;
         }
@@ -193,114 +157,87 @@ export async function GET(request: Request) {
     const sliceEnd = sliceStart + pageSize;
     const paginated = orderedCandidates.slice(sliceStart, sliceEnd);
 
-    return NextResponse.json({
-      subreddits: paginated,
-      totalCount,
-      page: currentPage,
-      pageSize,
-    });
+    return NextResponse.json(
+      {
+        subreddits: paginated,
+        totalCount,
+        page: currentPage,
+        pageSize,
+      },
+      { headers: RESPONSE_HEADERS },
+    );
   }
 
   let query = supabaseAdmin
-    .from("subreddits")
-    .select("name,self_promotion,self_promotion_detail,members_count", {
+    .from("current_subreddits")
+    .select("name,self_promotion,self_promotion_detail,weekly_active_users", {
       count: "exact",
-    });
+    })
+    .not("self_promotion", "is", null);
 
   if (selfPromotionFilters.length > 0) {
     query = query.in("self_promotion", selfPromotionFilters);
   }
 
-  if (minMembers !== null) {
-    query = query.gte("members_count", minMembers);
-  }
-
-  if (
-    maxMembers !== null &&
-    (minMembers === null || maxMembers >= minMembers)
-  ) {
-    query = query.lte("members_count", maxMembers);
-  }
-  const effectiveSortField = sortField ?? "members";
+  const effectiveSortField = sortField ?? "weekly_active";
   const { data, error, count } = await query
-    .order(effectiveSortField === "members" ? "members_count" : "name", {
-      ascending: sortField ? sortDirection === "asc" : true,
-    })
+    .order(
+      effectiveSortField === "weekly_active" ? "weekly_active_users" : "name",
+      {
+        ascending: sortField ? sortDirection === "asc" : true,
+        nullsFirst: false,
+      },
+    )
+    .order("name", { ascending: true })
     .range(rangeStart, rangeEnd);
 
   if (error) {
     return NextResponse.json(
       { message: "Failed to load subreddits." },
-      { status: 500 },
+      { status: 500, headers: RESPONSE_HEADERS },
     );
   }
-  return NextResponse.json({
-    subreddits: (data ?? []) as SubredditRow[],
-    totalCount: count ?? 0,
-    page: currentPage,
-    pageSize,
-  });
+  return NextResponse.json(
+    {
+      subreddits: (data ?? []) as SubredditRow[],
+      totalCount: count ?? 0,
+      page: currentPage,
+      pageSize,
+    },
+    { headers: RESPONSE_HEADERS },
+  );
 }
 
 type SemanticCandidateArgs = {
   searchTerm: string;
-  supabaseAdmin: Awaited<ReturnType<typeof createAdminClient>>;
+  supabaseAdmin: ReturnType<typeof createAdminClient>;
 };
 
 async function fetchSemanticCandidates({
   searchTerm,
   supabaseAdmin,
 }: SemanticCandidateArgs): Promise<SubredditRow[]> {
-  const geminiClient = createGeminiClient();
-  const response = await geminiClient.models.embedContent({
-    model: "gemini-embedding-001",
-    contents: `subreddit related to ${searchTerm}`,
-    config: {
-      taskType: "RETRIEVAL_QUERY",
-      httpOptions: {
-        headers: {
-          "Helicone-Cache-Enabled": "true",
-          "Cache-Control": "max-age=31536000",
-        },
-      },
-    },
-  });
-
-  const embeddingValues = response.embeddings?.[0]?.values;
-  if (!embeddingValues || embeddingValues.length === 0) {
-    return [];
-  }
+  const query = searchTerm.replace(/^r\//i, "");
+  const nameTerms = [
+    ...new Set(query.toLowerCase().match(/[a-z0-9_]+/g) ?? []),
+  ].filter((term) => term.length > 1 && !NAME_STOP_WORDS.has(term));
+  const embeddingValues = await embedDescription(
+    query,
+    "RETRIEVAL_QUERY",
+    env.VERCEL_AI_GATEWAY,
+  );
 
   const { data, error } = await supabaseAdmin.rpc(
     "match_subreddits_by_description",
     {
-      // @ts-expect-error: RPC arguments are typed incorrectly and 'query_embedding' works.
-      query_embedding: embeddingValues,
+      query_embedding: JSON.stringify(embeddingValues),
       match_threshold: SEMANTIC_MATCH_THRESHOLD,
       match_count: SEMANTIC_MATCH_COUNT,
+      name_terms: nameTerms,
     },
   );
 
-  if (error) {
-    console.error("Failed to fetch semantic matches:", error.message);
-    return [];
-  }
+  if (error) throw new Error("Failed to fetch semantic matches.");
 
-  const seen = new Set<string>();
-  const rows: SubredditRow[] = [];
-
-  for (const row of data ?? []) {
-    if (!row?.name || seen.has(row.name)) {
-      continue;
-    }
-    seen.add(row.name);
-    rows.push({
-      name: row.name,
-      self_promotion: row.self_promotion,
-      self_promotion_detail: row.self_promotion_detail,
-      members_count: row.members_count,
-    });
-  }
-
-  return rows;
+  return data ?? [];
 }
