@@ -399,7 +399,7 @@ export function ResultsTable({
                       <div className="relative min-h-5">
                         <div
                           aria-hidden="true"
-                          className="absolute inset-x-0 top-0 truncate transition-opacity duration-200 group-hover:opacity-0 group-focus-within:opacity-0 motion-reduce:transition-none"
+                          className="absolute inset-x-0 top-0 truncate transition-opacity duration-400 ease-[cubic-bezier(0.4,0,0.2,1)] group-hover:opacity-0 group-focus-within:opacity-0 motion-reduce:transition-none"
                         >
                           {formatSelfPromotion(subreddit.self_promotion)}
                           {subreddit.self_promotion_detail ? (
@@ -408,7 +408,7 @@ export function ResultsTable({
                             </span>
                           ) : null}
                         </div>
-                        <div className="grid grid-rows-[0fr] opacity-0 transition-[grid-template-rows,opacity] duration-200 ease-in-out group-hover:grid-rows-[1fr] group-hover:opacity-100 group-focus-within:grid-rows-[1fr] group-focus-within:opacity-100 motion-reduce:transition-none">
+                        <div className="grid grid-rows-[0fr] opacity-0 transition-[grid-template-rows,opacity] duration-400 ease-[cubic-bezier(0.4,0,0.2,1)] group-hover:grid-rows-[1fr] group-hover:opacity-100 group-focus-within:grid-rows-[1fr] group-focus-within:opacity-100 motion-reduce:transition-none">
                           <div className="min-h-0 overflow-hidden whitespace-normal break-words">
                             {formatSelfPromotion(subreddit.self_promotion)}
                             {subreddit.self_promotion_detail ? (
