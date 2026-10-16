@@ -1,9 +1,9 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import { agentResource, authenticateAgent } from "@/lib/ai/agent-oauth";
-import { pluginUpdateNotice, pluginVersion } from "@/lib/ai/plugin-update";
 import { withApiHandler } from "@/lib/api/handler";
 import { env } from "@/lib/config/env";
+import { pluginUpdateNotice, pluginVersion } from "@/lib/plugins/plugin-update";
 import { admissionSchema, agentSearchInputSchema } from "@/lib/schemas/agents";
 import { searchSubreddits } from "@/lib/subreddits/search";
 import { createAdminClient } from "@/lib/supabase/admin-server";
