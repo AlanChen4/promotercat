@@ -283,12 +283,15 @@ export function ForAgents() {
       <button
         ref={trigger}
         type="button"
+        aria-label="Add to Codex or Claude Code"
         aria-haspopup="dialog"
         aria-expanded={open}
         onClick={() => setOpen(true)}
-        className="hidden shrink-0 rounded px-2 py-1 text-sm text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-2 md:inline-flex"
+        className="hidden shrink-0 items-center gap-1.5 rounded px-2 py-1 text-sm text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-2 md:inline-flex"
       >
-        For Agents
+        Add to
+        <Image src={codexLogo} alt="" width={16} height={16} />
+        <Image src={claudeLogo} alt="" width={16} height={16} />
       </button>
       {open ? <AgentWindow onClose={close} /> : null}
     </>
