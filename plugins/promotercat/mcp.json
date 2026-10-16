@@ -3,7 +3,10 @@
   "mcpServers": {
     "promotercat": {
       "type": "streamable-http",
-      "url": "https://www.promotercat.com/mcp"
+      "url": "https://www.promotercat.com/mcp",
+      "headers": {
+        "X-PromoterCat-Plugin-Version": "0.1.1"
+      }
     }
   }
 }

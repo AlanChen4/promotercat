@@ -11,4 +11,6 @@ description: Connect or troubleshoot PromoterCat and verify community search whe
 4. Explain that verification uses one search, then call `search_subreddits` once with `page: 1`, `self_promotion: ["allowed_full", "allowed_limited"]`, and no `search`.
 5. Report ready only after a successful response, including an empty result. On failure, report the error and any rate-limit reset time, then stop without automatic retries or substitute sources.
 
+If a response includes `pluginUpdate`, show the version notice and relevant update commands once per chat. Updates are optional; run commands only if requested.
+
 Keep the outcome brief. Installation or browser sign-in alone does not prove readiness.

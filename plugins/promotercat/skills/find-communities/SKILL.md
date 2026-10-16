@@ -9,6 +9,8 @@ description: Find Reddit communities and promotion rules with PromoterCat when u
 2. Search with a short product description; ask if missing. Exclude confidential content unless authorized.
 3. Return relevant Reddit links, promotion restrictions, and activity counts. Remind users to check current rules before posting.
 
+If a response includes `pluginUpdate`, show the version notice and relevant update commands once per chat, alongside results or errors. Updates are optional; run commands only if requested.
+
 ## Parameters
 
 - `search`: up to 1,000 characters; omit to browse.
