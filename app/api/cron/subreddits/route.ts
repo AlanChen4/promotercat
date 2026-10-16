@@ -14,7 +14,7 @@ export async function GET(request: Request) {
   }
   const db = createAdminClient(env);
   const { data, error } = await db.rpc("get_subreddits_due_for_refresh", {
-    p_limit: 350,
+    p_limit: 100,
   });
   if (error) return Response.json({ error: error.message }, { status: 500 });
   const results = await ingestSubreddits(
