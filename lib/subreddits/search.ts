@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { embedDescription } from "@/lib/ai";
-import { ApiError, callService } from "@/lib/api-handler";
-import { env } from "@/lib/env";
+import { embedDescription } from "@/lib/ai/embeddings";
+import { ApiError, callService } from "@/lib/api/handler";
+import { env } from "@/lib/config/env";
 import {
   RESULTS_PER_PAGE,
   type SelfPromotionStatus,

@@ -1,5 +1,5 @@
-import { withApiHandler } from "@/lib/api-handler";
-import { searchSubreddits } from "@/lib/search-subreddits";
+import { withApiHandler } from "@/lib/api/handler";
+import { searchSubreddits } from "@/lib/subreddits/search";
 import { requireSession } from "@/lib/supabase/server";
 
 export const GET = withApiHandler(async (request) => {

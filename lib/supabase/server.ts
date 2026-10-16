@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
-import { ApiError, callService } from "@/lib/api-handler";
-import { env } from "@/lib/env";
+import { ApiError, callService } from "@/lib/api/handler";
+import { env } from "@/lib/config/env";
 import type { Database } from "@/types/database.types";
 
 export async function createClient() {

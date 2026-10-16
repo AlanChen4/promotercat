@@ -1,4 +1,4 @@
-import { ApiError, callService, withApiHandler } from "@/lib/api-handler";
+import { ApiError, callService, withApiHandler } from "@/lib/api/handler";
 import { oauthConnectionSchema } from "@/lib/schemas/agents";
 import { requireSession } from "@/lib/supabase/server";
 

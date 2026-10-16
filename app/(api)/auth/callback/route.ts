@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { ApiError, callService, withApiHandler } from "@/lib/api-handler";
-import { env } from "@/lib/env";
+import { ApiError, callService, withApiHandler } from "@/lib/api/handler";
+import { env } from "@/lib/config/env";
 import { createClient, isAuthServiceError } from "@/lib/supabase/server";
 
 // Allow search and the exact OAuth consent route; reject external redirects.

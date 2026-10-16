@@ -5,12 +5,12 @@ import {
   SUPPORTED_PROTOCOL_VERSIONS,
 } from "@modelcontextprotocol/sdk/types.js";
 import { NextResponse } from "next/server";
-import { agentResource, authenticateAgent } from "@/lib/agent-oauth";
-import { ApiError, callService, withApiHandler } from "@/lib/api-handler";
-import { env } from "@/lib/env";
+import { agentResource, authenticateAgent } from "@/lib/ai/agent-oauth";
+import { ApiError, callService, withApiHandler } from "@/lib/api/handler";
+import { env } from "@/lib/config/env";
 import { admissionSchema, agentSearchInputSchema } from "@/lib/schemas/agents";
 import type { SubredditResponse } from "@/lib/schemas/subreddits";
-import { searchSubreddits } from "@/lib/search-subreddits";
+import { searchSubreddits } from "@/lib/subreddits/search";
 import { createAdminClient } from "@/lib/supabase/admin-server";
 
 export const runtime = "nodejs";

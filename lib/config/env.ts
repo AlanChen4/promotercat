@@ -1,5 +1,5 @@
 import { createEnv } from "@t3-oss/env-nextjs";
-import { environmentFields } from "./schemas/env.ts";
+import { environmentFields } from "../schemas/env.ts";
 
 export const env = createEnv({
   ...environmentFields,

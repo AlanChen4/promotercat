@@ -1,6 +1,6 @@
 import { timingSafeEqual } from "node:crypto";
-import { ApiError, callService, withApiHandler } from "@/lib/api-handler";
-import { env } from "@/lib/env";
+import { ApiError, callService, withApiHandler } from "@/lib/api/handler";
+import { env } from "@/lib/config/env";
 import { subredditUrlSchema } from "@/lib/schemas/subreddits";
 import { createAdminClient } from "@/lib/supabase/admin-server";
 import { ingestSubreddits } from "@/scripts/cli";

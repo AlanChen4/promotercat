@@ -10,7 +10,7 @@ import {
   Output,
 } from "ai";
 import { load } from "cheerio";
-import { embedDescription } from "../lib/ai.ts";
+import { embedDescription } from "../lib/ai/embeddings.ts";
 import {
   type ApifyRun,
   apifyCommunitySchema,
@@ -691,7 +691,7 @@ async function main() {
     NODE_ENV: process.env.NODE_ENV ?? "development",
     ...secrets,
   });
-  const { env } = await import("../lib/env.ts");
+  const { env } = await import("../lib/config/env.ts");
   const results = await ingestSubreddits(targets, env, {
     command: "add",
     report: (result) => {
@@ -707,7 +707,7 @@ async function main() {
 const APIFY_MIN_WEEKLY_ACTIVE_USERS = 2_500;
 
 type IngestionEnv = Pick<
-  typeof import("../lib/env.ts").env,
+  typeof import("../lib/config/env.ts").env,
   | "NEXT_PUBLIC_SUPABASE_URL"
   | "SUPABASE_SERVICE_ROLE_KEY"
   | "TINYFISH_API_KEY"

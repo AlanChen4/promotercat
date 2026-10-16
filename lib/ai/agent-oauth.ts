@@ -1,7 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
-import { ApiError, callService } from "@/lib/api-handler";
-import { env } from "@/lib/env";
+import { ApiError, callService } from "@/lib/api/handler";
+import { env } from "@/lib/config/env";
 import { agentClaimsSchema } from "@/lib/schemas/agents";
 import { createAdminClient } from "@/lib/supabase/admin-server";
 import { isAuthServiceError } from "@/lib/supabase/server";

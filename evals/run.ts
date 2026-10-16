@@ -30,7 +30,7 @@ summary requirements. Exit 1 on a failed check or API error.`);
       await readFile(new URL("./self-promotion.json", import.meta.url), "utf8"),
     ),
   );
-  const { env } = await import("../lib/env.ts");
+  const { env } = await import("../lib/config/env.ts");
   let passed = 0;
   for (const example of cases) {
     try {
