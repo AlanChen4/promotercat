@@ -1,4 +1,4 @@
-import { embedDescription } from "@/lib/ai/embeddings";
+import { getQueryEmbedding } from "@/lib/ai/query-embeddings";
 import { ApiError } from "@/lib/api/handler";
 import { env } from "@/lib/config/env";
 import {
@@ -8,17 +8,12 @@ import {
   type SubredditResult as SubredditRow,
   type SubredditSearchInput,
   selfPromotionSchema,
+  subredditResultSchema,
 } from "@/lib/schemas/subreddits";
 import { createAdminClient } from "@/lib/supabase/admin-server";
+import { normalizeSearchTerms } from "./search-terms.ts";
 
 const SEMANTIC_MATCH_THRESHOLD = 0.5;
-const SEMANTIC_MATCH_COUNT = 200;
-// These words help the semantic query, but should not independently match names.
-const NAME_STOP_WORDS = new Set(
-  "a an and are as at be by for from i in is it my of on or our that the this to we with you your".split(
-    " ",
-  ),
-);
 
 export async function searchSubreddits(
   input: SubredditSearchInput,
@@ -157,26 +152,22 @@ async function fetchSemanticCandidates({
   searchTerm,
   supabaseAdmin,
 }: SemanticCandidateArgs): Promise<SubredditRow[]> {
-  const query = searchTerm.replace(/^r\//i, "");
-  const nameTerms = [
-    ...new Set(query.toLowerCase().match(/[a-z0-9_]+/g) ?? []),
-  ].filter((term) => term.length > 1 && !NAME_STOP_WORDS.has(term));
-  const embeddingValues = await embedDescription(
-    query,
-    "RETRIEVAL_QUERY",
-    env.VERCEL_AI_GATEWAY,
+  const terms = normalizeSearchTerms(searchTerm);
+  if (terms.length === 0) return [];
+  const embeddings = await Promise.all(
+    terms.map((term) => getQueryEmbedding(term, env.VERCEL_AI_GATEWAY)),
   );
   const { data, error } = await supabaseAdmin.rpc(
-    "match_subreddits_by_description",
+    "match_subreddits_by_descriptions",
     {
-      query_embedding: JSON.stringify(embeddingValues),
+      query_embeddings: embeddings,
       match_threshold: SEMANTIC_MATCH_THRESHOLD,
-      match_count: SEMANTIC_MATCH_COUNT,
-      name_terms: nameTerms,
     },
   );
 
   if (error) throw new ApiError(503, "Failed to fetch semantic matches.");
 
-  return data ?? [];
+  const parsed = subredditResultSchema.array().safeParse(data);
+  if (!parsed.success) throw new ApiError(503, "Invalid semantic matches.");
+  return parsed.data;
 }

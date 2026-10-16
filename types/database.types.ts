@@ -240,6 +240,10 @@ export type Database = {
           weekly_active_users: number;
         }[];
       };
+      match_subreddits_by_descriptions: {
+        Args: { query_embeddings: Json; match_threshold: number };
+        Returns: Json;
+      };
       save_subreddit_snapshot: {
         Args: { p_mode: string; p_rules: Json; p_snapshot: Json };
         Returns: {
