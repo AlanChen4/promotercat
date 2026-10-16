@@ -9,14 +9,21 @@ import { useAuth } from "@/providers/auth-provider";
 import logo from "@/public/logo.png";
 import { SignInOptions } from "../../../_components/sign-in-options";
 
-export function OAuthConsent({ authorizationId }: { authorizationId: string }) {
+export function OAuthConsent({
+  authorizationId,
+  preview = false,
+}: {
+  authorizationId: string;
+  preview?: boolean;
+}) {
+  const isPreview = process.env.NODE_ENV === "development" && preview;
   const { user, isAuthenticated, isAuthenticatedLoading } = useAuth();
-  const [details, setDetails] = useState<OAuthAuthorizationDetails | null>(
-    null,
-  );
+  const [requestDetails, setDetails] =
+    useState<OAuthAuthorizationDetails | null>(null);
+  const email = isPreview ? "alex@example.com" : user?.email;
   const [error, setError] = useState("");
   useEffect(() => {
-    if (!isAuthenticated || !authorizationId) return;
+    if (isPreview || !isAuthenticated || !authorizationId) return;
     let active = true;
     setDetails(null);
     setError("");
@@ -45,11 +52,11 @@ export function OAuthConsent({ authorizationId }: { authorizationId: string }) {
     return () => {
       active = false;
     };
-  }, [authorizationId, isAuthenticated]);
+  }, [authorizationId, isAuthenticated, isPreview]);
 
   return (
     <article
-      className="ph-no-capture ph-no-record mx-auto max-w-lg space-y-5 rounded-xl border bg-card p-6 text-sm leading-6 shadow-sm"
+      className="ph-no-capture ph-no-record mx-auto max-w-lg space-y-5 bg-card p-6 text-sm leading-6"
       data-ph-no-capture
       data-ph-no-record
     >
@@ -57,13 +64,13 @@ export function OAuthConsent({ authorizationId }: { authorizationId: string }) {
         <Image src={logo} alt="PromoterCat" width={40} height={40} />
         <h1 className="text-xl font-semibold">Connect your agent</h1>
       </div>
-      {!authorizationId ? (
+      {!isPreview && !authorizationId ? (
         <p role="alert">
           Missing connection request. Start connecting from your agent.
         </p>
-      ) : isAuthenticatedLoading ? (
+      ) : !isPreview && isAuthenticatedLoading ? (
         <p>Loading your account…</p>
-      ) : !isAuthenticated ? (
+      ) : !isPreview && !isAuthenticated ? (
         <>
           <p>Sign in to PromoterCat to connect your agent.</p>
           <SignInOptions
@@ -74,63 +81,39 @@ export function OAuthConsent({ authorizationId }: { authorizationId: string }) {
         <p role="alert" className="text-destructive">
           {error}
         </p>
-      ) : !details ? (
+      ) : !isPreview && !requestDetails ? (
         <p>Loading connection request…</p>
       ) : (
         <>
-          <p>
-            <strong>{details.client.name || "An agent"}</strong> wants to
-            connect to your PromoterCat account.
-          </p>
           <p className="text-muted-foreground">
-            Signed in as {user?.email}. This connection can find communities and
-            read their promotion rules. It cannot post to Reddit.
-          </p>
-          <div className="space-y-2 rounded-md bg-muted p-3">
-            <p className="font-medium">Requested account information</p>
-            <ul className="list-disc pl-5">
-              {details.scope
-                .split(/\s+/)
-                .filter(Boolean)
-                .map((scope) => (
-                  <li key={scope}>
-                    {{
-                      email: "Your email address",
-                      profile: "Your name and profile picture",
-                      openid: "Your account identifier",
-                      phone: "Your phone number",
-                    }[scope] ?? scope}
-                  </li>
-                ))}
-            </ul>
-          </div>
-          <p className="break-all text-xs text-muted-foreground">
-            After approval, return to: {details.redirect_uri}
-          </p>
-          <p className="text-xs text-muted-foreground">
-            Only approve clients you trust. Limits are shared across your
-            connected agents: 30 searches per UTC minute and 1,000 per UTC day.
+            Signed in as {email}. This connection can find communities and read
+            their promotion rules. It cannot post to Reddit.
           </p>
           <form
             method="POST"
             action="/api/oauth/decision"
-            className="flex gap-3"
+            onSubmit={isPreview ? (event) => event.preventDefault() : undefined}
+            className="flex justify-between gap-3"
           >
             <input
               type="hidden"
               name="authorization_id"
               value={authorizationId}
             />
-            <Button type="submit" name="decision" value="approve">
-              Connect
-            </Button>
             <Button
-              type="submit"
+              type={isPreview ? "button" : "submit"}
               name="decision"
               value="deny"
               variant="outline"
             >
               Cancel
+            </Button>
+            <Button
+              type={isPreview ? "button" : "submit"}
+              name="decision"
+              value="approve"
+            >
+              Connect
             </Button>
           </form>
         </>

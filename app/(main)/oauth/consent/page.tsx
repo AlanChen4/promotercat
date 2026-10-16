@@ -8,11 +8,12 @@ export const metadata: Metadata = {
 export default async function ConsentPage({
   searchParams,
 }: {
-  searchParams: Promise<{ authorization_id?: string }>;
+  searchParams: Promise<{ authorization_id?: string; preview?: string }>;
 }) {
-  const { authorization_id } = await searchParams;
+  const { authorization_id, preview } = await searchParams;
   return (
     <OAuthConsent
+      preview={process.env.NODE_ENV === "development" && preview === "1"}
       authorizationId={
         typeof authorization_id === "string" ? authorization_id : ""
       }
