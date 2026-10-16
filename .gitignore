@@ -50,3 +50,10 @@ next-env.d.ts
 .vscode/
 CLAUDE.md
 skills-lock.json
+
+# Track only the native Codex marketplace catalog.
+!.agents/
+.agents/*
+!.agents/plugins/
+.agents/plugins/*
+!.agents/plugins/marketplace.json

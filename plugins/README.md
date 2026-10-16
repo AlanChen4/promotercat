@@ -1,8 +1,10 @@
 # PromoterCat plugins
 
 The `promotercat@promotercat` plugin supports Codex and Claude Code from one package
-in `plugins/promotercat/`. Both clients read the repository's
-`.claude-plugin/marketplace.json` catalog and use the same `find-communities` skill.
+in `plugins/promotercat/`. Each client uses its native repository catalog:
+Codex reads `.agents/plugins/marketplace.json`, and Claude Code reads
+`.claude-plugin/marketplace.json`. Both point to the same package and
+`find-communities` skill. Codex does not need the Claude compatibility fallback.
 The package includes portable Codex configuration (`plugin.json`, `mcp.json`) and
 Claude Code configuration (`.claude-plugin/plugin.json`, `.mcp.json`).
 No user API key is needed.
