@@ -5,7 +5,11 @@
   "description": "Find Reddit communities and their self-promotion rules.",
   "extensions": {
     "com.openai": {
-      "onboardingSkill": "./skills/setup/SKILL.md"
+      "onboardingSkill": "./skills/setup/SKILL.md",
+      "interface": {
+        "composerIcon": "./assets/logo.png",
+        "logo": "./assets/logo.png"
+      }
     }
   }
 }
