@@ -5,8 +5,8 @@
   },
   "plugins": [
     {
-      "name": "reddit",
-      "source": "./plugins/reddit",
+      "name": "promotercat",
+      "source": "./plugins/promotercat",
       "description": "Find Reddit communities and their self-promotion rules."
     }
   ],

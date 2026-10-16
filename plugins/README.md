@@ -1,7 +1,7 @@
 # PromoterCat plugins
 
-The `reddit@promotercat` plugin supports Codex and Claude Code from one package
-in `plugins/reddit/`. Both clients read the repository's
+The `promotercat@promotercat` plugin supports Codex and Claude Code from one package
+in `plugins/promotercat/`. Both clients read the repository's
 `.claude-plugin/marketplace.json` catalog and use the same `find-communities` skill.
 The package includes portable Codex configuration (`plugin.json`, `mcp.json`) and
 Claude Code configuration (`.claude-plugin/plugin.json`, `.mcp.json`).
@@ -13,10 +13,10 @@ Run from the repository root:
 
 ```sh
 codex plugin marketplace add "$PWD"
-codex plugin add reddit@promotercat
+codex plugin add promotercat@promotercat
 
 claude plugin marketplace add "$PWD"
-claude plugin install reddit@promotercat
+claude plugin install promotercat@promotercat
 ```
 
 Restart the client, choose PromoterCat in its MCP connections menu, and complete
@@ -27,13 +27,13 @@ published to that endpoint until release.
 ## Use in chat
 
 After installation, start a new chat and complete OAuth sign-in when prompted.
-In the desktop app, open the `@` menu and select the `reddit` plugin. In Codex CLI,
+In the desktop app, open the `@` menu and select the `promotercat` plugin. In Codex CLI,
 use `/skills` to select its `find-communities` skill. In Claude Code, use
-`/reddit:find-communities`. You can also ask naturally for communities where you
+`/promotercat:find-communities`. You can also ask naturally for communities where you
 can promote your project.
 
 The `promotercat` name identifies the marketplace and bundled MCP connection;
-`reddit` identifies the installed plugin.
+`promotercat` also identifies the installed plugin and its chat mention.
 
 ## Test the local MCP endpoint directly
 

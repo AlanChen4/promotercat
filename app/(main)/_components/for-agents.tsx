@@ -10,9 +10,9 @@ import codexLogo from "@/public/codex.png";
 
 const AGENT_INSTALL = {
   codex:
-    "codex plugin marketplace add AlanChen4/promotercat\ncodex plugin add reddit@promotercat",
+    "codex plugin marketplace add AlanChen4/promotercat\ncodex plugin add promotercat@promotercat",
   claude:
-    "claude plugin marketplace add AlanChen4/promotercat\nclaude plugin install reddit@promotercat",
+    "claude plugin marketplace add AlanChen4/promotercat\nclaude plugin install promotercat@promotercat",
 };
 
 function CopyBlock({ text }: { text: string }) {
