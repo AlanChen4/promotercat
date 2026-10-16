@@ -15,16 +15,9 @@ calibration and its limitations.
 
 Deploy the OpenAI embedding migration before deploying the application. It adds
 `description_embedding_openai` and a separate search RPC, preserving the old
-Qwen column and RPC during rollout. With the target environment loaded:
-
-```sh
-node scripts/backfill-openai-embeddings.ts          # dry run
-node scripts/backfill-openai-embeddings.ts --apply  # resumable backfill
-```
-
-The script updates only the new vector column on existing description snapshots.
-It does not scrape Reddit or change descriptions, rules, or policy classifications.
-Rerun until `currentRowsStillMissing` is zero, then deploy the application. Keep
+Qwen column and RPC during rollout. Backfill the new vector column on existing
+description snapshots without changing descriptions, rules, or policy classifications.
+Verify that every current description has an OpenAI vector before deploying the application. Keep
 old ingestion workers stopped during cutover; an old writer that changes a
 description cannot supply its OpenAI vector. Re-run the backfill after old
 workers finish. The new model, dimensions, and cache version isolate query caches.
@@ -32,7 +25,6 @@ workers finish. The new model, dimensions, and cache version isolate query cache
 Checks:
 
 ```sh
-node --test lib/ai/embeddings.test.ts
 # Against a migrated local database; fixtures are rolled back:
 docker exec -i supabase_db_promotercat psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/tests/openai_embeddings.sql
 ```
