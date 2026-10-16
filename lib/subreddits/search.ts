@@ -11,9 +11,20 @@ import {
   subredditResultSchema,
 } from "@/lib/schemas/subreddits";
 import { createAdminClient } from "@/lib/supabase/admin-server";
-import { normalizeSearchTerms } from "./search-terms.ts";
 
 const SEMANTIC_MATCH_THRESHOLD = 0.5;
+
+/** Commas separate unordered terms; word order within a term is meaningful. */
+function normalizeSearchTerms(search: string): string[] {
+  return [
+    ...new Set(
+      search
+        .split(",")
+        .map((term) => term.trim().toLowerCase().replace(/^r\//, "").trim())
+        .filter(Boolean),
+    ),
+  ].sort();
+}
 
 export async function searchSubreddits(
   input: SubredditSearchInput,

@@ -29,7 +29,3 @@ Apply `20261016190755_multi_term_semantic_search.sql` before deploying the
 application changes. The old search RPC remains available for older deployments.
 The new RPC returns all matches before pagination so adding terms cannot remove
 matches through a candidate limit.
-
-Run `pnpm test` for normalization and cache tests. With the local Supabase
-database container running, run `pnpm test:db` for ranking and permission tests.
-The database tests create and delete their own isolated database.
