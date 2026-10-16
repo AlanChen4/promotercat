@@ -12,7 +12,7 @@ description: Find Reddit communities and promotion rules with PromoterCat when u
 ## Parameters
 
 - `search`: up to 1,000 characters; omit to browse.
-- `self_promotion`: array of `allowed_full`, `allowed_limited`, `unspecified`, or `not_allowed`. Prefer the first two for promotion.
+- `self_promotion`: array of `allowed_full`, `allowed_limited`, `unspecified`, or `not_allowed`.
 - `sort`: `name` or `weekly_active`; omit for search relevance.
 - `sort_direction`: `asc` or `desc`.
 - `page`: positive integer; 10 results per page. Fetch more only as needed.
