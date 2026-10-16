@@ -6,7 +6,7 @@
   "plugins": [
     {
       "name": "reddit",
-      "source": "./plugins/claude",
+      "source": "./plugins/reddit",
       "description": "Find Reddit communities and their self-promotion rules."
     }
   ],

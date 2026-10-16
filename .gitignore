@@ -50,10 +50,3 @@ next-env.d.ts
 .vscode/
 CLAUDE.md
 skills-lock.json
-
-# Share only the Codex plugin marketplace from local agent configuration.
-!.agents/
-.agents/*
-!.agents/plugins/
-.agents/plugins/*
-!.agents/plugins/marketplace.json

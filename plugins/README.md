@@ -1,7 +1,11 @@
 # PromoterCat plugins
 
-The `reddit@promotercat` plugin packages for Codex and Claude Code connect to the same OAuth-protected MCP server and share the
-`find-communities` skill. No user API key is needed.
+The `reddit@promotercat` plugin supports Codex and Claude Code from one package
+in `plugins/reddit/`. Both clients read the repository's
+`.claude-plugin/marketplace.json` catalog and use the same `find-communities` skill.
+The package includes portable Codex configuration (`plugin.json`, `mcp.json`) and
+Claude Code configuration (`.claude-plugin/plugin.json`, `.mcp.json`).
+No user API key is needed.
 
 ## Local plugin installation
 
@@ -19,6 +23,17 @@ Restart the client, choose PromoterCat in its MCP connections menu, and complete
 browser sign-in and approval. The client stores and refreshes its own tokens.
 The bundled endpoint is `https://www.promotercat.com/mcp`; local code is not
 published to that endpoint until release.
+
+## Use in chat
+
+After installation, start a new chat and complete OAuth sign-in when prompted.
+In the desktop app, open the `@` menu and select the `reddit` plugin. In Codex CLI,
+use `/skills` to select its `find-communities` skill. In Claude Code, use
+`/reddit:find-communities`. You can also ask naturally for communities where you
+can promote your project.
+
+The `promotercat` name identifies the marketplace and bundled MCP connection;
+`reddit` identifies the installed plugin.
 
 ## Test the local MCP endpoint directly
 
