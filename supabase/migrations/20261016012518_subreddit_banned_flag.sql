@@ -194,4 +194,3 @@ $$;
 revoke all on function public.save_subreddit_snapshot(text, jsonb, jsonb)
     from public, anon, authenticated;
 grant execute on function public.save_subreddit_snapshot(text, jsonb, jsonb) to service_role;
-
