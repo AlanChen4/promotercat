@@ -15,7 +15,8 @@
     "db:reset": "supabase db reset",
     "db:status": "supabase status",
     "subreddits": "node scripts/cli.ts",
-    "evals": "NODE_ENV=development doppler run --project web --config dev -- node evals/run.ts"
+    "evals": "NODE_ENV=development doppler run --project web --config dev -- node evals/run.ts",
+    "plugin:version": "node scripts/plugin-version.ts"
   },
   "dependencies": {
     "@hugeicons/core-free-icons": "^2.0.0",

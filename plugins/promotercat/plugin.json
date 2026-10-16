@@ -1,6 +1,15 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "promotercat",
-  "version": "0.1.0",
-  "description": "Find Reddit communities and their self-promotion rules."
+  "version": "0.1.1",
+  "description": "Find Reddit communities and their self-promotion rules.",
+  "extensions": {
+    "com.openai": {
+      "onboardingSkill": "./skills/setup/SKILL.md",
+      "interface": {
+        "composerIcon": "./assets/logo.png",
+        "logo": "./assets/logo.png"
+      }
+    }
+  }
 }

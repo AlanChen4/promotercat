@@ -4,16 +4,8 @@
     "promotercat": {
       "type": "streamable-http",
       "url": "https://www.promotercat.com/mcp",
-      "extensions": {
-        "com.openai": {
-          "auth": {
-            "type": "oauth",
-            "client": {
-              "mode": "dcr"
-            },
-            "baseScopes": ["email"]
-          }
-        }
+      "headers": {
+        "X-PromoterCat-Plugin-Version": "0.1.1"
       }
     }
   }
