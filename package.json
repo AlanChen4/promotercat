@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "biome check",
     "format": "biome format --write",
+    "plugin:check": "node scripts/check-plugin-loader.mjs && node scripts/check-plugin.mjs",
     "generate-types": "supabase gen types --lang typescript --local --schema public > types/database.types.ts",
     "supabase": "supabase",
     "db:start": "supabase start",

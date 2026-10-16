@@ -3,18 +3,7 @@
   "mcpServers": {
     "promotercat": {
       "type": "streamable-http",
-      "url": "https://www.promotercat.com/mcp",
-      "extensions": {
-        "com.openai": {
-          "auth": {
-            "type": "oauth",
-            "client": {
-              "mode": "dcr"
-            },
-            "baseScopes": ["email"]
-          }
-        }
-      }
+      "url": "https://www.promotercat.com/mcp"
     }
   }
 }
