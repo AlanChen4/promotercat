@@ -12,7 +12,6 @@ export function descriptionEmbeddingText(name: string, description: string) {
 
 export async function embedDescription(
   text: string,
-  _taskType: "RETRIEVAL_DOCUMENT" | "RETRIEVAL_QUERY",
   apiKey: string,
   signal?: AbortSignal,
 ) {
@@ -124,5 +123,5 @@ export const getQueryEmbedding = createQueryEmbeddingLoader({
       // Preserve our SHA-256 key instead of the SDK's default 32-bit hash.
       keyHashFunction: (key) => key,
     }),
-  embed: (term, apiKey) => embedDescription(term, "RETRIEVAL_QUERY", apiKey),
+  embed: (term, apiKey) => embedDescription(term, apiKey),
 });

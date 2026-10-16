@@ -1113,7 +1113,6 @@ export async function ingestSubreddits(
             : JSON.stringify(
                 await embedDescription(
                   descriptionEmbeddingText(stats.name, description),
-                  "RETRIEVAL_DOCUMENT",
                   env.VERCEL_AI_GATEWAY,
                   options.signal,
                 ),
