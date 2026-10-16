@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { Enums } from "../types/database.types.ts";
+import type { Enums } from "../../types/database.types.ts";
 
 export const RESULTS_PER_PAGE = 10;
 export const selfPromotionSchema = z.enum([
@@ -53,3 +53,45 @@ export const subredditUrlSchema = redditPageUrlSchema
     return { name, url: `https://www.reddit.com/r/${name}/` };
   });
 export type SubredditTarget = z.output<typeof subredditUrlSchema>;
+
+export type SubredditSearchInput = {
+  search?: string;
+  self_promotion?: SelfPromotionStatus[];
+  sort?: SortField;
+  sort_direction?: SortDirection;
+  page?: number;
+};
+
+const defaultPromotionFilters: SelfPromotionStatus[] = [
+  "allowed_full",
+  "allowed_limited",
+  "unspecified",
+];
+const searchPageSchema = z.coerce
+  .number()
+  .int()
+  .positive()
+  .max(Math.floor(Number.MAX_SAFE_INTEGER / RESULTS_PER_PAGE))
+  .catch(1);
+
+export function parseSearchParams(params: Pick<URLSearchParams, "get">) {
+  const filters = [
+    ...new Set(
+      (params.get("self_promotion") ?? "").split(",").flatMap((value) => {
+        const parsed = selfPromotionSchema.safeParse(
+          value.trim().toLowerCase(),
+        );
+        return parsed.success ? [parsed.data] : [];
+      }),
+    ),
+  ];
+  return {
+    search: params.get("search")?.trim() ?? "",
+    self_promotion: filters.length ? filters : defaultPromotionFilters,
+    sort: sortFieldSchema.safeParse(params.get("sort")?.toLowerCase()).data,
+    sort_direction: sortDirectionSchema
+      .catch("asc")
+      .parse(params.get("sort_direction")?.toLowerCase()),
+    page: searchPageSchema.parse(params.get("page") ?? 1),
+  };
+}

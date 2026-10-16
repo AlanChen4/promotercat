@@ -1,9 +1,8 @@
-import { createEnv } from "@t3-oss/env-nextjs";
 import { z } from "zod";
 
 const secret = z.string().trim().min(1);
 
-export const env = createEnv({
+export const environmentFields = {
   server: {
     SUPABASE_SERVICE_ROLE_KEY: secret,
     VERCEL_AI_GATEWAY: secret,
@@ -34,16 +33,4 @@ export const env = createEnv({
   shared: {
     NODE_ENV: z.enum(["development", "production", "test"]),
   },
-  runtimeEnv: {
-    NODE_ENV: process.env.NODE_ENV,
-    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
-    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,
-    SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
-    VERCEL_AI_GATEWAY: process.env.VERCEL_AI_GATEWAY,
-    TINYFISH_API_KEY: process.env.TINYFISH_API_KEY,
-    CRON_SECRET: process.env.CRON_SECRET,
-    APIFY_API_KEYS: process.env.APIFY_API_KEYS,
-    CI: Boolean(process.env.CI),
-  },
-});
+};

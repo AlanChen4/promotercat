@@ -1,22 +1,24 @@
 import { timingSafeEqual } from "node:crypto";
-import { env } from "@/lib/env";
-import { subredditUrlSchema } from "@/lib/subreddits";
+import { ApiError, withApiHandler } from "@/lib/api/handler";
+import { env } from "@/lib/config/env";
+import { subredditUrlSchema } from "@/lib/schemas/subreddits";
 import { createAdminClient } from "@/lib/supabase/admin-server";
 import { ingestSubreddits } from "@/scripts/cli";
 
 export const maxDuration = 800;
 
-export async function GET(request: Request) {
+export const GET = withApiHandler(async (request) => {
   const actual = Buffer.from(request.headers.get("authorization") ?? "");
   const expected = Buffer.from(`Bearer ${env.CRON_SECRET}`);
   if (actual.length !== expected.length || !timingSafeEqual(actual, expected)) {
     return new Response("Unauthorized", { status: 401 });
   }
   const db = createAdminClient(env);
+  const message = "Could not load subreddits due for refresh.";
   const { data, error } = await db.rpc("get_subreddits_due_for_refresh", {
     p_limit: 100,
   });
-  if (error) return Response.json({ error: error.message }, { status: 500 });
+  if (error) throw new ApiError(503, message);
   const results = await ingestSubreddits(
     data.map(({ name }) =>
       subredditUrlSchema.parse(`https://www.reddit.com/r/${name}/`),
@@ -28,4 +30,4 @@ export async function GET(request: Request) {
     { results },
     { status: results.some(({ status }) => status === "failed") ? 500 : 200 },
   );
-}
+});

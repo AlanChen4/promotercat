@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { env } from "@/lib/env";
+import { env } from "@/lib/config/env";
 import { createClient } from "@/lib/supabase/client";
 
 export function SignInOptions({ returnTo }: { returnTo: string }) {

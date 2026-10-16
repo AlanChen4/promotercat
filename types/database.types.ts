@@ -9,6 +9,30 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      agent_api_quotas: {
+        Row: {
+          account_id: string;
+          day_count: number;
+          day_start: string;
+          minute_count: number;
+          minute_start: string;
+        };
+        Insert: {
+          account_id: string;
+          day_count?: number;
+          day_start?: string;
+          minute_count?: number;
+          minute_start?: string;
+        };
+        Update: {
+          account_id?: string;
+          day_count?: number;
+          day_start?: string;
+          minute_count?: number;
+          minute_start?: string;
+        };
+        Relationships: [];
+      };
       subreddit_descriptions: {
         Row: {
           created_at: string;
@@ -194,6 +218,7 @@ export type Database = {
       };
     };
     Functions: {
+      admit_agent_request: { Args: { p_account_id: string }; Returns: Json };
       get_subreddits_due_for_refresh: {
         Args: { p_limit?: number };
         Returns: {

@@ -1,7 +1,5 @@
 "use client";
 
-import { GithubIcon } from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 
@@ -39,7 +37,7 @@ export function GitHubStars() {
   }, []);
 
   return (
-    <Button asChild variant="ghost" size="sm" className="min-w-18 shrink-0">
+    <Button asChild variant="ghost" size="sm" className="shrink-0 gap-1">
       <a
         href="https://github.com/AlanChen4/promotercat"
         target="_blank"
@@ -47,12 +45,11 @@ export function GitHubStars() {
         title="Star PromoterCat on GitHub"
         aria-label={`Star PromoterCat on GitHub${stars === null ? "" : ` (${stars.toLocaleString("en-US")} stars)`}`}
       >
-        <HugeiconsIcon
-          icon={GithubIcon}
-          className="size-4"
+        <span
+          className="size-4 shrink-0 bg-current [mask-image:url('/github.png')] [mask-size:contain] [mask-position:center] [mask-repeat:no-repeat]"
           aria-hidden="true"
         />
-        <span className="min-w-6 text-right tabular-nums">
+        <span className="tabular-nums">
           {stars === null
             ? "Star"
             : Intl.NumberFormat("en-US", {

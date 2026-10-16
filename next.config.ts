@@ -1,6 +1,6 @@
 import { withSentryConfig } from "@sentry/nextjs/config";
 import type { NextConfig } from "next";
-import { env } from "./lib/env";
+import { env } from "./lib/config/env";
 
 const nextConfig: NextConfig = {
   /* config options here */

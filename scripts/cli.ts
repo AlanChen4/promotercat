@@ -10,14 +10,21 @@ import {
   Output,
 } from "ai";
 import { load } from "cheerio";
-import { z } from "zod";
-import { embedDescription } from "../lib/ai.ts";
+import { embedDescription } from "../lib/ai/embeddings.ts";
+import {
+  type ApifyRun,
+  apifyCommunitySchema,
+  apifyErrorSchema,
+  apifyRunSchema,
+  fetchResponseSchema,
+  policyConfidenceSchema,
+  policySummarySchema,
+} from "../lib/schemas/ingestion.ts";
 import {
   redditPageUrlSchema,
   type SubredditTarget,
-  selfPromotionSchema,
   subredditUrlSchema,
-} from "../lib/subreddits.ts";
+} from "../lib/schemas/subreddits.ts";
 import { createAdminClient } from "../lib/supabase/admin-server.ts";
 import type { Json, Tables } from "../types/database.types.ts";
 
@@ -135,17 +142,6 @@ function parsePolicy(markdown: string, target: SubredditTarget): Policy {
   return { rules };
 }
 
-const fetchResponse = z.object({
-  results: z.array(
-    z.object({
-      url: z.string(),
-      final_url: z.string().nullable(),
-      text: z.string().nullable(),
-    }),
-  ),
-  errors: z.array(z.object({ url: z.string(), error: z.string() })),
-});
-
 function requestSignal(timeout: number, signal?: AbortSignal) {
   return AbortSignal.any([
     AbortSignal.timeout(timeout),
@@ -234,7 +230,7 @@ async function fetchTinyfish(
         throw new Error(
           `TinyFish Fetch returned HTTP ${response.status}${response.status === 402 ? ": daily allowance or wallet exhausted" : ""}.`,
         );
-      return fetchResponse.parse(await response.json());
+      return fetchResponseSchema.parse(await response.json());
     }
   } finally {
     // Errors and cancellation must release the slot or later batches can stall.
@@ -333,46 +329,6 @@ async function fetchSubredditBatch<T>(
   return values;
 }
 
-const apifyRunSchema = z.object({
-  data: z.object({
-    id: z.string().regex(/^[A-Za-z0-9]+$/),
-    status: z.string(),
-    statusMessage: z.string().nullish(),
-    options: z.object({ maxTotalChargeUsd: z.number().nullish() }).optional(),
-    defaultDatasetId: z.string().regex(/^[A-Za-z0-9]+$/),
-  }),
-});
-const apifyCommunitySchema = z.object({
-  dataType: z.literal("community"),
-  name: z.string(),
-  url: subredditUrlSchema,
-  // Restricted communities are readable and still expose rules and activity.
-  subredditType: z.enum(["public", "restricted"]),
-  publicDescription: z.string().nullish(),
-  rules: z
-    .array(
-      z.object({
-        shortName: z.string().trim().min(1),
-        description: z.string().nullable(),
-        priority: z.number().int().nonnegative(),
-      }),
-    )
-    .max(100)
-    .refine(
-      (rules) =>
-        new Set(rules.map((rule) => rule.priority)).size === rules.length,
-      "Apify returned duplicate rule positions.",
-    )
-    .transform((rules) =>
-      rules
-        .sort((a, b) => a.priority - b.priority)
-        .map((rule) => ({
-          title: rule.shortName,
-          description: rule.description?.trim() || null,
-        })),
-    ),
-});
-
 class ApifyUsageExhaustedError extends Error {
   constructor() {
     super("Apify account usage is exhausted.");
@@ -394,9 +350,9 @@ async function apifyRequest(
     signal: requestSignal(70_000, signal),
   });
   if (!response.ok) {
-    const body = z
-      .object({ error: z.object({ type: z.string(), message: z.string() }) })
-      .safeParse(await response.json().catch(() => null));
+    const body = apifyErrorSchema.safeParse(
+      await response.json().catch(() => null),
+    );
     if ([400, 402, 403].includes(response.status) && body.success) {
       const { type, message } = body.data.error;
       if (
@@ -436,7 +392,7 @@ async function fetchApifyCommunities(
     // Recalculate the cap for missing URLs only; recovered results are never paid
     // for again when an account runs out of credits partway through a batch.
     const budget = Number((0.02 + pending.length * 0.0015).toFixed(4));
-    let run: z.infer<typeof apifyRunSchema>["data"];
+    let run: ApifyRun;
     try {
       run = apifyRunSchema.parse(
         await apifyRequest(
@@ -511,7 +467,7 @@ async function fetchApifyCommunities(
 async function collectApifyCommunities(
   targets: SubredditTarget[],
   apiKey: string,
-  run: z.infer<typeof apifyRunSchema>["data"],
+  run: ApifyRun,
   budget: number,
   signal?: AbortSignal,
 ) {
@@ -539,35 +495,35 @@ async function collectApifyCommunities(
     throw new Error(
       `Apify run ${run.id} ended with ${run.status}; no retry was started.`,
     );
-  // A timed-out production run had already saved 74 valid community records.
-  // Terminal status describes the run, not each record. Recover its dataset and
-  // validate each community below instead of discarding paid results or starting
-  // another paid run. Invalid records remain individual failures; missing ones
-  // can be retried below only after confirmed account credit exhaustion.
-  const items = z
-    .array(z.unknown())
-    .parse(
-      await apifyRequest(
-        `datasets/${run.defaultDatasetId}/items?format=json&limit=${targets.length + 1}`,
-        apiKey,
-        undefined,
-        signal,
-      ),
-    );
+  // Recover paid results from terminal runs. Only missing records can retry
+  // after confirmed credit exhaustion; invalid records remain failures.
+  const items: unknown[] = await apifyRequest(
+    `datasets/${run.defaultDatasetId}/items?format=json&limit=${targets.length + 1}`,
+    apiKey,
+    undefined,
+    signal,
+  );
+  const records = items.map((item) => ({
+    name:
+      typeof item === "object" &&
+      item !== null &&
+      "name" in item &&
+      typeof item.name === "string"
+        ? item.name.toLowerCase()
+        : undefined,
+    parsed: apifyCommunitySchema.safeParse(item),
+  }));
   for (const target of targets) {
     try {
-      const matches = items.filter((item) => {
-        const identity = z.object({ name: z.string() }).safeParse(item);
-        return (
-          identity.success && identity.data.name.toLowerCase() === target.name
-        );
-      });
+      const matches = records.filter((record) => record.name === target.name);
       if (!matches.length) missing.push(target);
       if (matches.length !== 1)
         throw new Error(
           `Apify run ${run.id} (${run.status}) did not return exactly one community record.`,
         );
-      const community = apifyCommunitySchema.parse(matches[0]);
+      const record = matches[0].parsed;
+      if (!record.success) throw record.error;
+      const community = record.data;
       if (community.url.name !== target.name)
         throw new Error("Apify returned a mismatched community URL.");
       // A public community record with rules: [] confirms a rule-free community.
@@ -670,15 +626,11 @@ export async function classifyPolicy(
     },
     abortSignal: requestSignal(60_000, signal),
   });
-  const confidence = z
-    .number()
-    .min(0)
-    .max(1)
-    .parse(
-      result.providerMetadata?.typesafe?.confidence &&
-        (result.providerMetadata.typesafe.confidence as Record<string, unknown>)
-          .promotion,
-    );
+  const confidence = policyConfidenceSchema.parse(
+    result.providerMetadata?.typesafe?.confidence &&
+      (result.providerMetadata.typesafe.confidence as Record<string, unknown>)
+        .promotion,
+  );
   let status = result.answers.promotion.choice;
   const needsReview = confidence < 0.8;
   let detail = "";
@@ -780,21 +732,7 @@ Output:
         rules: policy.rules,
       }),
       output: Output.object({
-        schema: z
-          .object({
-            // Only uncertain classifications can change. Confident limited cases
-            // still use Luna for a summary, with Jev's category fixed by schema.
-            self_promotion: needsReview
-              ? selfPromotionSchema
-              : z.literal(status),
-            summary: z.string().trim(),
-          })
-          .refine(
-            (value) =>
-              value.self_promotion !== "allowed_limited" ||
-              value.summary.length > 0,
-            "Limited permission requires a summary of the conditions.",
-          ),
+        schema: policySummarySchema(status, needsReview),
       }),
       reasoning: "none",
       temperature: 0,
@@ -938,7 +876,7 @@ async function main() {
     NODE_ENV: process.env.NODE_ENV ?? "development",
     ...secrets,
   });
-  const { env } = await import("../lib/env.ts");
+  const { env } = await import("../lib/config/env.ts");
   const results = await ingestSubreddits(targets, env, {
     command: "add",
     report: (result) => {
@@ -954,7 +892,7 @@ async function main() {
 const APIFY_MIN_WEEKLY_ACTIVE_USERS = 2_500;
 
 type IngestionEnv = Pick<
-  typeof import("../lib/env.ts").env,
+  typeof import("../lib/config/env.ts").env,
   | "NEXT_PUBLIC_SUPABASE_URL"
   | "SUPABASE_SERVICE_ROLE_KEY"
   | "TINYFISH_API_KEY"
