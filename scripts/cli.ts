@@ -10,7 +10,10 @@ import {
   Output,
 } from "ai";
 import { load } from "cheerio";
-import { embedDescription } from "../lib/ai/embeddings.ts";
+import {
+  descriptionEmbeddingText,
+  embedDescription,
+} from "../lib/ai/embeddings.ts";
 import {
   type ApifyRun,
   apifyCommunitySchema,
@@ -30,7 +33,7 @@ import type { Json, Tables } from "../types/database.types.ts";
 
 type ExistingSubreddit = Pick<
   Tables<"current_subreddits">,
-  "id" | "name" | "description" | "description_embedding" | "is_banned"
+  "id" | "name" | "description" | "description_embedding_openai" | "is_banned"
 >;
 type Activity = {
   name: string;
@@ -968,7 +971,7 @@ export async function ingestSubreddits(
   await forEachConcurrent(batches, 8, async (batch) => {
     const { data: rows, error } = await db
       .from("current_subreddits")
-      .select("id,name,description,description_embedding,is_banned")
+      .select("id,name,description,description_embedding_openai,is_banned")
       .or(
         batch
           .map(({ name }) => `name.ilike.${name.replaceAll("_", "\\_")}`)
@@ -1105,12 +1108,11 @@ export async function ingestSubreddits(
           options.signal,
         );
         const embedding =
-          row?.description === description && row.description_embedding
-            ? row.description_embedding
+          row?.description === description && row.description_embedding_openai
+            ? row.description_embedding_openai
             : JSON.stringify(
                 await embedDescription(
-                  `${stats.name}: ${description}`,
-                  "RETRIEVAL_DOCUMENT",
+                  descriptionEmbeddingText(stats.name, description),
                   env.VERCEL_AI_GATEWAY,
                   options.signal,
                 ),
@@ -1124,7 +1126,7 @@ export async function ingestSubreddits(
               : {}),
             description,
             ...classification,
-            description_embedding: embedding,
+            description_embedding_openai: embedding,
           } as Json,
           p_rules: policy.rules as Json,
         });

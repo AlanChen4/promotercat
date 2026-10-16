@@ -24,7 +24,7 @@ export default withSentryConfig(nextConfig, {
   // For all available options, see:
   // https://www.npmjs.com/package/@sentry/webpack-plugin#options
 
-  org: "where-can-i-promote",
+  org: "promoter-cat",
 
   project: "web",
 

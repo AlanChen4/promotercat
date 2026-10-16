@@ -2,24 +2,25 @@ import { createHash } from "node:crypto";
 import { getCache, type RuntimeCache } from "@vercel/functions";
 import { createGateway, embed } from "ai";
 
-export const EMBEDDING_MODEL = "alibaba/qwen3-embedding-8b";
-export const EMBEDDING_DIMENSIONS = 4096;
-export const QUERY_EMBEDDING_INSTRUCTION =
-  "Given a search query, retrieve relevant subreddit names and descriptions.";
+export const EMBEDDING_MODEL = "openai/text-embedding-3-small";
+export const EMBEDDING_DIMENSIONS = 1536;
+export const SEMANTIC_MATCH_THRESHOLD = 0.3;
+
+export function descriptionEmbeddingText(name: string, description: string) {
+  return `${name}: ${description}`;
+}
 
 export async function embedDescription(
   text: string,
-  taskType: "RETRIEVAL_DOCUMENT" | "RETRIEVAL_QUERY",
   apiKey: string,
   signal?: AbortSignal,
 ) {
   signal?.throwIfAborted();
   const { embedding } = await embed({
     model: createGateway({ apiKey }).embeddingModel(EMBEDDING_MODEL),
-    value:
-      taskType === "RETRIEVAL_QUERY"
-        ? `Instruct: ${QUERY_EMBEDDING_INSTRUCTION}\nQuery: ${text}`
-        : text,
+    // OpenAI embeds plain text for both queries and documents.
+    value: text,
+    dimensions: EMBEDDING_DIMENSIONS,
     abortSignal: AbortSignal.any([
       AbortSignal.timeout(60_000),
       ...(signal ? [signal] : []),
@@ -41,7 +42,7 @@ export async function embedDescription(
 
 const CACHE_TTL_SECONDS = 30 * 24 * 60 * 60;
 // Bump this when preprocessing or vector normalization changes.
-const CACHE_VERSION = "v1";
+const CACHE_VERSION = "v2";
 
 export function queryEmbeddingCacheKey(term: string): string {
   return createHash("sha256")
@@ -50,7 +51,6 @@ export function queryEmbeddingCacheKey(term: string): string {
         version: CACHE_VERSION,
         model: EMBEDDING_MODEL,
         dimensions: EMBEDDING_DIMENSIONS,
-        instruction: QUERY_EMBEDDING_INSTRUCTION,
         term,
       }),
     )
@@ -123,5 +123,5 @@ export const getQueryEmbedding = createQueryEmbeddingLoader({
       // Preserve our SHA-256 key instead of the SDK's default 32-bit hash.
       keyHashFunction: (key) => key,
     }),
-  embed: (term, apiKey) => embedDescription(term, "RETRIEVAL_QUERY", apiKey),
+  embed: (term, apiKey) => embedDescription(term, apiKey),
 });

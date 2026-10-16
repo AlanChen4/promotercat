@@ -38,18 +38,21 @@ export type Database = {
           created_at: string;
           description: string | null;
           description_embedding: string | null;
+          description_embedding_openai: string | null;
           subreddit_id: string;
         };
         Insert: {
           created_at?: string;
           description?: string | null;
           description_embedding?: string | null;
+          description_embedding_openai?: string | null;
           subreddit_id: string;
         };
         Update: {
           created_at?: string;
           description?: string | null;
           description_embedding?: string | null;
+          description_embedding_openai?: string | null;
           subreddit_id?: string;
         };
         Relationships: [
@@ -203,6 +206,7 @@ export type Database = {
         Row: {
           description: string | null;
           description_embedding: string | null;
+          description_embedding_openai: string | null;
           id: string | null;
           is_banned: boolean | null;
           is_restricted: boolean | null;
@@ -241,7 +245,11 @@ export type Database = {
         }[];
       };
       match_subreddits_by_descriptions: {
-        Args: { query_embeddings: Json; match_threshold: number };
+        Args: { match_threshold: number; query_embeddings: Json };
+        Returns: Json;
+      };
+      match_subreddits_by_descriptions_openai: {
+        Args: { match_threshold: number; query_embeddings: Json };
         Returns: Json;
       };
       save_subreddit_snapshot: {
