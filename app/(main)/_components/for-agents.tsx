@@ -2,7 +2,7 @@
 
 import { Check, Copy, X } from "lucide-react";
 import Image from "next/image";
-import { useEffect, useId, useRef, useState } from "react";
+import { type RefObject, useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
 import claudeLogo from "@/public/claude.png";
@@ -71,7 +71,13 @@ function CopyBlock({ text }: { text: string }) {
   );
 }
 
-function AgentWindow({ onClose }: { onClose: () => void }) {
+function AgentWindow({
+  onClose,
+  triggerRef,
+}: {
+  onClose: () => void;
+  triggerRef: RefObject<HTMLButtonElement | null>;
+}) {
   const tabId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -101,9 +107,22 @@ function AgentWindow({ onClose }: { onClose: () => void }) {
   };
   useEffect(() => {
     const rect = panelRef.current?.getBoundingClientRect();
+    const anchor = triggerRef.current?.getBoundingClientRect();
     setPosition({
-      x: Math.max(12, (window.innerWidth - (rect?.width ?? 560)) / 2),
-      y: Math.max(12, (window.innerHeight - (rect?.height ?? 600)) / 2),
+      x: Math.max(
+        12,
+        Math.min(
+          (anchor?.right ?? window.innerWidth - 12) - (rect?.width ?? 560),
+          window.innerWidth - (rect?.width ?? 560) - 12,
+        ),
+      ),
+      y: Math.max(
+        12,
+        Math.min(
+          (anchor?.bottom ?? 12) + 8,
+          window.innerHeight - (rect?.height ?? 600) - 12,
+        ),
+      ),
     });
     setReady(true);
     const resize = () => {
@@ -138,7 +157,7 @@ function AgentWindow({ onClose }: { onClose: () => void }) {
       window.removeEventListener("resize", resize);
       window.removeEventListener("keydown", keydown);
     };
-  }, [onClose]);
+  }, [onClose, triggerRef]);
 
   useEffect(() => {
     if (ready) closeRef.current?.focus();
@@ -150,7 +169,7 @@ function AgentWindow({ onClose }: { onClose: () => void }) {
       role="dialog"
       aria-modal="false"
       aria-label="For Agents"
-      className="fixed z-30 flex max-h-[calc(100dvh-24px)] w-[560px] max-w-[calc(100vw-24px)] flex-col overflow-hidden rounded-xl border bg-card text-card-foreground shadow-xl"
+      className={`fixed z-30 flex max-h-[calc(100dvh-24px)] w-[560px] max-w-[calc(100vw-24px)] flex-col overflow-hidden rounded-xl border bg-card text-card-foreground shadow-xl ${ready ? "origin-center transition-none animate-in fade-in zoom-in-95 duration-150 motion-reduce:animate-none" : ""}`}
       style={{
         left: position.x,
         top: position.y,
@@ -293,7 +312,7 @@ export function ForAgents() {
         <Image src={codexLogo} alt="" width={16} height={16} />
         <Image src={claudeLogo} alt="" width={16} height={16} />
       </button>
-      {open ? <AgentWindow onClose={close} /> : null}
+      {open ? <AgentWindow onClose={close} triggerRef={trigger} /> : null}
     </>
   );
 }
