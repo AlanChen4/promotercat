@@ -2,16 +2,22 @@ import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
-// Usage: node scripts/plugin-version.mjs [sync|patch|minor|major|X.Y.Z|auto BASE_REF]
+// Usage: node scripts/plugin-version.ts [sync|patch|minor|major|X.Y.Z|auto BASE_REF]
 const root = fileURLToPath(new URL("../", import.meta.url));
 const pluginRoot = "plugins/promotercat";
 const manifestPath = `${pluginRoot}/plugin.json`;
-const readJson = (path) =>
+type PluginManifest = { version: string };
+type McpConfig = {
+  mcpServers: Record<string, { headers?: Record<string, string> }>;
+};
+type BumpLevel = "major" | "minor" | "patch";
+
+const readJson = <T>(path: string): T =>
   JSON.parse(readFileSync(new URL(`../${path}`, import.meta.url), "utf8"));
-const git = (...args) =>
+const git = (...args: string[]) =>
   execFileSync("git", args, { cwd: root, encoding: "utf8" }).trim();
 
-function parts(version) {
+function parts(version: unknown) {
   if (
     typeof version !== "string" ||
     version.length > 64 ||
@@ -21,18 +27,18 @@ function parts(version) {
   return version.split(".").map(BigInt);
 }
 
-function greater(left, right) {
+function greater(left: string, right: string) {
   const a = parts(left);
   const b = parts(right);
   const index = a.findIndex((part, i) => part !== b[i]);
   return index >= 0 && a[index] > b[index];
 }
 
-function bump(version, level) {
+function bump(version: string, level: BumpLevel) {
   const next = parts(version);
   const index = ["major", "minor", "patch"].indexOf(level);
-  next[index] += 1n;
-  for (let i = index + 1; i < next.length; i++) next[i] = 0n;
+  next[index] += BigInt(1);
+  for (let i = index + 1; i < next.length; i++) next[i] = BigInt(0);
   return next.join(".");
 }
 
@@ -40,7 +46,7 @@ function main() {
   const [command = "sync", baseRef, ...extra] = process.argv.slice(2);
   if (extra.length || (command !== "auto" && baseRef))
     throw new Error("Use sync, patch, minor, major, X.Y.Z, or auto BASE_REF.");
-  const manifest = readJson(manifestPath);
+  const manifest = readJson<PluginManifest>(manifestPath);
   let version = manifest.version;
   parts(version);
 
@@ -68,7 +74,11 @@ function main() {
     ).version;
     // Preserve an explicit increase and reuse it on subsequent pushes to this PR.
     if (!greater(version, baseVersion)) version = bump(baseVersion, "patch");
-  } else if (["patch", "minor", "major"].includes(command)) {
+  } else if (
+    command === "patch" ||
+    command === "minor" ||
+    command === "major"
+  ) {
     version = bump(version, command);
   } else if (command !== "sync") {
     parts(command);
@@ -79,19 +89,19 @@ function main() {
     version = command;
   }
 
-  const documents = [
+  const documents: [string, PluginManifest | McpConfig][] = [
     [manifestPath, manifest],
     [
       `${pluginRoot}/.claude-plugin/plugin.json`,
-      readJson(`${pluginRoot}/.claude-plugin/plugin.json`),
+      readJson<PluginManifest>(`${pluginRoot}/.claude-plugin/plugin.json`),
     ],
-    [`${pluginRoot}/mcp.json`, readJson(`${pluginRoot}/mcp.json`)],
-    [`${pluginRoot}/.mcp.json`, readJson(`${pluginRoot}/.mcp.json`)],
+    [`${pluginRoot}/mcp.json`, readJson<McpConfig>(`${pluginRoot}/mcp.json`)],
+    [`${pluginRoot}/.mcp.json`, readJson<McpConfig>(`${pluginRoot}/.mcp.json`)],
   ];
-  const writes = [];
+  const writes: [string, string][] = [];
   for (const [path, document] of documents) {
     const previous = JSON.stringify(document);
-    if (path.endsWith("plugin.json")) document.version = version;
+    if ("version" in document) document.version = version;
     else {
       const server = document.mcpServers.promotercat;
       server.headers ??= {};
@@ -108,6 +118,6 @@ function main() {
 try {
   main();
 } catch (error) {
-  console.error(error.message);
+  console.error(error instanceof Error ? error.message : String(error));
   process.exitCode = 1;
 }

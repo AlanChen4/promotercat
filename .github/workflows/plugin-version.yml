@@ -5,7 +5,7 @@ on:
     types: [opened, synchronize, reopened, edited]
     paths:
       - "plugins/promotercat/**"
-      - "scripts/plugin-version.mjs"
+      - "scripts/plugin-version.ts"
       - ".github/workflows/plugin-version.yml"
 
 permissions:
@@ -34,7 +34,7 @@ jobs:
       - name: Synchronize the release version
         env:
           BASE_REF: ${{ github.event.pull_request.base.sha }}
-        run: node scripts/plugin-version.mjs auto "$BASE_REF"
+        run: node scripts/plugin-version.ts auto "$BASE_REF"
       - name: Commit version changes to the PR
         run: |
           git add plugins/promotercat/plugin.json plugins/promotercat/.claude-plugin/plugin.json plugins/promotercat/mcp.json plugins/promotercat/.mcp.json
