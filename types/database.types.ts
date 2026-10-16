@@ -154,18 +154,21 @@ export type Database = {
           id: string;
           is_banned: boolean;
           is_restricted: boolean;
+          last_refreshed_at: string | null;
           name: string;
         };
         Insert: {
           id?: string;
           is_banned?: boolean;
           is_restricted?: boolean;
+          last_refreshed_at?: string | null;
           name: string;
         };
         Update: {
           id?: string;
           is_banned?: boolean;
           is_restricted?: boolean;
+          last_refreshed_at?: string | null;
           name?: string;
         };
         Relationships: [];
