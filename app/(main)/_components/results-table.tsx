@@ -45,7 +45,7 @@ import type {
   SortField,
   SortState,
   SubredditResult,
-} from "@/lib/subreddits";
+} from "@/lib/schemas/subreddits";
 import logo from "@/public/logo.png";
 import { type SearchSuggestion, SearchSuggestions } from "./search-suggestions";
 

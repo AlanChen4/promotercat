@@ -5,36 +5,16 @@ import {
   SUPPORTED_PROTOCOL_VERSIONS,
 } from "@modelcontextprotocol/sdk/types.js";
 import { NextResponse } from "next/server";
-import { z } from "zod";
-import { admissionSchema } from "@/lib/agent-api";
 import { agentResource, authenticateAgent } from "@/lib/agent-oauth";
 import { ApiError, callService, withApiHandler } from "@/lib/api-handler";
 import { env } from "@/lib/env";
+import { admissionSchema, agentSearchInputSchema } from "@/lib/schemas/agents";
+import type { SubredditResponse } from "@/lib/schemas/subreddits";
 import { searchSubreddits } from "@/lib/search-subreddits";
-import {
-  type SubredditResponse,
-  selfPromotionSchema,
-  sortDirectionSchema,
-  sortFieldSchema,
-} from "@/lib/subreddits";
 import { createAdminClient } from "@/lib/supabase/admin-server";
 
 export const runtime = "nodejs";
 export const maxDuration = 90;
-const inputSchema = z
-  .object({
-    search: z.string().max(1000).optional(),
-    self_promotion: z.array(selfPromotionSchema).min(1).optional(),
-    sort: sortFieldSchema.optional(),
-    sort_direction: sortDirectionSchema.optional(),
-    page: z
-      .number()
-      .int()
-      .min(1)
-      .max(Math.floor(Number.MAX_SAFE_INTEGER / 10))
-      .optional(),
-  })
-  .strict();
 
 function json(body: unknown, status: number, headers = {}) {
   return NextResponse.json(body, {
@@ -81,7 +61,9 @@ export const POST = withApiHandler(async (request) => {
     const version = request.headers.get("mcp-protocol-version");
     if (version && !SUPPORTED_PROTOCOL_VERSIONS.includes(version))
       return json({ message: "Unsupported MCP protocol version." }, 400);
-    if (!inputSchema.safeParse(rpc.data.params.arguments ?? {}).success)
+    if (
+      !agentSearchInputSchema.safeParse(rpc.data.params.arguments ?? {}).success
+    )
       return json({ message: "Invalid search parameters." }, 400);
     const message = "Rate limiting is unavailable. Please try again.";
     const { data, error } = await callService(message, () =>
@@ -117,7 +99,7 @@ export const POST = withApiHandler(async (request) => {
       title: "Find Reddit communities",
       description:
         "Search Reddit communities by topic, filter promotion rules, and paginate results. Returns promotion details, activity counts, and Reddit links. Does not post to Reddit.",
-      inputSchema,
+      inputSchema: agentSearchInputSchema,
       annotations: {
         readOnlyHint: true,
         destructiveHint: false,

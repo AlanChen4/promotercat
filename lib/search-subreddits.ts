@@ -9,7 +9,7 @@ import {
   selfPromotionSchema,
   sortDirectionSchema,
   sortFieldSchema,
-} from "@/lib/subreddits";
+} from "@/lib/schemas/subreddits";
 import { createAdminClient } from "@/lib/supabase/admin-server";
 
 const SEMANTIC_MATCH_THRESHOLD = 0.5;

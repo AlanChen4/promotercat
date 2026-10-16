@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { Enums } from "../types/database.types.ts";
+import type { Enums } from "../../types/database.types.ts";
 
 export const RESULTS_PER_PAGE = 10;
 export const selfPromotionSchema = z.enum([
@@ -53,3 +53,5 @@ export const subredditUrlSchema = redditPageUrlSchema
     return { name, url: `https://www.reddit.com/r/${name}/` };
   });
 export type SubredditTarget = z.output<typeof subredditUrlSchema>;
+
+export const searchPageSchema = z.coerce.number().int().positive().catch(1);

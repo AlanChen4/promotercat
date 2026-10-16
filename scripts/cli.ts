@@ -10,13 +10,23 @@ import {
   Output,
 } from "ai";
 import { load } from "cheerio";
-import { z } from "zod";
 import { embedDescription } from "../lib/ai.ts";
+import {
+  type ApifyRun,
+  apifyCommunitySchema,
+  apifyDatasetSchema,
+  apifyErrorSchema,
+  apifyIdentitySchema,
+  apifyRunSchema,
+  fetchResponseSchema,
+  policyConfidenceSchema,
+  policySummarySchema,
+} from "../lib/schemas/ingestion.ts";
 import {
   redditPageUrlSchema,
   type SubredditTarget,
   subredditUrlSchema,
-} from "../lib/subreddits.ts";
+} from "../lib/schemas/subreddits.ts";
 import { createAdminClient } from "../lib/supabase/admin-server.ts";
 import type { Json, Tables } from "../types/database.types.ts";
 
@@ -106,17 +116,6 @@ function parsePolicy(markdown: string, target: SubredditTarget): Policy {
   return { rules };
 }
 
-const fetchResponse = z.object({
-  results: z.array(
-    z.object({
-      url: z.string(),
-      final_url: z.string().nullable(),
-      text: z.string().nullable(),
-    }),
-  ),
-  errors: z.array(z.object({ url: z.string(), error: z.string() })),
-});
-
 function requestSignal(timeout: number, signal?: AbortSignal) {
   return AbortSignal.any([
     AbortSignal.timeout(timeout),
@@ -154,7 +153,7 @@ async function fetchTinyfish(
     throw new Error(
       `TinyFish Fetch returned HTTP ${response.status}${response.status === 402 ? ": daily allowance or wallet exhausted" : ""}.`,
     );
-  return fetchResponse.parse(await response.json());
+  return fetchResponseSchema.parse(await response.json());
 }
 
 async function fetchSubredditBatch<T>(
@@ -246,43 +245,6 @@ async function fetchSubredditBatch<T>(
   return values;
 }
 
-const apifyRunSchema = z.object({
-  data: z.object({
-    id: z.string().regex(/^[A-Za-z0-9]+$/),
-    status: z.string(),
-    defaultDatasetId: z.string().regex(/^[A-Za-z0-9]+$/),
-  }),
-});
-const apifyCommunitySchema = z.object({
-  dataType: z.literal("community"),
-  name: z.string(),
-  url: subredditUrlSchema,
-  subredditType: z.literal("public"),
-  publicDescription: z.string().nullish(),
-  rules: z
-    .array(
-      z.object({
-        shortName: z.string().trim().min(1),
-        description: z.string().nullable(),
-        priority: z.number().int().nonnegative(),
-      }),
-    )
-    .max(100)
-    .refine(
-      (rules) =>
-        new Set(rules.map((rule) => rule.priority)).size === rules.length,
-      "Apify returned duplicate rule positions.",
-    )
-    .transform((rules) =>
-      rules
-        .sort((a, b) => a.priority - b.priority)
-        .map((rule) => ({
-          title: rule.shortName,
-          description: rule.description?.trim() || null,
-        })),
-    ),
-});
-
 class ApifyUsageExhaustedError extends Error {
   constructor() {
     super("Apify account usage is exhausted.");
@@ -304,9 +266,9 @@ async function apifyRequest(
     signal: requestSignal(70_000, signal),
   });
   if (!response.ok) {
-    const body = z
-      .object({ error: z.object({ type: z.string(), message: z.string() }) })
-      .safeParse(await response.json().catch(() => null));
+    const body = apifyErrorSchema.safeParse(
+      await response.json().catch(() => null),
+    );
     if ([400, 402, 403].includes(response.status) && body.success) {
       const { type, message } = body.data.error;
       if (
@@ -336,9 +298,7 @@ async function fetchApifyCommunities(
   const communities = new Map<string, ApifyCommunity | Error>();
   if (!targets.length) return communities;
   signal?.throwIfAborted();
-  let selected:
-    | { apiKey: string; run: z.infer<typeof apifyRunSchema>["data"] }
-    | undefined;
+  let selected: { apiKey: string; run: ApifyRun } | undefined;
   for (const [index, apiKey] of apiKeys.entries()) {
     signal?.throwIfAborted();
     try {
@@ -399,20 +359,18 @@ async function fetchApifyCommunities(
     throw new Error(
       `Apify run ${run.id} ended with ${run.status}; no retry was started.`,
     );
-  const items = z
-    .array(z.unknown())
-    .parse(
-      await apifyRequest(
-        `datasets/${run.defaultDatasetId}/items?format=json&limit=${targets.length + 1}`,
-        apiKey,
-        undefined,
-        signal,
-      ),
-    );
+  const items = apifyDatasetSchema.parse(
+    await apifyRequest(
+      `datasets/${run.defaultDatasetId}/items?format=json&limit=${targets.length + 1}`,
+      apiKey,
+      undefined,
+      signal,
+    ),
+  );
   for (const target of targets) {
     try {
       const matches = items.filter((item) => {
-        const identity = z.object({ name: z.string() }).safeParse(item);
+        const identity = apifyIdentitySchema.safeParse(item);
         return (
           identity.success && identity.data.name.toLowerCase() === target.name
         );
@@ -504,15 +462,11 @@ export async function classifyPolicy(
     },
     abortSignal: requestSignal(60_000, signal),
   });
-  const confidence = z
-    .number()
-    .min(0)
-    .max(1)
-    .parse(
-      result.providerMetadata?.typesafe?.confidence &&
-        (result.providerMetadata.typesafe.confidence as Record<string, unknown>)
-          .promotion,
-    );
+  const confidence = policyConfidenceSchema.parse(
+    result.providerMetadata?.typesafe?.confidence &&
+      (result.providerMetadata.typesafe.confidence as Record<string, unknown>)
+        .promotion,
+  );
   const status = result.answers.promotion.choice;
   let detail = "";
   if (confidence < 0.8 || status === "allowed_limited") {
@@ -602,12 +556,7 @@ Output:
         rules: policy.rules,
       }),
       output: Output.object({
-        schema: z.object({
-          summary: z
-            .string()
-            .trim()
-            .min(status === "allowed_limited" ? 1 : 0),
-        }),
+        schema: policySummarySchema(status),
       }),
       reasoning: "none",
       temperature: 0,

@@ -1,7 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { parseArgs } from "node:util";
-import { z } from "zod";
-import { selfPromotionSchema } from "../lib/subreddits.ts";
+import { policyEvalCasesSchema } from "../lib/schemas/ingestion.ts";
 import { classifyPolicy } from "../scripts/cli.ts";
 
 async function main() {
@@ -26,32 +25,11 @@ summary requirements. Exit 1 on a failed check or API error.`);
     return;
   }
 
-  const cases = z
-    .array(
-      z.object({
-        name: z.string().min(1),
-        source: z.string().min(1),
-        expected: selfPromotionSchema,
-        summaryChecks: z
-          .object({
-            required: z.array(z.string()).default([]),
-            forbidden: z.array(z.string()).default([]),
-          })
-          .optional(),
-        rules: z.array(
-          z.object({ title: z.string(), description: z.string().nullable() }),
-        ),
-      }),
-    )
-    .min(1)
-    .parse(
-      JSON.parse(
-        await readFile(
-          new URL("./self-promotion.json", import.meta.url),
-          "utf8",
-        ),
-      ),
-    );
+  const cases = policyEvalCasesSchema.parse(
+    JSON.parse(
+      await readFile(new URL("./self-promotion.json", import.meta.url), "utf8"),
+    ),
+  );
   const { env } = await import("../lib/env.ts");
   let passed = 0;
   for (const example of cases) {

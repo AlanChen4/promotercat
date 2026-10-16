@@ -1,6 +1,6 @@
 import { withApiHandler } from "@/lib/api-handler";
-import { requireSession } from "@/lib/api-session";
 import { searchSubreddits } from "@/lib/search-subreddits";
+import { requireSession } from "@/lib/supabase/server";
 
 export const GET = withApiHandler(async (request) => {
   const parsed = Number(new URL(request.url).searchParams.get("page"));

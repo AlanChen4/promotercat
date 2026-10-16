@@ -1,6 +1,6 @@
-import { z } from "zod";
 import { ApiError, callService, withApiHandler } from "@/lib/api-handler";
-import { requireSession } from "@/lib/api-session";
+import { oauthConnectionSchema } from "@/lib/schemas/agents";
+import { requireSession } from "@/lib/supabase/server";
 
 export const GET = withApiHandler(async () => {
   const client = await requireSession();
@@ -17,7 +17,7 @@ export const DELETE = withApiHandler(async (request) => {
     throw new ApiError(403, "A same-origin request is required.");
   const client = await requireSession();
   const body = await request.json().catch(() => null);
-  const parsed = z.object({ clientId: z.uuid() }).strict().safeParse(body);
+  const parsed = oauthConnectionSchema.safeParse(body);
   if (!parsed.success) throw new ApiError(400, "Invalid client.");
   const message = "Could not disconnect this agent.";
   const { error } = await callService(message, () =>

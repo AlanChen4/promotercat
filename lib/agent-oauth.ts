@@ -1,10 +1,10 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
-import { z } from "zod";
 import { ApiError, callService } from "@/lib/api-handler";
-import { isAuthServiceError } from "@/lib/api-session";
 import { env } from "@/lib/env";
+import { agentClaimsSchema } from "@/lib/schemas/agents";
 import { createAdminClient } from "@/lib/supabase/admin-server";
+import { isAuthServiceError } from "@/lib/supabase/server";
 
 export function agentResource(request: Request) {
   const origin =
@@ -23,16 +23,6 @@ export function oauthMetadata(request: Request) {
     resource_name: "PromoterCat community search",
   };
 }
-
-const claimsSchema = z.object({
-  sub: z.uuid(),
-  session_id: z.uuid(),
-  client_id: z.uuid(),
-  iss: z.string(),
-  aud: z.union([z.string(), z.array(z.string())]),
-  role: z.literal("authenticated"),
-  is_anonymous: z.literal(false).optional(),
-});
 
 export async function authenticateAgent(request: Request) {
   const bearer = /^Bearer (\S+)$/i.exec(
@@ -65,7 +55,7 @@ export async function authenticateAgent(request: Request) {
       );
     return { response: unauthorized() };
   }
-  const parsed = claimsSchema.safeParse(data?.claims);
+  const parsed = agentClaimsSchema.safeParse(data?.claims);
   if (!parsed.success) return { response: unauthorized() };
   const claims = parsed.data;
   const audience = Array.isArray(claims.aud) ? claims.aud : [claims.aud];

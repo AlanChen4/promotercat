@@ -2,7 +2,6 @@
 
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
-import { z } from "zod";
 import {
   RESULTS_PER_PAGE,
   type SelfPromotionStatus,
@@ -10,10 +9,11 @@ import {
   type SortState,
   type SubredditResponse,
   type SubredditResult,
+  searchPageSchema,
   selfPromotionSchema,
   sortDirectionSchema,
   sortFieldSchema,
-} from "@/lib/subreddits";
+} from "@/lib/schemas/subreddits";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/providers/auth-provider";
 import { Filters } from "./_components/filters";
@@ -123,12 +123,7 @@ function SearchPage() {
     ];
     return selection.length ? selection : DEFAULT_SELF_PROMOTION_SELECTION;
   }, [params]);
-  const page = z.coerce
-    .number()
-    .int()
-    .positive()
-    .catch(1)
-    .parse(params.get("page") ?? 1);
+  const page = searchPageSchema.parse(params.get("page") ?? 1);
   const sortState = useMemo<SortState>(() => {
     const field = sortFieldSchema.safeParse(params.get("sort"));
     const direction = sortDirectionSchema.safeParse(

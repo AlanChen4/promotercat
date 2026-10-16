@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { ApiError, callService, withApiHandler } from "@/lib/api-handler";
-import { isAuthServiceError, requireSession } from "@/lib/api-session";
+import { isAuthServiceError, requireSession } from "@/lib/supabase/server";
 
 export const POST = withApiHandler(async (request) => {
   if (request.headers.get("origin") !== new URL(request.url).origin)

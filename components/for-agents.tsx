@@ -4,10 +4,16 @@ import { Check, Copy, X } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { AGENT_INSTALL } from "@/lib/agent-install";
 import claudeLogo from "@/public/claude.png";
 import codexLogo from "@/public/codex.png";
 import { Button } from "./ui/button";
+
+const AGENT_INSTALL = {
+  codex:
+    "codex plugin marketplace add AlanChen4/promotercat\ncodex plugin add reddit@promotercat",
+  claude:
+    "claude plugin marketplace add AlanChen4/promotercat\nclaude plugin install reddit@promotercat",
+};
 
 function CopyBlock({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);

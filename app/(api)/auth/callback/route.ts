@@ -1,9 +1,25 @@
 import { NextResponse } from "next/server";
 import { ApiError, callService, withApiHandler } from "@/lib/api-handler";
-import { isAuthServiceError } from "@/lib/api-session";
-import { searchReturnPath } from "@/lib/auth";
 import { env } from "@/lib/env";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, isAuthServiceError } from "@/lib/supabase/server";
+
+// Allow search and the exact OAuth consent route; reject external redirects.
+function searchReturnPath(value: string | null | undefined): string {
+  if (value) {
+    const url = URL.canParse(value, "https://promotercat.invalid")
+      ? new URL(value, "https://promotercat.invalid")
+      : null;
+    if (
+      value.startsWith("/oauth/consent?") &&
+      url?.origin === "https://promotercat.invalid" &&
+      url.pathname === "/oauth/consent" &&
+      url.searchParams.get("authorization_id")
+    ) {
+      return `/oauth/consent?authorization_id=${encodeURIComponent(url.searchParams.get("authorization_id") ?? "")}`;
+    }
+  }
+  return value === "/" || value?.startsWith("/?") ? value : "/";
+}
 
 export const GET = withApiHandler(async (request) => {
   const { searchParams, origin } = new URL(request.url);
