@@ -17,12 +17,13 @@ export const sortDirectionSchema = z.enum(["asc", "desc"]);
 export type SortField = z.infer<typeof sortFieldSchema>;
 export type SortDirection = z.infer<typeof sortDirectionSchema>;
 export type SortState = { field: SortField; direction: SortDirection } | null;
-export type SubredditResult = {
-  name: string;
-  self_promotion: SelfPromotionStatus;
-  self_promotion_detail: string;
-  weekly_active_users: number | null;
-};
+export const subredditResultSchema = z.object({
+  name: z.string(),
+  self_promotion: selfPromotionSchema,
+  self_promotion_detail: z.string(),
+  weekly_active_users: z.number().nullable(),
+});
+export type SubredditResult = z.infer<typeof subredditResultSchema>;
 export type SubredditResponse = {
   subreddits: SubredditResult[];
   totalCount: number;
