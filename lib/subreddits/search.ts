@@ -1,4 +1,7 @@
-import { getQueryEmbedding } from "@/lib/ai/embeddings";
+import {
+  getQueryEmbedding,
+  SEMANTIC_MATCH_THRESHOLD,
+} from "@/lib/ai/embeddings";
 import { ApiError } from "@/lib/api/handler";
 import { env } from "@/lib/config/env";
 import {
@@ -11,8 +14,6 @@ import {
   subredditResultSchema,
 } from "@/lib/schemas/subreddits";
 import { createAdminClient } from "@/lib/supabase/admin-server";
-
-const SEMANTIC_MATCH_THRESHOLD = 0.5;
 
 /** Commas separate unordered terms; word order within a term is meaningful. */
 function normalizeSearchTerms(search: string): string[] {
@@ -169,7 +170,7 @@ async function fetchSemanticCandidates({
     terms.map((term) => getQueryEmbedding(term, env.VERCEL_AI_GATEWAY)),
   );
   const { data, error } = await supabaseAdmin.rpc(
-    "match_subreddits_by_descriptions",
+    "match_subreddits_by_descriptions_openai",
     {
       query_embeddings: embeddings,
       match_threshold: SEMANTIC_MATCH_THRESHOLD,
