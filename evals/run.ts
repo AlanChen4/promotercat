@@ -12,7 +12,7 @@ async function main() {
     console.log(`Usage: pnpm evals
 
 Run saved self-promotion cases against the live ingestion classifier.
-Uses Doppler web/dev and makes paid Jev and conditional DeepSeek API calls.
+Uses Doppler web/dev and makes paid Jev and conditional Luna API calls.
 Does not scrape pages or read/write the database. Not run by lint or build.
 
 Examples:

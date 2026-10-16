@@ -20,6 +20,8 @@ export const apifyRunSchema = z.object({
   data: z.object({
     id: z.string(),
     status: z.string(),
+    statusMessage: z.string().nullish(),
+    options: z.object({ maxTotalChargeUsd: z.number().nullish() }).optional(),
     defaultDatasetId: z.string(),
   }),
 });
@@ -27,7 +29,7 @@ export const apifyCommunitySchema = z.object({
   dataType: z.literal("community"),
   name: z.string(),
   url: subredditUrlSchema,
-  subredditType: z.literal("public"),
+  subredditType: z.enum(["public", "restricted"]),
   publicDescription: z.string().nullish(),
   rules: z
     .array(
@@ -51,13 +53,21 @@ export type ApifyRun = z.infer<typeof apifyRunSchema>["data"];
 export const apifyErrorSchema = z.object({
   error: z.object({ type: z.string(), message: z.string() }),
 });
-export const policySummarySchema = (status: SelfPromotionStatus) =>
-  z.object({
-    summary: z
-      .string()
-      .trim()
-      .min(status === "allowed_limited" ? 1 : 0),
-  });
+export const policySummarySchema = (
+  status: SelfPromotionStatus,
+  needsReview: boolean,
+) =>
+  z
+    .object({
+      // Only uncertain classifications can change during summary generation.
+      self_promotion: needsReview ? selfPromotionSchema : z.literal(status),
+      summary: z.string().trim(),
+    })
+    .refine(
+      (value) =>
+        value.self_promotion !== "allowed_limited" || value.summary.length > 0,
+      "Limited permission requires a summary of the conditions.",
+    );
 
 export const policyEvalCasesSchema = z
   .array(

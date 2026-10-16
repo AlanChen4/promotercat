@@ -16,7 +16,7 @@ export const GET = withApiHandler(async (request) => {
   const db = createAdminClient(env);
   const message = "Could not load subreddits due for refresh.";
   const { data, error } = await db.rpc("get_subreddits_due_for_refresh", {
-    p_limit: 350,
+    p_limit: 100,
   });
   if (error) throw new ApiError(503, message);
   const results = await ingestSubreddits(
