@@ -152,14 +152,23 @@ export type Database = {
       subreddits: {
         Row: {
           id: string;
+          is_banned: boolean;
+          is_restricted: boolean;
+          last_refreshed_at: string | null;
           name: string;
         };
         Insert: {
           id?: string;
+          is_banned?: boolean;
+          is_restricted?: boolean;
+          last_refreshed_at?: string | null;
           name: string;
         };
         Update: {
           id?: string;
+          is_banned?: boolean;
+          is_restricted?: boolean;
+          last_refreshed_at?: string | null;
           name?: string;
         };
         Relationships: [];
@@ -171,6 +180,8 @@ export type Database = {
           description: string | null;
           description_embedding: string | null;
           id: string | null;
+          is_banned: boolean | null;
+          is_restricted: boolean | null;
           name: string | null;
           self_promotion:
             | Database["public"]["Enums"]["self_promotion_status"]
@@ -189,6 +200,7 @@ export type Database = {
           name: string;
         }[];
       };
+      mark_subreddit_banned: { Args: { p_name: string }; Returns: string };
       match_subreddits_by_description: {
         Args: {
           match_count: number;

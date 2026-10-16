@@ -768,5 +768,89 @@
     "summaryChecks": {
       "required": ["2 weeks|two weeks|fortnight"]
     }
+  },
+  {
+    "name": "cleaningtips",
+    "source": "https://www.reddit.com/r/cleaningtips/about/",
+    "expected": "allowed_limited",
+    "summaryChecks": {
+      "required": ["(YouTube|video)", "educational"]
+    },
+    "rules": [
+      {
+        "title": "Advertising and self-promotion of products or services is strictly forbidden",
+        "description": "Replies to a request for recommendations may include a link to a cleaning product or equipment, but manufacturers and service providers (and their employees) can not promote their own products. YouTube creators may share educational videos only. All content must have an informational purpose. Moderators may grant exceptions to this rule on a case by case basis if they believe it to be an overall net benefit to the community."
+      },
+      {
+        "title": "Be respectful.",
+        "description": "All posts and comments must be civil. Insults, harassments, and bullying are not tolerated. \"Trolling\" comments will be removed."
+      },
+      {
+        "title": "All posts must be cleaning related.",
+        "description": "All posts must either be a request for advice, informational content surrounding cleaning/tidying/organizing, or related to the subreddit."
+      },
+      {
+        "title": "No cleaning chemical combinations of products intended to be used on their own",
+        "description": null
+      },
+      {
+        "title": "No meme posts",
+        "description": "Memes, even if tangentially related to cleaning, are considered off topic for this subreddit."
+      },
+      {
+        "title": "NSFW tag is required on photos depicting bodily fluids or human waste",
+        "description": "Any photos with depictions of, or that may be construed as containing, feces, bodily fluids, or similar nature must be tagged as NSFW so that they default to a blurred state."
+      },
+      {
+        "title": "Be positive and helpful",
+        "description": "All comments should be constructive, positive, and intended to help others. Negativity, intentionally unhelpful or disparaging behavior will not be tolerated."
+      },
+      {
+        "title": "No AI-generated content is permitted",
+        "description": "In order to cultivate an authentic environment where people share real life advice and experiences, GPT or AI-generated text in comments and posts is prohibited."
+      },
+      {
+        "title": "No Relationship Mentions in Posts",
+        "description": "Titles must avoid mentioning personal relationships to keep discussions focused on cleaning. Relationship references can attract off-topic comments and detract from our goal of sharing cleaning advice. Please ensure your titles are strictly related to cleaning topics to maintain a positive, supportive, and relevant community."
+      }
+    ]
+  },
+  {
+    "name": "malefashionadvice",
+    "source": "https://www.reddit.com/r/malefashionadvice/about/",
+    "expected": "allowed_limited",
+    "summaryChecks": {
+      "required": ["AMA|Ask Me Anything", "(mod|approv|clear)"]
+    },
+    "rules": [
+      {
+        "title": "Be civil and respectful",
+        "description": "1.0 Personal attacks, insults, and demeaning comments will be removed. Repeat violations will result in a ban. \n1.1 Personal attacks based on sexual orientation, race, gender, weight, fitness, body type or other social profiles will result in an immediate ban.\n1.2 *Unsolicited* comments regarding fitness, weight, and body type are also not allowed even if they are not intended as insults. Comments will be removed and repeat violations will result in a ban."
+      },
+      {
+        "title": "Posts must be relevant and promote discussion",
+        "description": "r/malefashionadvice is primarily a Q&A and discussion forum. If your post exists simply to tell other people about something, that does not promote discussion that is useful, then it probably doesn't belong here. For further details, see here: https://www.reddit.com/r/malefashionadvice/wiki/rules/#wiki_2._all_posts_must_request_or_give_advice"
+      },
+      {
+        "title": "No Marketing",
+        "description": "We prohibit all forms of marketing, including self-promotion, advertisements, blog posts, video-blogs, market research, product feedback, and more. Violations will lead to post/comment removal and user bans. The only exceptions are Ask Me Anything (AMA) sessions, but brands must be cleared by mods and follow specific guidelines. Online crowdfunding campaigns, referral links, direct product release links, market research, and academic research are also not allowed and will result in bans."
+      },
+      {
+        "title": "No Sales or Personal Sales",
+        "description": "Sales, coupons, and personal sale posts are not allowed here. Visit /r/frugalmalefashion for such content."
+      },
+      {
+        "title": "Follow Reddiquette and the Content Policy",
+        "description": "Reddiquette:\n\nhttps://support.reddithelp.com/hc/en-us/articles/205926439-Reddiquette\n\nReddit's Content Policy:\n\nhttps://www.redditinc.com/policies/content-policy"
+      },
+      {
+        "title": "Posting Requirements/Guidelines",
+        "description": "For full posting requirements and a guide to posting, see here: https://www.reddit.com/r/malefashionadvice/wiki/rules/#wiki_3._posting_requirements"
+      },
+      {
+        "title": "Detailed Rules Available Here",
+        "description": "https://www.reddit.com/r/malefashionadvice/wiki/rules/"
+      }
+    ]
   }
 ]
