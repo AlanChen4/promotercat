@@ -1,4 +1,4 @@
-import { getQueryEmbedding } from "@/lib/ai/query-embeddings";
+import { getQueryEmbedding } from "@/lib/ai/embeddings";
 import { ApiError } from "@/lib/api/handler";
 import { env } from "@/lib/config/env";
 import {

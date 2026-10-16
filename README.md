@@ -22,7 +22,7 @@ use the SDK's in-memory fallback.
 Search results are not cached. Description updates take effect on the next
 search. Changes to the embedding model, dimensions, or instruction produce new
 cache keys; changes to preprocessing or vector normalization must also bump
-`CACHE_VERSION` in `lib/ai/query-embeddings.ts`. Model changes require compatible
+`CACHE_VERSION` in `lib/ai/embeddings.ts`. Model changes require compatible
 description embeddings.
 
 Apply `20261016190755_multi_term_semantic_search.sql` before deploying the
