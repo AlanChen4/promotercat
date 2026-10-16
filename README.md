@@ -9,9 +9,7 @@
 Search uses `openai/text-embedding-3-small` at 1,536 dimensions. Documents remain
 `name: description`, without rules or generated summaries. Queries use plain
 normalized terms. A community qualifies when any term scores at least **0.30**;
-results are ordered by the mean score across terms. See
-[`evals/search-threshold.json`](evals/search-threshold.json) for the ten-query
-calibration and its limitations.
+results are ordered by the mean score across terms.
 
 Deploy the OpenAI embedding migration before deploying the application. It adds
 `description_embedding_openai` and a separate search RPC, preserving the old
