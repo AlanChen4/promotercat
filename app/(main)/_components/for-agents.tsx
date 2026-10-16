@@ -4,9 +4,9 @@ import { Check, Copy, X } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { Button } from "@/components/ui/button";
 import claudeLogo from "@/public/claude.png";
 import codexLogo from "@/public/codex.png";
-import { Button } from "./ui/button";
 
 const AGENT_INSTALL = {
   codex:

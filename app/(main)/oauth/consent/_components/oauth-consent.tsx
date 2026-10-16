@@ -3,11 +3,11 @@
 import type { OAuthAuthorizationDetails } from "@supabase/supabase-js";
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { SignInOptions } from "@/components/buttons";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/providers/auth-provider";
 import logo from "@/public/logo.png";
+import { SignInOptions } from "../../../_components/sign-in-options";
 
 export function OAuthConsent({ authorizationId }: { authorizationId: string }) {
   const { user, isAuthenticated, isAuthenticatedLoading } = useAuth();

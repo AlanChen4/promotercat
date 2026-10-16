@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { OAuthConsent } from "@/components/oauth-consent";
+import { OAuthConsent } from "./_components/oauth-consent";
 
 export const metadata: Metadata = {
   title: "Connect your agent | PromoterCat",

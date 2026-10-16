@@ -18,10 +18,6 @@ import {
   useRef,
   useState,
 } from "react";
-import { AccountMenu } from "@/components/account-menu";
-import { SignInOptions } from "@/components/buttons";
-import { ForAgents } from "@/components/for-agents";
-import { GitHubStars } from "@/components/github-stars";
 import {
   Empty,
   EmptyContent,
@@ -47,7 +43,11 @@ import type {
   SubredditResult,
 } from "@/lib/schemas/subreddits";
 import logo from "@/public/logo.png";
+import { AccountMenu } from "./account-menu";
+import { ForAgents } from "./for-agents";
+import { GitHubStars } from "./github-stars";
 import { type SearchSuggestion, SearchSuggestions } from "./search-suggestions";
+import { SignInOptions } from "./sign-in-options";
 
 function PromotionText({
   status,

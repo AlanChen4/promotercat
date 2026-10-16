@@ -1,6 +1,5 @@
 "use client";
 
-import { SignInOptions } from "@/components/buttons";
 import {
   Card,
   CardContent,
@@ -9,6 +8,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useAuth } from "@/providers/auth-provider";
+import { SignInOptions } from "../_components/sign-in-options";
 
 export default function AccountPage() {
   const { user, isAuthenticatedLoading } = useAuth();
