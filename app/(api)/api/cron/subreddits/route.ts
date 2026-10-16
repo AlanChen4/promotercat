@@ -1,5 +1,5 @@
 import { timingSafeEqual } from "node:crypto";
-import { ApiError, callService, withApiHandler } from "@/lib/api/handler";
+import { ApiError, withApiHandler } from "@/lib/api/handler";
 import { env } from "@/lib/config/env";
 import { subredditUrlSchema } from "@/lib/schemas/subreddits";
 import { createAdminClient } from "@/lib/supabase/admin-server";
@@ -15,9 +15,9 @@ export const GET = withApiHandler(async (request) => {
   }
   const db = createAdminClient(env);
   const message = "Could not load subreddits due for refresh.";
-  const { data, error } = await callService(message, () =>
-    db.rpc("get_subreddits_due_for_refresh", { p_limit: 350 }),
-  );
+  const { data, error } = await db.rpc("get_subreddits_due_for_refresh", {
+    p_limit: 350,
+  });
   if (error) throw new ApiError(503, message);
   const results = await ingestSubreddits(
     data.map(({ name }) =>

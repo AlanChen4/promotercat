@@ -1,12 +1,11 @@
 import { withApiHandler } from "@/lib/api/handler";
+import { parseSearchParams } from "@/lib/schemas/subreddits";
 import { searchSubreddits } from "@/lib/subreddits/search";
 import { requireSession } from "@/lib/supabase/server";
 
 export const GET = withApiHandler(async (request) => {
-  const parsed = Number(new URL(request.url).searchParams.get("page"));
-  const requestedPage =
-    Number.isFinite(parsed) && parsed >= 1 ? Math.floor(parsed) : 1;
-  if (requestedPage > 1)
+  const input = parseSearchParams(new URL(request.url).searchParams);
+  if (input.page > 1)
     await requireSession("Sign up or log in to view more results.");
-  return searchSubreddits(request);
+  return Response.json(await searchSubreddits(input));
 });

@@ -38,8 +38,9 @@ export default function PrivacyPage() {
             Agent connections: when you approve an agent, Supabase manages its
             authorization grant, sessions, and access and refresh tokens. We use
             your account identifier and request counts for the current minute
-            and day to authenticate searches and enforce limits. You can
-            disconnect an agent from the For Agents window.
+            and day to authenticate searches and enforce limits. You can stop
+            using the plugin at any time. Issued access tokens remain valid
+            until they expire.
           </li>
           <li>
             Search information: we process the search text and filters you enter

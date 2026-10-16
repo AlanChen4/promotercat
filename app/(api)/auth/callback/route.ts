@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { ApiError, callService, withApiHandler } from "@/lib/api/handler";
+import { ApiError, withApiHandler } from "@/lib/api/handler";
 import { env } from "@/lib/config/env";
 import { createClient, isAuthServiceError } from "@/lib/supabase/server";
 
@@ -29,9 +29,7 @@ export const GET = withApiHandler(async (request) => {
   if (code) {
     const supabase = await createClient();
     const message = "Sign-in service unavailable. Please try again.";
-    const { error } = await callService(message, () =>
-      supabase.auth.exchangeCodeForSession(code),
-    );
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (error && isAuthServiceError(error)) throw new ApiError(503, message);
     if (!error) {
       const forwardedHost = request.headers.get("x-forwarded-host"); // original origin before load balancer

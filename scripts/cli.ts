@@ -14,9 +14,7 @@ import { embedDescription } from "../lib/ai/embeddings.ts";
 import {
   type ApifyRun,
   apifyCommunitySchema,
-  apifyDatasetSchema,
   apifyErrorSchema,
-  apifyIdentitySchema,
   apifyRunSchema,
   fetchResponseSchema,
   policyConfidenceSchema,
@@ -359,25 +357,25 @@ async function fetchApifyCommunities(
     throw new Error(
       `Apify run ${run.id} ended with ${run.status}; no retry was started.`,
     );
-  const items = apifyDatasetSchema.parse(
-    await apifyRequest(
-      `datasets/${run.defaultDatasetId}/items?format=json&limit=${targets.length + 1}`,
-      apiKey,
-      undefined,
-      signal,
-    ),
+  const items: unknown[] = await apifyRequest(
+    `datasets/${run.defaultDatasetId}/items?format=json&limit=${targets.length + 1}`,
+    apiKey,
+    undefined,
+    signal,
   );
+  const records = items.map((item) => apifyCommunitySchema.safeParse(item));
   for (const target of targets) {
     try {
-      const matches = items.filter((item) => {
-        const identity = apifyIdentitySchema.safeParse(item);
-        return (
-          identity.success && identity.data.name.toLowerCase() === target.name
-        );
-      });
+      const matches = records.flatMap((record) =>
+        record.success && record.data.name.toLowerCase() === target.name
+          ? [record.data]
+          : [],
+      );
       if (matches.length !== 1)
-        throw new Error("Apify did not return exactly one community record.");
-      const community = apifyCommunitySchema.parse(matches[0]);
+        throw new Error(
+          "Apify did not return exactly one valid community record.",
+        );
+      const community = matches[0];
       if (community.url.name !== target.name)
         throw new Error("Apify returned a mismatched community URL.");
       // A public community record with rules: [] confirms a rule-free community.

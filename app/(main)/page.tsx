@@ -3,16 +3,13 @@
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import {
+  parseSearchParams,
   RESULTS_PER_PAGE,
   type SelfPromotionStatus,
   type SortField,
   type SortState,
   type SubredditResponse,
   type SubredditResult,
-  searchPageSchema,
-  selfPromotionSchema,
-  sortDirectionSchema,
-  sortFieldSchema,
 } from "@/lib/schemas/subreddits";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/providers/auth-provider";
@@ -38,12 +35,6 @@ const SELF_PROMOTION_LABELS: Record<SelfPromotionStatus, string> =
     },
     {} as Record<SelfPromotionStatus, string>,
   );
-
-const DEFAULT_SELF_PROMOTION_SELECTION: SelfPromotionStatus[] = [
-  "allowed_full",
-  "allowed_limited",
-  "unspecified",
-];
 
 const SEARCH_DEBOUNCE_MS = 300;
 const SEARCH_SUGGESTIONS = [
@@ -108,37 +99,25 @@ export default function HomePage() {
 function SearchPage() {
   const { isAuthenticated, isAuthenticatedLoading } = useAuth();
   const params = useSearchParams();
-  const searchTerm = params.get("search")?.trim() ?? "";
+  const input = useMemo(() => parseSearchParams(params), [params]);
+  const {
+    search: searchTerm,
+    self_promotion: selectedSelfPromotion,
+    page,
+  } = input;
   const [searchInput, setSearchInput] = useState(searchTerm);
-  const selectedSelfPromotion = useMemo(() => {
-    const raw = params.get("self_promotion");
-    if (raw === null) return DEFAULT_SELF_PROMOTION_SELECTION;
-    const selection = [
-      ...new Set(
-        raw.split(",").flatMap((value) => {
-          const parsed = selfPromotionSchema.safeParse(value);
-          return parsed.success ? [parsed.data] : [];
-        }),
-      ),
-    ];
-    return selection.length ? selection : DEFAULT_SELF_PROMOTION_SELECTION;
-  }, [params]);
-  const page = searchPageSchema.parse(params.get("page") ?? 1);
-  const sortState = useMemo<SortState>(() => {
-    const field = sortFieldSchema.safeParse(params.get("sort"));
-    const direction = sortDirectionSchema.safeParse(
-      params.get("sort_direction"),
-    );
-    return field.success && direction.success
-      ? { field: field.data, direction: direction.data }
-      : null;
-  }, [params]);
+  const sortState = useMemo<SortState>(
+    () =>
+      input.sort
+        ? { field: input.sort, direction: input.sort_direction }
+        : null,
+    [input],
+  );
   const isLockedPage = page > 1 && !isAuthenticated;
   const [isLoading, setIsLoading] = useState(Boolean(searchTerm));
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [results, setResults] = useState<SubredditResult[]>([]);
   const [totalCount, setTotalCount] = useState(0);
-  const [isSortLoading, setIsSortLoading] = useState(false);
 
   useEffect(() => {
     setSearchInput(searchTerm);
@@ -159,11 +138,10 @@ function SearchPage() {
     const abortController = new AbortController();
 
     const fetchData = async () => {
-      if (!searchTerm) {
+      if (!searchTerm || isLockedPage) {
         setResults([]);
         setTotalCount(0);
         setIsLoading(false);
-        setIsSortLoading(false);
         setErrorMessage(null);
         return;
       }
@@ -181,7 +159,7 @@ function SearchPage() {
         query.set("sort", sortState.field);
         query.set("sort_direction", sortState.direction);
       }
-      query.set("page", String(isLockedPage ? 1 : page));
+      query.set("page", String(page));
 
       try {
         const response = await fetch(`/subreddits?${query.toString()}`, {
@@ -209,8 +187,8 @@ function SearchPage() {
           return;
         }
 
-        setResults(isLockedPage ? [] : (data.subreddits ?? []));
-        setTotalCount(data.totalCount ?? 0);
+        setResults(data.subreddits);
+        setTotalCount(data.totalCount);
       } catch {
         if (abortController.signal.aborted) {
           return;
@@ -221,7 +199,6 @@ function SearchPage() {
       } finally {
         if (!abortController.signal.aborted) {
           setIsLoading(false);
-          setIsSortLoading(false);
         }
       }
     };
@@ -267,7 +244,6 @@ function SearchPage() {
   };
 
   const handleSortToggle = (field: SortField) => {
-    setIsSortLoading(true);
     const next: SortState =
       sortState?.field !== field
         ? { field, direction: "desc" }
@@ -307,25 +283,19 @@ function SearchPage() {
         onSuggestionSelect={handleSuggestionSelect}
         searchInput={searchInput}
         onSearchInputChange={setSearchInput}
-        isLoading={isLoading || searchInput.trim() !== searchTerm}
+        isLoading={
+          !isLockedPage && (isLoading || searchInput.trim() !== searchTerm)
+        }
         errorMessage={errorMessage}
         totalCount={totalCount}
         displayedResults={isLockedPage ? [] : results}
-        lockedRowCount={
-          isLockedPage
-            ? Math.min(
-                RESULTS_PER_PAGE,
-                Math.max(0, totalCount - (page - 1) * RESULTS_PER_PAGE),
-              )
-            : 0
-        }
+        isLocked={isLockedPage && !isAuthenticatedLoading}
         formatSelfPromotion={formatSelfPromotion}
         formatActivityCount={formatActivityCount}
         sortState={sortState}
         onSortToggle={handleSortToggle}
-        isSortLoading={isSortLoading}
         pagination={
-          totalPages > 1 ? (
+          !isLockedPage && totalPages > 1 ? (
             <SubredditsPagination
               page={page}
               totalPages={totalPages}

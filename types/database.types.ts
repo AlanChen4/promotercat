@@ -214,14 +214,6 @@ export type Database = {
           name: string;
         }[];
       };
-      is_active_agent_session: {
-        Args: {
-          p_account_id: string;
-          p_client_id: string;
-          p_session_id: string;
-        };
-        Returns: boolean;
-      };
       match_subreddits_by_description: {
         Args: {
           match_count: number;

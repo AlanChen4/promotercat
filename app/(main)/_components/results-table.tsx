@@ -106,12 +106,11 @@ type ResultsTableProps = {
   errorMessage: string | null;
   totalCount: number;
   displayedResults: SubredditResult[];
-  lockedRowCount: number;
+  isLocked: boolean;
   formatSelfPromotion: (status: SelfPromotionStatus) => string;
   formatActivityCount: (count: number | null) => string;
   sortState: SortState;
   onSortToggle: (field: SortField) => void;
-  isSortLoading: boolean;
 };
 
 export function ResultsTable({
@@ -126,12 +125,11 @@ export function ResultsTable({
   errorMessage,
   totalCount,
   displayedResults,
-  lockedRowCount,
+  isLocked,
   formatSelfPromotion,
   formatActivityCount,
   sortState,
   onSortToggle,
-  isSortLoading,
 }: ResultsTableProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{
@@ -171,15 +169,8 @@ export function ResultsTable({
     };
   };
 
-  const showLoadingMessage = isLoading && !isSortLoading;
-  const showSkeleton =
-    isLoading && (!isSortLoading || displayedResults.length === 0);
-  const placeholderRows = Array.from(
-    { length: lockedRowCount },
-    (_, offset) => `locked-row-${offset}`,
-  );
   const paddingRows = Array.from(
-    { length: Math.max(0, 10 - (lockedRowCount || displayedResults.length)) },
+    { length: Math.max(0, 10 - displayedResults.length) },
     (_, offset) => `padding-row-${offset}`,
   );
 
@@ -253,9 +244,9 @@ export function ResultsTable({
               />
             </button>
             <p className="text-sm text-muted-foreground" aria-live="polite">
-              {showLoadingMessage ? (
+              {isLoading ? (
                 <Spinner />
-              ) : (
+              ) : isLocked ? null : (
                 `${totalCount.toLocaleString()} found`
               )}
             </p>
@@ -316,10 +307,17 @@ export function ResultsTable({
         <div className="min-w-0 flex-1">{filters}</div>
         <ForAgents />
       </div>
-      {showSkeleton ? (
-        <output className="sr-only">Loading results</output>
-      ) : null}
-      {errorMessage && !isLoading ? (
+      {isLoading ? <output className="sr-only">Loading results</output> : null}
+      {isLocked ? (
+        <div className="flex min-h-[27.5rem] items-center justify-center px-4">
+          <div className="w-full max-w-xs space-y-4 text-center">
+            <p className="text-sm text-muted-foreground">
+              Sign in to view more results.
+            </p>
+            <SignInOptions returnTo={returnTo} />
+          </div>
+        </div>
+      ) : errorMessage && !isLoading ? (
         <div className="flex h-[27.5rem] items-center px-4 text-sm text-destructive">
           {errorMessage}
         </div>
@@ -345,7 +343,7 @@ export function ResultsTable({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {showSkeleton ? (
+              {isLoading ? (
                 Array.from(
                   { length: 10 },
                   (_, index) => `loading-row-${index}`,
@@ -363,25 +361,6 @@ export function ResultsTable({
                     </TableCell>
                     <TableCell>
                       <div className="h-4 w-5/6 rounded bg-muted motion-safe:animate-pulse" />
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : lockedRowCount > 0 ? (
-                placeholderRows.map((placeholderKey) => (
-                  <TableRow
-                    key={placeholderKey}
-                    className="h-10 pointer-events-none select-none blur-[4px]"
-                    aria-hidden="true"
-                  >
-                    <TableCell className="font-medium truncate">
-                      r/community
-                    </TableCell>
-                    <TableCell>128K</TableCell>
-                    <TableCell className="truncate">
-                      Limited{" "}
-                      <span className="text-muted-foreground">
-                        Weekly promotion thread
-                      </span>
                     </TableCell>
                   </TableRow>
                 ))
@@ -459,8 +438,7 @@ export function ResultsTable({
                   </TableRow>
                 ))
               )}
-              {!showSkeleton &&
-              (lockedRowCount > 0 || displayedResults.length > 0 || isLoading)
+              {!isLoading && displayedResults.length > 0
                 ? paddingRows.map((paddingKey) => (
                     <TableRow
                       key={paddingKey}
@@ -473,15 +451,6 @@ export function ResultsTable({
                 : null}
             </TableBody>
           </Table>
-          {lockedRowCount > 0 && !showSkeleton ? (
-            <div className="pointer-events-none absolute inset-x-0 top-10 bottom-0 flex items-center justify-center">
-              <div className="flex w-full justify-center bg-muted/95 py-4">
-                <div className="pointer-events-auto w-full max-w-xs px-4">
-                  <SignInOptions returnTo={returnTo} />
-                </div>
-              </div>
-            </div>
-          ) : null}
         </div>
       )}
       <div className="flex h-11 items-center gap-2 rounded-b-xl border-t bg-muted/30 px-2 sm:px-4">

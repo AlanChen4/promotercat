@@ -1,14 +1,13 @@
-import { NextResponse } from "next/server";
 import { embedDescription } from "@/lib/ai/embeddings";
-import { ApiError, callService } from "@/lib/api/handler";
+import { ApiError } from "@/lib/api/handler";
 import { env } from "@/lib/config/env";
 import {
   RESULTS_PER_PAGE,
   type SelfPromotionStatus,
+  type SubredditResponse,
   type SubredditResult as SubredditRow,
+  type SubredditSearchInput,
   selfPromotionSchema,
-  sortDirectionSchema,
-  sortFieldSchema,
 } from "@/lib/schemas/subreddits";
 import { createAdminClient } from "@/lib/supabase/admin-server";
 
@@ -21,48 +20,18 @@ const NAME_STOP_WORDS = new Set(
   ),
 );
 
-function parsePage(requestedPage: string | null): number {
-  const parsed = Number(requestedPage);
-  if (!Number.isFinite(parsed) || parsed < 1) {
-    return 1;
-  }
-  return Math.floor(parsed);
-}
-
-function extractSelfPromotionFilters(
-  rawFilter: string | null,
-): SelfPromotionStatus[] {
-  if (!rawFilter) {
-    return [];
-  }
-
-  return rawFilter.split(",").flatMap((value) => {
-    const result = selfPromotionSchema.safeParse(value.trim().toLowerCase());
-    return result.success ? [result.data] : [];
-  });
-}
-
-export async function searchSubreddits(request: Request) {
-  const url = new URL(request.url);
-  const searchTerm = url.searchParams.get("search")?.trim() ?? "";
-  const selfPromotionFilters = extractSelfPromotionFilters(
-    url.searchParams.get("self_promotion"),
-  );
-  const requestedPage = parsePage(url.searchParams.get("page"));
-  const requestedSortField = sortFieldSchema.safeParse(
-    url.searchParams.get("sort")?.toLowerCase(),
-  ).data;
-  const requestedSortDirection = sortDirectionSchema.safeParse(
-    url.searchParams.get("sort_direction")?.toLowerCase(),
-  ).data;
-
+export async function searchSubreddits(
+  input: SubredditSearchInput,
+): Promise<SubredditResponse> {
+  const searchTerm = input.search?.trim() ?? "";
+  const selfPromotionFilters = input.self_promotion ?? [];
   const supabaseAdmin = createAdminClient(env);
   const pageSize = RESULTS_PER_PAGE;
-  const currentPage = requestedPage;
+  const currentPage = input.page ?? 1;
   const rangeStart = (currentPage - 1) * pageSize;
   const rangeEnd = rangeStart + pageSize - 1;
-  const sortField = requestedSortField;
-  const sortDirection = requestedSortDirection ?? "asc";
+  const sortField = input.sort;
+  const sortDirection = input.sort_direction ?? "asc";
 
   const shouldUseSemanticSearch = searchTerm.length > 0;
   if (shouldUseSemanticSearch) {
@@ -72,12 +41,12 @@ export async function searchSubreddits(request: Request) {
     });
 
     if (semanticCandidates.length === 0) {
-      return NextResponse.json({
+      return {
         subreddits: [],
         totalCount: 0,
         page: currentPage,
         pageSize,
-      });
+      };
     }
 
     let filteredCandidates = semanticCandidates;
@@ -119,12 +88,12 @@ export async function searchSubreddits(request: Request) {
     const sliceEnd = sliceStart + pageSize;
     const paginated = orderedCandidates.slice(sliceStart, sliceEnd);
 
-    return NextResponse.json({
+    return {
       subreddits: paginated,
       totalCount,
       page: currentPage,
       pageSize,
-    });
+    };
   }
 
   let query = supabaseAdmin
@@ -139,52 +108,44 @@ export async function searchSubreddits(request: Request) {
   }
 
   const effectiveSortField = sortField ?? "weekly_active";
-  const { data, error, count } = await callService(
-    "Failed to load subreddits.",
-    () =>
-      query
-        .order(
-          effectiveSortField === "weekly_active"
-            ? "weekly_active_users"
-            : "name",
-          {
-            ascending: sortField ? sortDirection === "asc" : true,
-            nullsFirst: false,
-          },
-        )
-        .order("name", { ascending: true })
-        .range(rangeStart, rangeEnd),
-  );
+  const { data, error, count } = await query
+    .order(
+      effectiveSortField === "weekly_active" ? "weekly_active_users" : "name",
+      {
+        ascending: sortField ? sortDirection === "asc" : true,
+        nullsFirst: false,
+      },
+    )
+    .order("name", { ascending: true })
+    .range(rangeStart, rangeEnd);
 
   // PostgREST returns 416 for a valid page beyond the last row.
   if (error?.code === "PGRST103") {
-    const total = await callService("Failed to load subreddits.", () =>
-      supabaseAdmin
-        .from("current_subreddits")
-        .select("name", { count: "exact", head: true })
-        .not("self_promotion", "is", null)
-        .in(
-          "self_promotion",
-          selfPromotionFilters.length
-            ? selfPromotionFilters
-            : selfPromotionSchema.options,
-        ),
-    );
+    const total = await supabaseAdmin
+      .from("current_subreddits")
+      .select("name", { count: "exact", head: true })
+      .not("self_promotion", "is", null)
+      .in(
+        "self_promotion",
+        selfPromotionFilters.length
+          ? selfPromotionFilters
+          : selfPromotionSchema.options,
+      );
     if (!total.error)
-      return NextResponse.json({
+      return {
         subreddits: [],
         totalCount: total.count ?? 0,
         page: currentPage,
         pageSize,
-      });
+      };
   }
   if (error) throw new ApiError(503, "Failed to load subreddits.");
-  return NextResponse.json({
+  return {
     subreddits: (data ?? []) as SubredditRow[],
     totalCount: count ?? 0,
     page: currentPage,
     pageSize,
-  });
+  };
 }
 
 type SemanticCandidateArgs = {
@@ -200,20 +161,19 @@ async function fetchSemanticCandidates({
   const nameTerms = [
     ...new Set(query.toLowerCase().match(/[a-z0-9_]+/g) ?? []),
   ].filter((term) => term.length > 1 && !NAME_STOP_WORDS.has(term));
-  const embeddingValues = await callService(
-    "Search embeddings are unavailable.",
-    () => embedDescription(query, "RETRIEVAL_QUERY", env.VERCEL_AI_GATEWAY),
+  const embeddingValues = await embedDescription(
+    query,
+    "RETRIEVAL_QUERY",
+    env.VERCEL_AI_GATEWAY,
   );
-
-  const { data, error } = await callService(
-    "Failed to fetch semantic matches.",
-    () =>
-      supabaseAdmin.rpc("match_subreddits_by_description", {
-        query_embedding: JSON.stringify(embeddingValues),
-        match_threshold: SEMANTIC_MATCH_THRESHOLD,
-        match_count: SEMANTIC_MATCH_COUNT,
-        name_terms: nameTerms,
-      }),
+  const { data, error } = await supabaseAdmin.rpc(
+    "match_subreddits_by_description",
+    {
+      query_embedding: JSON.stringify(embeddingValues),
+      match_threshold: SEMANTIC_MATCH_THRESHOLD,
+      match_count: SEMANTIC_MATCH_COUNT,
+      name_terms: nameTerms,
+    },
   );
 
   if (error) throw new ApiError(503, "Failed to fetch semantic matches.");

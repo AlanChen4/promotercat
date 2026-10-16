@@ -110,7 +110,6 @@ export function OAuthConsent({ authorizationId }: { authorizationId: string }) {
           <p className="text-xs text-muted-foreground">
             Only approve clients you trust. Limits are shared across your
             connected agents: 30 searches per UTC minute and 1,000 per UTC day.
-            You can disconnect an agent from the For Agents window.
           </p>
           <form
             method="POST"

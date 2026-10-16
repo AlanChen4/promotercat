@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { ApiError, callService, withApiHandler } from "@/lib/api/handler";
+import { ApiError, withApiHandler } from "@/lib/api/handler";
 import { isAuthServiceError, requireSession } from "@/lib/supabase/server";
 
 export const POST = withApiHandler(async (request) => {
@@ -15,17 +15,13 @@ export const POST = withApiHandler(async (request) => {
   )
     throw new ApiError(400, "Invalid connection decision.");
   const client = await requireSession("Sign in before connecting your agent.");
-  const { data, error } = await callService(
-    "Connection service unavailable. Please try again.",
-    () =>
-      decision === "approve"
-        ? client.auth.oauth.approveAuthorization(authorizationId, {
-            skipBrowserRedirect: true,
-          })
-        : client.auth.oauth.denyAuthorization(authorizationId, {
-            skipBrowserRedirect: true,
-          }),
-  );
+  const { data, error } = await (decision === "approve"
+    ? client.auth.oauth.approveAuthorization(authorizationId, {
+        skipBrowserRedirect: true,
+      })
+    : client.auth.oauth.denyAuthorization(authorizationId, {
+        skipBrowserRedirect: true,
+      }));
   if (error) {
     if (isAuthServiceError(error))
       throw new ApiError(

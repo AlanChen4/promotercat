@@ -10,20 +10,6 @@ export class ApiError extends Error {
   }
 }
 
-// Use only around calls to external services, not validation or route logic.
-export async function callService<T>(
-  message: string,
-  operation: () => PromiseLike<T>,
-): Promise<T> {
-  try {
-    return await operation();
-  } catch (error) {
-    unstable_rethrow(error);
-    if (error instanceof ApiError) throw error;
-    throw new ApiError(503, message);
-  }
-}
-
 /** Keep route-specific responses intact; cache successful responses only by opt-in. */
 export function withApiHandler(
   handler: (request: Request) => Response | Promise<Response>,

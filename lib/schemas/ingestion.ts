@@ -18,9 +18,9 @@ export const fetchResponseSchema = z.object({
 
 export const apifyRunSchema = z.object({
   data: z.object({
-    id: z.string().regex(/^[A-Za-z0-9]+$/),
+    id: z.string(),
     status: z.string(),
-    defaultDatasetId: z.string().regex(/^[A-Za-z0-9]+$/),
+    defaultDatasetId: z.string(),
   }),
 });
 export const apifyCommunitySchema = z.object({
@@ -37,12 +37,6 @@ export const apifyCommunitySchema = z.object({
         priority: z.number().int().nonnegative(),
       }),
     )
-    .max(100)
-    .refine(
-      (rules) =>
-        new Set(rules.map((rule) => rule.priority)).size === rules.length,
-      "Apify returned duplicate rule positions.",
-    )
     .transform((rules) =>
       rules
         .sort((a, b) => a.priority - b.priority)
@@ -57,8 +51,6 @@ export type ApifyRun = z.infer<typeof apifyRunSchema>["data"];
 export const apifyErrorSchema = z.object({
   error: z.object({ type: z.string(), message: z.string() }),
 });
-export const apifyDatasetSchema = z.array(z.unknown());
-export const apifyIdentitySchema = z.object({ name: z.string() });
 export const policySummarySchema = (status: SelfPromotionStatus) =>
   z.object({
     summary: z

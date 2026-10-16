@@ -18,7 +18,6 @@ export const admissionSchema = z.discriminatedUnion("allowed", [
 
 export const agentClaimsSchema = z.object({
   sub: z.uuid(),
-  session_id: z.uuid(),
   client_id: z.uuid(),
   iss: z.string(),
   aud: z.union([z.string(), z.array(z.string())]),
@@ -40,5 +39,3 @@ export const agentSearchInputSchema = z
       .optional(),
   })
   .strict();
-
-export const oauthConnectionSchema = z.object({ clientId: z.uuid() }).strict();
