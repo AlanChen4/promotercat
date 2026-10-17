@@ -5,7 +5,7 @@
       "type": "streamable-http",
       "url": "https://www.promotercat.com/mcp",
       "headers": {
-        "X-PromoterCat-Plugin-Version": "0.1.1"
+        "X-PromoterCat-Plugin-Version": "0.1.2"
       }
     }
   }

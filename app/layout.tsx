@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AuthProvider } from "@/providers/auth-provider";
+import { MotionProvider } from "@/providers/motion-provider";
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/next";
 
@@ -31,7 +32,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <AuthProvider>
-          {children}
+          <MotionProvider>{children}</MotionProvider>
           <Analytics />
         </AuthProvider>
       </body>

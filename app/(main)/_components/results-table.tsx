@@ -4,23 +4,14 @@ import {
   Alert02Icon,
   Cancel01Icon,
   Search01Icon,
-  SortByDown02Icon,
-  SortByUp02Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { GripVertical } from "lucide-react";
-import Image from "next/image";
+import { motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
-import {
-  type CSSProperties,
-  type ReactNode,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import {
   Empty,
-  EmptyContent,
   EmptyDescription,
   EmptyHeader,
   EmptyMedia,
@@ -38,16 +29,33 @@ import {
 } from "@/components/ui/table";
 import type {
   SelfPromotionStatus,
-  SortField,
-  SortState,
   SubredditResult,
 } from "@/lib/schemas/subreddits";
-import logo from "@/public/logo.png";
 import { AccountMenu } from "./account-menu";
 import { ForAgents } from "./for-agents";
 import { GitHubStars } from "./github-stars";
-import { type SearchSuggestion, SearchSuggestions } from "./search-suggestions";
 import { SignInOptions } from "./sign-in-options";
+
+const MotionTableRow = motion.create(TableRow);
+const MotionLink = motion.create(Link);
+function ResultRow({ children }: { children: ReactNode }) {
+  const [focused, setFocused] = useState(false);
+  return (
+    <MotionTableRow
+      className="group h-10"
+      initial="collapsed"
+      animate={focused ? "expanded" : "collapsed"}
+      whileHover="expanded"
+      onFocusCapture={() => setFocused(true)}
+      onBlurCapture={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget))
+          setFocused(false);
+      }}
+    >
+      {children}
+    </MotionTableRow>
+  );
+}
 
 function PromotionText({
   status,
@@ -56,41 +64,40 @@ function PromotionText({
   status: string;
   detail: string | null;
 }) {
-  const textRef = useRef<HTMLDivElement>(null);
-  const [fullHeight, setFullHeight] = useState(20);
-
-  useEffect(() => {
-    const text = textRef.current;
-    if (!text) return;
-    const measure = () => {
-      setFullHeight(Math.ceil(text.getBoundingClientRect().height));
-    };
-    measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(text);
-    return () => observer.disconnect();
-  }, []);
-
   return (
-    <div
-      className="relative h-5 overflow-hidden leading-5 transition-[height] duration-400 ease-[cubic-bezier(0.4,0,0.2,1)] group-hover:h-[var(--promotion-height)] group-focus-within:h-[var(--promotion-height)] motion-reduce:transition-none"
-      style={{ "--promotion-height": `${fullHeight}px` } as CSSProperties}
+    <motion.div
+      className="relative overflow-hidden leading-5"
+      variants={{ collapsed: { height: 20 }, expanded: { height: "auto" } }}
     >
-      <div ref={textRef} className="whitespace-normal break-words">
+      <div className="whitespace-normal break-words">
         {status}
         {detail ? (
           <span className="ml-2 text-muted-foreground">{detail}</span>
         ) : null}
       </div>
-      {fullHeight > 20 ? (
-        <span
+      {detail ? (
+        <motion.span
           aria-hidden="true"
-          className="pointer-events-none absolute right-0 top-0 w-5 bg-linear-to-r from-transparent to-card to-40% text-right text-muted-foreground group-hover:invisible group-focus-within:invisible"
-        >
-          …
-        </span>
+          variants={{ collapsed: { opacity: 1 }, expanded: { opacity: 0 } }}
+          className="pointer-events-none absolute right-0 top-0 h-5 w-5 bg-linear-to-r from-transparent to-card"
+        />
       ) : null}
-    </div>
+    </motion.div>
+  );
+}
+
+function LoadingBar({ className }: { className: string }) {
+  const reduceMotion = useReducedMotion();
+  return (
+    <motion.div
+      className={`h-4 rounded bg-muted ${className}`}
+      animate={{ opacity: reduceMotion ? 1 : [1, 0.45, 1] }}
+      transition={
+        reduceMotion
+          ? { duration: 0 }
+          : { duration: 1.4, repeat: Infinity, ease: "easeInOut" }
+      }
+    />
   );
 }
 
@@ -98,8 +105,6 @@ type ResultsTableProps = {
   returnTo: string;
   filters: ReactNode;
   pagination: ReactNode;
-  suggestions: SearchSuggestion[];
-  onSuggestionSelect: (query: string) => void;
   searchInput: string;
   onSearchInputChange: (value: string) => void;
   isLoading: boolean;
@@ -109,16 +114,12 @@ type ResultsTableProps = {
   isLocked: boolean;
   formatSelfPromotion: (status: SelfPromotionStatus) => string;
   formatActivityCount: (count: number | null) => string;
-  sortState: SortState;
-  onSortToggle: (field: SortField) => void;
 };
 
 export function ResultsTable({
   returnTo,
   filters,
   pagination,
-  suggestions,
-  onSuggestionSelect,
   searchInput,
   onSearchInputChange,
   isLoading,
@@ -128,8 +129,6 @@ export function ResultsTable({
   isLocked,
   formatSelfPromotion,
   formatActivityCount,
-  sortState,
-  onSortToggle,
 }: ResultsTableProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{
@@ -173,43 +172,10 @@ export function ResultsTable({
     { length: Math.max(0, 10 - displayedResults.length) },
     (_, offset) => `padding-row-${offset}`,
   );
-
-  const getSortIcon = (field: SortField) => {
-    if (sortState?.field !== field) {
-      return SortByDown02Icon;
-    }
-    return sortState.direction === "asc" ? SortByUp02Icon : SortByDown02Icon;
-  };
-
-  const renderSortableHeader = (label: string, field: SortField) => {
-    const Icon = getSortIcon(field);
-    const isActive = sortState?.field === field;
-    const sortLabel = isActive
-      ? `Sort by ${label.toLowerCase()} ${sortState.direction === "asc" ? "ascending" : "descending"}`
-      : `Sort by ${label.toLowerCase()}`;
-
-    return (
-      <button
-        type="button"
-        onClick={() => onSortToggle(field)}
-        aria-pressed={isActive}
-        aria-label={sortLabel}
-        className="flex cursor-pointer items-center gap-2 rounded p-1"
-      >
-        <span>{label}</span>
-        <HugeiconsIcon
-          icon={Icon}
-          className="size-4 shrink-0 translate-y-px"
-          aria-hidden="true"
-        />
-      </button>
-    );
-  };
-
   return (
     <div
       ref={containerRef}
-      className="relative rounded-xl border bg-card w-full max-w-4xl"
+      className="relative rounded-xl border bg-card w-full max-w-3xl"
       aria-busy={isLoading}
       style={{ transform: `translate(${position.x}px, ${position.y}px)` }}
     >
@@ -222,7 +188,9 @@ export function ResultsTable({
           <Input
             id="subreddit-search"
             aria-label="Search subreddits"
-            placeholder='Keywords separated by commas (e.g. "gaming, game development")'
+            placeholder={
+              'Describe what you\'re building (e.g. "AI calorie tracker app")'
+            }
             value={searchInput}
             onChange={(event) => onSearchInputChange(event.target.value)}
             className="border-0 bg-transparent pl-6 shadow-none text-sm focus-visible:border-transparent focus-visible:ring-0"
@@ -308,16 +276,7 @@ export function ResultsTable({
         <ForAgents />
       </div>
       {isLoading ? <output className="sr-only">Loading results</output> : null}
-      {isLocked ? (
-        <div className="flex min-h-[27.5rem] items-center justify-center px-4">
-          <div className="w-full max-w-xs space-y-4 text-center">
-            <p className="text-sm text-muted-foreground">
-              Sign in to view more results.
-            </p>
-            <SignInOptions returnTo={returnTo} />
-          </div>
-        </div>
-      ) : errorMessage && !isLoading ? (
+      {errorMessage && !isLoading && !isLocked ? (
         <div className="flex h-[27.5rem] items-center px-4 text-sm text-destructive">
           {errorMessage}
         </div>
@@ -331,11 +290,9 @@ export function ResultsTable({
             </colgroup>
             <TableHeader>
               <TableRow className="bg-muted">
+                <TableHead className="text-muted-foreground">Name</TableHead>
                 <TableHead className="text-muted-foreground">
-                  {renderSortableHeader("Name", "name")}
-                </TableHead>
-                <TableHead className="text-muted-foreground">
-                  {renderSortableHeader("Weekly active", "weekly_active")}
+                  Weekly active
                 </TableHead>
                 <TableHead className="text-muted-foreground">
                   Promotion
@@ -343,7 +300,29 @@ export function ResultsTable({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {isLoading ? (
+              {isLocked ? (
+                Array.from(
+                  { length: 10 },
+                  (_, index) => `locked-row-${index}`,
+                ).map((key) => (
+                  <TableRow
+                    key={key}
+                    className="h-10 pointer-events-none select-none blur-[4px]"
+                    aria-hidden="true"
+                  >
+                    <TableCell className="font-medium truncate">
+                      r/community
+                    </TableCell>
+                    <TableCell>128K</TableCell>
+                    <TableCell className="truncate">
+                      Limited{" "}
+                      <span className="text-muted-foreground">
+                        Weekly promotion thread
+                      </span>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : isLoading ? (
                 Array.from(
                   { length: 10 },
                   (_, index) => `loading-row-${index}`,
@@ -354,13 +333,13 @@ export function ResultsTable({
                     aria-hidden="true"
                   >
                     <TableCell>
-                      <div className="h-4 w-3/4 rounded bg-muted motion-safe:animate-pulse" />
+                      <LoadingBar className="w-3/4" />
                     </TableCell>
                     <TableCell>
-                      <div className="h-4 w-16 rounded bg-muted motion-safe:animate-pulse" />
+                      <LoadingBar className="w-16" />
                     </TableCell>
                     <TableCell>
-                      <div className="h-4 w-5/6 rounded bg-muted motion-safe:animate-pulse" />
+                      <LoadingBar className="w-5/6" />
                     </TableCell>
                   </TableRow>
                 ))
@@ -372,59 +351,32 @@ export function ResultsTable({
                   >
                     <Empty>
                       <EmptyHeader>
-                        <EmptyMedia
-                          variant={searchInput.trim() ? "icon" : "default"}
-                        >
-                          {searchInput.trim() ? (
-                            <HugeiconsIcon icon={Alert02Icon} />
-                          ) : (
-                            <Image
-                              src={logo}
-                              alt="PromoterCat"
-                              width={64}
-                              height={64}
-                            />
-                          )}
+                        <EmptyMedia variant="icon">
+                          <HugeiconsIcon icon={Alert02Icon} />
                         </EmptyMedia>
-                        <EmptyTitle>
-                          {searchInput.trim()
-                            ? "No matches this time"
-                            : "Find your purr-fect community"}
-                        </EmptyTitle>
-                        {searchInput.trim() ? (
-                          <EmptyDescription>
-                            Try different keywords.
-                          </EmptyDescription>
-                        ) : (
-                          <EmptyDescription>
-                            Try a suggested search below to see how it works
-                          </EmptyDescription>
-                        )}
+                        <EmptyTitle>No matches this time</EmptyTitle>
+                        <EmptyDescription>
+                          Try different keywords or filters.
+                        </EmptyDescription>
                       </EmptyHeader>
-                      {searchInput.trim() ? null : (
-                        <EmptyContent className="max-w-none">
-                          <SearchSuggestions
-                            suggestions={suggestions}
-                            onSelect={onSuggestionSelect}
-                          />
-                        </EmptyContent>
-                      )}
                     </Empty>
                   </TableCell>
                 </TableRow>
               ) : (
                 displayedResults.map((subreddit) => (
-                  <TableRow key={subreddit.name} className="group h-10">
+                  <ResultRow key={subreddit.name}>
                     <TableCell className="font-medium">
-                      <Link
+                      <MotionLink
+                        whileHover={{ color: "var(--primary)" }}
+                        whileFocus={{ color: "var(--primary)" }}
                         href={`https://www.reddit.com/r/${subreddit.name}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="block truncate transition-colors duration-200 hover:text-orange-600 focus-visible:text-orange-600 motion-reduce:transition-none"
+                        className="block truncate"
                         title={`r/${subreddit.name}`}
                       >
                         r/{subreddit.name}
-                      </Link>
+                      </MotionLink>
                     </TableCell>
                     <TableCell>
                       {formatActivityCount(subreddit.weekly_active_users)}
@@ -435,10 +387,10 @@ export function ResultsTable({
                         detail={subreddit.self_promotion_detail}
                       />
                     </TableCell>
-                  </TableRow>
+                  </ResultRow>
                 ))
               )}
-              {!isLoading && displayedResults.length > 0
+              {!isLocked && !isLoading && displayedResults.length > 0
                 ? paddingRows.map((paddingKey) => (
                     <TableRow
                       key={paddingKey}
@@ -451,6 +403,15 @@ export function ResultsTable({
                 : null}
             </TableBody>
           </Table>
+          {isLocked ? (
+            <div className="pointer-events-none absolute inset-x-0 top-10 bottom-0 flex items-center justify-center">
+              <div className="flex w-full justify-center bg-muted/95 py-4">
+                <div className="pointer-events-auto w-full max-w-xs px-4">
+                  <SignInOptions returnTo={returnTo} />
+                </div>
+              </div>
+            </div>
+          ) : null}
         </div>
       )}
       <div className="flex h-11 items-center gap-2 rounded-b-xl border-t bg-muted/30 px-2 sm:px-4">

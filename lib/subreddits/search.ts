@@ -37,8 +37,6 @@ export async function searchSubreddits(
   const currentPage = input.page ?? 1;
   const rangeStart = (currentPage - 1) * pageSize;
   const rangeEnd = rangeStart + pageSize - 1;
-  const sortField = input.sort;
-  const sortDirection = input.sort_direction ?? "asc";
 
   const shouldUseSemanticSearch = searchTerm.length > 0;
   if (shouldUseSemanticSearch) {
@@ -67,33 +65,10 @@ export async function searchSubreddits(
       );
     }
 
-    let orderedCandidates = filteredCandidates;
-    if (sortField) {
-      const directionMultiplier = sortDirection === "asc" ? 1 : -1;
-      orderedCandidates = [...filteredCandidates].sort((a, b) => {
-        if (sortField === "weekly_active") {
-          if (a.weekly_active_users === null)
-            return b.weekly_active_users === null
-              ? a.name.localeCompare(b.name)
-              : 1;
-          if (b.weekly_active_users === null) return -1;
-          const aActivity = a.weekly_active_users;
-          const bActivity = b.weekly_active_users;
-          if (aActivity === bActivity) {
-            return a.name.localeCompare(b.name) * directionMultiplier;
-          }
-          return aActivity > bActivity
-            ? directionMultiplier
-            : -directionMultiplier;
-        }
-        return a.name.localeCompare(b.name) * directionMultiplier;
-      });
-    }
-
-    const totalCount = orderedCandidates.length;
+    const totalCount = filteredCandidates.length;
     const sliceStart = rangeStart;
     const sliceEnd = sliceStart + pageSize;
-    const paginated = orderedCandidates.slice(sliceStart, sliceEnd);
+    const paginated = filteredCandidates.slice(sliceStart, sliceEnd);
 
     return {
       subreddits: paginated,
@@ -114,15 +89,8 @@ export async function searchSubreddits(
     query = query.in("self_promotion", selfPromotionFilters);
   }
 
-  const effectiveSortField = sortField ?? "weekly_active";
   const { data, error, count } = await query
-    .order(
-      effectiveSortField === "weekly_active" ? "weekly_active_users" : "name",
-      {
-        ascending: sortField ? sortDirection === "asc" : true,
-        nullsFirst: false,
-      },
-    )
+    .order("weekly_active_users", { ascending: false, nullsFirst: false })
     .order("name", { ascending: true })
     .range(rangeStart, rangeEnd);
 

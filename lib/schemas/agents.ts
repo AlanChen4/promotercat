@@ -1,10 +1,5 @@
 import { z } from "zod";
-import {
-  RESULTS_PER_PAGE,
-  selfPromotionSchema,
-  sortDirectionSchema,
-  sortFieldSchema,
-} from "./subreddits.ts";
+import { RESULTS_PER_PAGE, selfPromotionSchema } from "./subreddits.ts";
 
 export const admissionSchema = z.discriminatedUnion("allowed", [
   z.object({ allowed: z.literal(true) }),
@@ -29,8 +24,6 @@ export const agentSearchInputSchema = z
   .object({
     search: z.string().max(1000).optional(),
     self_promotion: z.array(selfPromotionSchema).min(1).optional(),
-    sort: sortFieldSchema.optional(),
-    sort_direction: sortDirectionSchema.optional(),
     page: z
       .number()
       .int()
