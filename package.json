@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "pnpm db:start && doppler run --project web --config dev -- next dev --turbopack",
+    "dev:local": "pnpm db:start && next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
     "lint": "biome check",
@@ -15,7 +16,9 @@
     "db:reset": "supabase db reset",
     "db:status": "supabase status",
     "subreddits": "node scripts/cli.ts",
+    "subreddits:local": "NODE_ENV=development node --env-file=.env.local scripts/cli.ts --env local",
     "evals": "NODE_ENV=development doppler run --project web --config dev -- node evals/run.ts",
+    "evals:local": "NODE_ENV=development node --env-file=.env.local evals/run.ts",
     "plugin:version": "node scripts/plugin-version.ts"
   },
   "dependencies": {
