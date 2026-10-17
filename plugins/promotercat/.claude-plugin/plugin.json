@@ -1,7 +1,9 @@
 {
   "name": "promotercat",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Find Reddit communities and their self-promotion rules.",
-  "author": { "name": "PromoterCat" },
+  "author": {
+    "name": "PromoterCat"
+  },
   "icon": "./assets/logo.png"
 }
