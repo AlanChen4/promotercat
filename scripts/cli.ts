@@ -755,12 +755,12 @@ Output:
 }
 
 function help() {
-  return `Usage: pnpm --silent subreddits add --env dev|prod [options]
+  return `Usage: pnpm --silent subreddits add --env dev|prod|local [options]
 
 Insert subreddits. Existing names are a successful no-op.
 
 Options:
-  --env dev|prod    Required. Doppler web/dev or web/prd.
+  --env dev|prod|local  Required. Doppler web/dev, web/prd, or current environment.
   --url URL         Subreddit URL. Repeat for several communities.
   --input FILE|-    One URL per line from a file or stdin.
   --help, -h        Show help without credentials.
@@ -768,10 +768,12 @@ Options:
 Examples:
   pnpm --silent subreddits add --env dev --url https://www.reddit.com/r/apple/
   pnpm --silent subreddits add --env prod --input /tmp/subreddits.txt
+  pnpm --silent subreddits:local add --url https://www.reddit.com/r/apple/
   cat /tmp/subreddits.txt | pnpm --silent subreddits add --env dev --input -
 
 Output: one JSON object per result on stdout; errors on stderr. Exit 1 if any
-entry fails; duplicate adds exit 0. Requires Node.js 24+ and Doppler login.
+entry fails; duplicate adds exit 0. Requires Node.js 24+.
+Doppler login is required for dev/prod; subreddits:local loads .env.local.
 TinyFish batches contain up to 10 URLs and allow 60 seconds per URL. Failed URLs
 are retried once; activity timeouts get one extra attempt, with two-second pauses.
 Each process shares a four-request limit. HTTP 429s get three retries with
@@ -815,9 +817,9 @@ async function main() {
   }
   if (positionals[0] !== "add")
     throw new Error(`Supply the add command.\n${help()}`);
-  if (values.env !== "dev" && values.env !== "prod")
+  if (values.env !== "dev" && values.env !== "prod" && values.env !== "local")
     throw new Error(
-      "Set --env dev or --env prod. Example: pnpm --silent subreddits add --env dev --url https://www.reddit.com/r/apple/",
+      "Set --env dev, --env prod, or --env local. Example: pnpm --silent subreddits add --env dev --url https://www.reddit.com/r/apple/",
     );
   const targets: SubredditTarget[] = [];
   const inputs = [...(values.url ?? [])];
@@ -851,28 +853,30 @@ async function main() {
       targets.push(target);
     }
   }
-  let secrets: Record<string, string>;
-  try {
-    secrets = JSON.parse(
-      execFileSync(
-        "doppler",
-        [
-          "secrets",
-          "download",
-          "--no-file",
-          "--no-fallback",
-          "-p",
-          "web",
-          "-c",
-          values.env === "prod" ? "prd" : "dev",
-        ],
-        { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] },
-      ),
-    );
-  } catch {
-    throw new Error(
-      "Doppler could not load the selected config. Check doppler login and --env.",
-    );
+  let secrets: Record<string, string> = {};
+  if (values.env !== "local") {
+    try {
+      secrets = JSON.parse(
+        execFileSync(
+          "doppler",
+          [
+            "secrets",
+            "download",
+            "--no-file",
+            "--no-fallback",
+            "-p",
+            "web",
+            "-c",
+            values.env === "prod" ? "prd" : "dev",
+          ],
+          { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] },
+        ),
+      );
+    } catch {
+      throw new Error(
+        "Doppler could not load the selected config. Check doppler login and --env.",
+      );
+    }
   }
   // Load the selected config before importing the validated app environment.
   Object.assign(process.env, {
