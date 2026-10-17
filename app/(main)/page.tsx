@@ -6,8 +6,6 @@ import {
   parseSearchParams,
   RESULTS_PER_PAGE,
   type SelfPromotionStatus,
-  type SortField,
-  type SortState,
   type SubredditResponse,
   type SubredditResult,
 } from "@/lib/schemas/subreddits";
@@ -37,33 +35,6 @@ const SELF_PROMOTION_LABELS: Record<SelfPromotionStatus, string> =
   );
 
 const SEARCH_DEBOUNCE_MS = 300;
-const SEARCH_SUGGESTIONS = [
-  {
-    label: "Game Development",
-    emoji: "🕹️",
-    query: "gaming, game development, indie games",
-  },
-  {
-    label: "AI & SaaS",
-    emoji: "🧠",
-    query: "ai tools, saas, machine learning, automation",
-  },
-  {
-    label: "Startups",
-    emoji: "🚀",
-    query: "startups, founders, entrepreneurship",
-  },
-  {
-    label: "Fitness",
-    emoji: "💪",
-    query: "fitness, exercise, strength training, workouts",
-  },
-  {
-    label: "Marketing",
-    emoji: "📣",
-    query: "marketing, digital marketing, advertising, content marketing",
-  },
-];
 
 function updateSearchParams(
   updates: Record<string, string | null>,
@@ -106,21 +77,18 @@ function SearchPage() {
     page,
   } = input;
   const [searchInput, setSearchInput] = useState(searchTerm);
-  const sortState = useMemo<SortState>(
-    () =>
-      input.sort
-        ? { field: input.sort, direction: input.sort_direction }
-        : null,
-    [input],
-  );
   const isLockedPage = page > 1 && !isAuthenticated;
-  const [isLoading, setIsLoading] = useState(Boolean(searchTerm));
+  const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [results, setResults] = useState<SubredditResult[]>([]);
+  const [loadedPage, setLoadedPage] = useState<number | null>(null);
   const [totalCount, setTotalCount] = useState(0);
 
   useEffect(() => {
-    setSearchInput(searchTerm);
+    // Keep spaces in the draft when its normalized value matches the URL.
+    setSearchInput((current) =>
+      current.trim() === searchTerm ? current : searchTerm,
+    );
   }, [searchTerm]);
 
   useEffect(() => {
@@ -138,9 +106,8 @@ function SearchPage() {
     const abortController = new AbortController();
 
     const fetchData = async () => {
-      if (!searchTerm || isLockedPage) {
+      if (isLockedPage) {
         setResults([]);
-        setTotalCount(0);
         setIsLoading(false);
         setErrorMessage(null);
         return;
@@ -154,10 +121,6 @@ function SearchPage() {
       }
       if (selectedSelfPromotion.length > 0) {
         query.set("self_promotion", selectedSelfPromotion.join(","));
-      }
-      if (sortState) {
-        query.set("sort", sortState.field);
-        query.set("sort_direction", sortState.direction);
       }
       query.set("page", String(page));
 
@@ -188,6 +151,7 @@ function SearchPage() {
         }
 
         setResults(data.subreddits);
+        setLoadedPage(data.page);
         setTotalCount(data.totalCount);
       } catch {
         if (abortController.signal.aborted) {
@@ -211,7 +175,6 @@ function SearchPage() {
     selectedSelfPromotion,
     page,
     isLockedPage,
-    sortState,
     isAuthenticatedLoading,
   ]);
 
@@ -243,33 +206,14 @@ function SearchPage() {
     updateSearchParams({ self_promotion: selection.join(","), page: null });
   };
 
-  const handleSortToggle = (field: SortField) => {
-    const next: SortState =
-      sortState?.field !== field
-        ? { field, direction: "desc" }
-        : sortState.direction === "desc"
-          ? { field, direction: "asc" }
-          : null;
-    updateSearchParams({
-      sort: next?.field ?? null,
-      sort_direction: next?.direction ?? null,
-      page: null,
-    });
-  };
-
   const handlePageChange = (nextPage: number) => {
     updateSearchParams({ page: nextPage === 1 ? null : String(nextPage) });
-  };
-
-  const handleSuggestionSelect = (query: string) => {
-    setSearchInput(query);
-    updateSearchParams({ search: query, page: null });
   };
 
   const returnTo = params.toString() ? `/?${params.toString()}` : "/";
 
   return (
-    <div className="relative z-10 mx-auto flex max-w-4xl flex-col items-center gap-2 p-4">
+    <div className="relative z-10 mx-auto flex max-w-3xl flex-col items-center gap-2 p-4">
       <ResultsTable
         returnTo={returnTo}
         filters={
@@ -279,12 +223,13 @@ function SearchPage() {
             onSelfPromotionChange={handleFilterChange}
           />
         }
-        suggestions={SEARCH_SUGGESTIONS}
-        onSuggestionSelect={handleSuggestionSelect}
         searchInput={searchInput}
         onSearchInputChange={setSearchInput}
         isLoading={
-          !isLockedPage && (isLoading || searchInput.trim() !== searchTerm)
+          !isLockedPage &&
+          (isLoading ||
+            (!errorMessage && loadedPage !== page) ||
+            searchInput.trim() !== searchTerm)
         }
         errorMessage={errorMessage}
         totalCount={totalCount}
@@ -292,13 +237,13 @@ function SearchPage() {
         isLocked={isLockedPage && !isAuthenticatedLoading}
         formatSelfPromotion={formatSelfPromotion}
         formatActivityCount={formatActivityCount}
-        sortState={sortState}
-        onSortToggle={handleSortToggle}
         pagination={
-          !isLockedPage && totalPages > 1 ? (
+          isLockedPage || totalPages > 1 ? (
             <SubredditsPagination
               page={page}
-              totalPages={totalPages}
+              totalPages={
+                isLockedPage ? Math.max(page, totalPages) : totalPages
+              }
               onPageChange={handlePageChange}
             />
           ) : null

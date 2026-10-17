@@ -12,11 +12,6 @@ export const selfPromotionSchema = z.enum([
   ...Enums<"self_promotion_status">[],
 ]);
 export type SelfPromotionStatus = z.infer<typeof selfPromotionSchema>;
-export const sortFieldSchema = z.enum(["name", "weekly_active"]);
-export const sortDirectionSchema = z.enum(["asc", "desc"]);
-export type SortField = z.infer<typeof sortFieldSchema>;
-export type SortDirection = z.infer<typeof sortDirectionSchema>;
-export type SortState = { field: SortField; direction: SortDirection } | null;
 export const subredditResultSchema = z.object({
   name: z.string(),
   self_promotion: selfPromotionSchema,
@@ -58,8 +53,6 @@ export type SubredditTarget = z.output<typeof subredditUrlSchema>;
 export type SubredditSearchInput = {
   search?: string;
   self_promotion?: SelfPromotionStatus[];
-  sort?: SortField;
-  sort_direction?: SortDirection;
   page?: number;
 };
 
@@ -67,6 +60,7 @@ const defaultPromotionFilters: SelfPromotionStatus[] = [
   "allowed_full",
   "allowed_limited",
   "unspecified",
+  "not_allowed",
 ];
 const searchPageSchema = z.coerce
   .number()
@@ -89,10 +83,6 @@ export function parseSearchParams(params: Pick<URLSearchParams, "get">) {
   return {
     search: params.get("search")?.trim() ?? "",
     self_promotion: filters.length ? filters : defaultPromotionFilters,
-    sort: sortFieldSchema.safeParse(params.get("sort")?.toLowerCase()).data,
-    sort_direction: sortDirectionSchema
-      .catch("asc")
-      .parse(params.get("sort_direction")?.toLowerCase()),
     page: searchPageSchema.parse(params.get("page") ?? 1),
   };
 }

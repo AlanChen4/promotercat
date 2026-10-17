@@ -1,5 +1,7 @@
 "use client";
 
+import { LayoutGroup, motion } from "motion/react";
+import { useId } from "react";
 import {
   Pagination,
   PaginationContent,
@@ -21,6 +23,8 @@ export function SubredditsPagination({
   totalPages,
   onPageChange,
 }: SubredditsPaginationProps) {
+  const layoutId = useId();
+
   if (totalPages <= 1) {
     return null;
   }
@@ -51,58 +55,72 @@ export function SubredditsPagination({
             ];
 
   return (
-    <Pagination>
-      <PaginationContent className="gap-0 sm:gap-1">
-        <PaginationItem>
-          <PaginationPrevious
-            href="#"
-            onClick={(event) => {
-              event.preventDefault();
-              if (page > 1) {
-                onPageChange(page - 1);
+    <LayoutGroup id={layoutId}>
+      <Pagination>
+        <PaginationContent className="gap-0 sm:gap-1">
+          <motion.li initial={false} animate={{ opacity: page === 1 ? 0 : 1 }}>
+            <PaginationPrevious
+              href="#"
+              onClick={(event) => {
+                event.preventDefault();
+                if (page > 1) {
+                  onPageChange(page - 1);
+                }
+              }}
+              aria-hidden={page === 1}
+              tabIndex={page === 1 ? -1 : undefined}
+              className={page === 1 ? "pointer-events-none" : undefined}
+            />
+          </motion.li>
+          {visiblePages.map((pageNumber) => (
+            <PaginationItem key={pageNumber}>
+              {typeof pageNumber === "number" ? (
+                <PaginationLink
+                  href="#"
+                  className="relative isolate size-7 sm:size-9 data-[active=true]:border-transparent data-[active=true]:bg-transparent data-[active=true]:shadow-none"
+                  isActive={pageNumber === page}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    if (pageNumber !== page) {
+                      onPageChange(pageNumber);
+                    }
+                  }}
+                >
+                  {pageNumber === page ? (
+                    <motion.span
+                      layoutId="active-page"
+                      aria-hidden="true"
+                      className="pointer-events-none absolute inset-0 -z-10 rounded-md border bg-background shadow-xs"
+                    />
+                  ) : null}
+                  {pageNumber}
+                </PaginationLink>
+              ) : (
+                <PaginationEllipsis className="size-7 sm:size-9" />
+              )}
+            </PaginationItem>
+          ))}
+          <motion.li
+            initial={false}
+            animate={{ opacity: page === totalPages ? 0 : 1 }}
+          >
+            <PaginationNext
+              href="#"
+              onClick={(event) => {
+                event.preventDefault();
+                if (page < totalPages) {
+                  onPageChange(page + 1);
+                }
+              }}
+              aria-hidden={page === totalPages}
+              tabIndex={page === totalPages ? -1 : undefined}
+              className={
+                page === totalPages ? "pointer-events-none" : undefined
               }
-            }}
-            aria-hidden={page === 1}
-            tabIndex={page === 1 ? -1 : undefined}
-            className={`transition-opacity duration-200 motion-reduce:transition-none ${page === 1 ? "pointer-events-none opacity-0" : "opacity-100"}`}
-          />
-        </PaginationItem>
-        {visiblePages.map((pageNumber) => (
-          <PaginationItem key={pageNumber}>
-            {typeof pageNumber === "number" ? (
-              <PaginationLink
-                href="#"
-                className="size-7 sm:size-9"
-                isActive={pageNumber === page}
-                onClick={(event) => {
-                  event.preventDefault();
-                  if (pageNumber !== page) {
-                    onPageChange(pageNumber);
-                  }
-                }}
-              >
-                {pageNumber}
-              </PaginationLink>
-            ) : (
-              <PaginationEllipsis className="size-7 sm:size-9" />
-            )}
-          </PaginationItem>
-        ))}
-        <PaginationItem>
-          <PaginationNext
-            href="#"
-            onClick={(event) => {
-              event.preventDefault();
-              if (page < totalPages) {
-                onPageChange(page + 1);
-              }
-            }}
-            aria-hidden={page === totalPages}
-            tabIndex={page === totalPages ? -1 : undefined}
-            className={`transition-opacity duration-200 motion-reduce:transition-none ${page === totalPages ? "pointer-events-none opacity-0" : "opacity-100"}`}
-          />
-        </PaginationItem>
-      </PaginationContent>
-    </Pagination>
+            />
+          </motion.li>
+        </PaginationContent>
+      </Pagination>
+    </LayoutGroup>
   );
 }

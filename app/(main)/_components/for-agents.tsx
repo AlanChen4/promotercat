@@ -1,12 +1,16 @@
 "use client";
 
 import { Check, Copy, X } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
 import Image from "next/image";
 import { type RefObject, useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
 import claudeLogo from "@/public/claude.png";
 import codexLogo from "@/public/codex.png";
+
+const MotionCopy = motion.create(Copy);
+const MotionCheck = motion.create(Check);
 
 const AGENT_INSTALL = {
   codex:
@@ -51,13 +55,17 @@ function CopyBlock({ text }: { text: string }) {
           }
         }}
       >
-        <Copy
+        <MotionCopy
           aria-hidden="true"
-          className={`absolute size-4 transition-opacity duration-200 motion-reduce:transition-none ${copied ? "opacity-0" : "opacity-100"}`}
+          className="absolute size-4"
+          initial={false}
+          animate={{ opacity: copied ? 0 : 1 }}
         />
-        <Check
+        <MotionCheck
           aria-hidden="true"
-          className={`absolute size-4 transition-opacity duration-200 motion-reduce:transition-none ${copied ? "opacity-100" : "opacity-0"}`}
+          className="absolute size-4"
+          initial={false}
+          animate={{ opacity: copied ? 1 : 0 }}
         />
       </Button>
       <output
@@ -164,12 +172,15 @@ function AgentWindow({
   }, [ready]);
 
   return createPortal(
-    <div
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: ready ? 1 : 0, scale: ready ? 1 : 0.95 }}
+      exit={{ opacity: 0, scale: 0.95 }}
       ref={panelRef}
       role="dialog"
       aria-modal="false"
       aria-label="For Agents"
-      className={`fixed z-30 flex max-h-[calc(100dvh-24px)] w-[560px] max-w-[calc(100vw-24px)] flex-col overflow-hidden rounded-xl border bg-card text-card-foreground shadow-xl ${ready ? "origin-center transition-none animate-in fade-in zoom-in-95 duration-150 motion-reduce:animate-none" : ""}`}
+      className="fixed z-30 flex max-h-[calc(100dvh-24px)] w-[560px] max-w-[calc(100vw-24px)] flex-col overflow-hidden rounded-xl border bg-card text-card-foreground shadow-xl"
       style={{
         left: position.x,
         top: position.y,
@@ -238,7 +249,14 @@ function AgentWindow({
           }}
         >
           {(["codex", "claude"] as const).map((value) => (
-            <button
+            <motion.button
+              animate={{
+                color:
+                  client === value
+                    ? "var(--foreground)"
+                    : "var(--muted-foreground)",
+              }}
+              whileHover={{ color: "var(--foreground)" }}
               key={value}
               id={`${tabId}-${value}`}
               role="tab"
@@ -247,7 +265,7 @@ function AgentWindow({
               aria-controls={`${tabId}-panel`}
               tabIndex={client === value ? 0 : -1}
               onClick={() => setClient(value)}
-              className={`inline-flex cursor-pointer items-center gap-2 rounded py-1 text-sm font-medium transition-colors focus-visible:outline-2 ${client === value ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+              className="inline-flex cursor-pointer items-center gap-2 rounded py-1 text-sm font-medium focus-visible:outline-2"
             >
               <Image
                 src={value === "codex" ? codexLogo : claudeLogo}
@@ -257,7 +275,7 @@ function AgentWindow({
                 className={`size-[18px] shrink-0 ${client === value ? "opacity-100" : "opacity-50"}`}
               />
               {value === "codex" ? "Codex" : "Claude Code"}
-            </button>
+            </motion.button>
           ))}
         </div>
         <button
@@ -284,7 +302,7 @@ function AgentWindow({
           30 requests/minute and 1,000/day per account.
         </p>
       </div>
-    </div>,
+    </motion.div>,
     document.body,
   );
 }
@@ -312,7 +330,9 @@ export function ForAgents() {
         <Image src={codexLogo} alt="" width={16} height={16} />
         <Image src={claudeLogo} alt="" width={16} height={16} />
       </button>
-      {open ? <AgentWindow onClose={close} triggerRef={trigger} /> : null}
+      <AnimatePresence>
+        {open ? <AgentWindow onClose={close} triggerRef={trigger} /> : null}
+      </AnimatePresence>
     </>
   );
 }
